@@ -5,6 +5,7 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useConfig } from '../../context/ConfigContext';
 import { Avatar, Badge, Button, DataTable, EmptyState, ErrorState, Field, IconButton, Input, Modal, PageHeader, Pagination, Select, Stars, Textarea, Toggle } from '../../components/ui';
+import { MOBILE_PLACEHOLDER, NUMBER_LOCALE, POSTAL_CODE_RE, isMobile } from '../../utils/locale';
 import { CityField, FilterBar, SearchField, useMutation } from './_ops/shared';
 
 const EMPTY = {
@@ -28,13 +29,12 @@ function validate(f, isNew) {
   const e = {};
   if (f.name.trim().length < 2) e.name = 'Enter the full name';
   if (isNew && !/^\S+@\S+\.\S+$/.test(f.email.trim())) e.email = 'Enter a valid email';
-  const phone = f.phone.replace(/[\s-]/g, '').replace(/^\+?91(?=\d{10}$)/, '');
-  if (!/^[6-9]\d{9}$/.test(phone)) e.phone = 'Enter a valid 10-digit mobile number';
+  if (!isMobile(f.phone)) e.phone = 'Enter a valid 10-digit mobile number';
   if (isNew && f.password.length < 8) e.password = 'At least 8 characters';
   if (f.city.trim().length < 2) e.city = 'Choose a city';
-  const bad = parsePins(f.pins).filter((p) => !/^\d{6}$/.test(p));
-  if (bad.length) e.pins = `Not valid PIN codes: ${bad.slice(0, 3).join(', ')}`;
-  if (parsePins(f.pins).length > 100) e.pins = 'At most 100 PIN codes';
+  const bad = parsePins(f.pins).filter((p) => !POSTAL_CODE_RE.test(p));
+  if (bad.length) e.pins = `Not valid 5-digit postal codes: ${bad.slice(0, 3).join(', ')}`;
+  if (parsePins(f.pins).length > 100) e.pins = 'At most 100 postal codes';
   if (f.commissionRate !== '' && (Number.isNaN(Number(f.commissionRate)) || Number(f.commissionRate) < 0 || Number(f.commissionRate) > 50)) e.commissionRate = 'Between 0 and 50';
   if (!isNew && f.start >= f.end) e.hours = 'End time must be after start time';
   return e;
@@ -126,7 +126,7 @@ function CollectorModal({ open, collector, onClose, onSaved }) {
           {(id) => <Input id={id} value={f.name} onChange={set('name')} invalid={Boolean(errors.name)} autoComplete="off" />}
         </Field>
         <Field label="Mobile number" required error={errors.phone}>
-          {(id) => <Input id={id} type="tel" inputMode="tel" value={f.phone} onChange={set('phone')} invalid={Boolean(errors.phone)} placeholder="98xxxxxxxx" />}
+          {(id) => <Input id={id} type="tel" inputMode="tel" value={f.phone} onChange={set('phone')} invalid={Boolean(errors.phone)} placeholder={MOBILE_PLACEHOLDER} />}
         </Field>
         {isNew ? (
           <>
@@ -154,12 +154,12 @@ function CollectorModal({ open, collector, onClose, onSaved }) {
             </Select>
           )}
         </Field>
-        <Field label="Vehicle number">{(id) => <Input id={id} value={f.vehicleNumber} onChange={set('vehicleNumber')} maxLength={20} placeholder="KA01AB1234" />}</Field>
+        <Field label="Vehicle number">{(id) => <Input id={id} value={f.vehicleNumber} onChange={set('vehicleNumber')} maxLength={20} placeholder="BA 2 PA 1234" />}</Field>
         <Field label="Commission rate (%)" error={errors.commissionRate} hint="Leave blank to use the global rate">
           {(id) => <Input id={id} type="number" min={0} max={50} step="0.5" value={f.commissionRate} onChange={set('commissionRate')} invalid={Boolean(errors.commissionRate)} />}
         </Field>
-        <Field label="Service PIN codes" className="sm:col-span-2" error={errors.pins} hint={`${parsePins(f.pins).length} PIN codes · separate with commas or spaces. Without PINs, the collector gets pickups across the city.`}>
-          {(id) => <Textarea id={id} value={f.pins} onChange={set('pins')} rows={2} placeholder="560038, 560008" aria-invalid={Boolean(errors.pins) || undefined} />}
+        <Field label="Service postal codes" className="sm:col-span-2" error={errors.pins} hint={`${parsePins(f.pins).length} postal codes · separate with commas or spaces. Without postal codes, the collector gets pickups across the city.`}>
+          {(id) => <Textarea id={id} value={f.pins} onChange={set('pins')} rows={2} placeholder="44600, 44700" aria-invalid={Boolean(errors.pins) || undefined} />}
         </Field>
         {!isNew && (
           <>
@@ -218,7 +218,7 @@ export default function AdminCollectors() {
     },
     {
       key: 'pins',
-      header: 'Service PINs',
+      header: 'Service postal codes',
       render: (c) => {
         const pins = c.collectorProfile?.servicePinCodes || [];
         return pins.length ? (
@@ -295,7 +295,7 @@ export default function AdminCollectors() {
     <div>
       <PageHeader
         title="Collectors"
-        subtitle={data?.pagination ? `${data.pagination.total.toLocaleString('en-IN')} collectors` : 'Field team, service areas and availability'}
+        subtitle={data?.pagination ? `${data.pagination.total.toLocaleString(NUMBER_LOCALE)} collectors` : 'Field team, service areas and availability'}
         actions={
           canEdit && (
             <Button icon={Plus} onClick={() => setEditing('new')}>

@@ -71,14 +71,14 @@ function ask(message, user) {
 }
 
 it('runs the tool loop against real data and shows cards', async () => {
-  mockScript.push(toolUse('get_scrap_rates', { search: 'copper' }), { text: 'Copper is ₹480–₹550 per kg right now.' });
+  mockScript.push(toolUse('get_scrap_rates', { search: 'copper' }), { text: 'Copper is Rs. 800–900 per kg right now.' });
 
   const res = await ask('copper rate?');
   expect(res.status).toBe(200);
   const msg = res.body.data.message;
   expect(msg.mode).toBe('ai');
-  expect(msg.content).toBe('Copper is ₹480–₹550 per kg right now.');
-  expect(msg.cards[0]).toMatchObject({ type: 'rates', city: 'Bengaluru' });
+  expect(msg.content).toBe('Copper is Rs. 800–900 per kg right now.');
+  expect(msg.cards[0]).toMatchObject({ type: 'rates', city: 'Kathmandu' });
 
   // First request: stable system + tools (cacheable), per-request context as a system message.
   const [first, second] = mockCalls;

@@ -5,6 +5,7 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar, Badge, Button, Card, DataTable, EmptyState, ErrorState, Field, Modal, PageHeader, Pagination, Select, Toggle } from '../../components/ui';
 import { fmtDate, rupees, timeAgo } from '../../utils/format';
+import { NUMBER_LOCALE } from '../../utils/locale';
 import { ExportButton, FilterBar, SearchField, qs, useMutation } from './_ops/shared';
 
 const TIERS = [
@@ -176,7 +177,7 @@ export default function AdminCustomers() {
     <div>
       <PageHeader
         title="Customers"
-        subtitle={data?.pagination ? `${data.pagination.total.toLocaleString('en-IN')} customers` : 'Households and businesses selling scrap'}
+        subtitle={data?.pagination ? `${data.pagination.total.toLocaleString(NUMBER_LOCALE)} customers` : 'Households and businesses selling scrap'}
         actions={<ExportButton path={`/admin/users?${qs({ ...filters, format: 'csv' })}`} filename="customers.csv" />}
       />
 

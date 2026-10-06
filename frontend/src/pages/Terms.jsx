@@ -5,7 +5,7 @@ const SECTIONS = [
   ['Indicative prices', 'Rates shown on the website, app and chat are indicative. The final amount is calculated from the actual weight and condition verified at pickup, using the ScrapMate rate for your city on that day.'],
   ['Pickups', 'Pickups are free. You can reschedule up to the cutoff shown on your pickup page and cancel before the collector arrives. Repeated last-minute cancellations may limit future bookings.'],
   ['Door code', 'For your safety, collectors must enter the 4-digit code from your pickup page before weighing. Only share it with the collector at your door.'],
-  ['Payments', 'Payouts are made by cash, UPI, bank transfer or to your ScrapMate wallet. Wallet balances can be withdrawn to UPI or a bank account after review.'],
+  ['Payments', 'Payouts are made by cash, eSewa, Khalti, bank transfer or to your ScrapMate wallet. Wallet balances can be withdrawn to eSewa, Khalti or a Nepali bank account after review.'],
   ['Disputes', 'If you disagree with a weighing, choose "Dispute" before accepting. Our support team reviews the photographed scale readings and contacts you.'],
   ['Privacy', 'We use your phone number, address and location only to arrange and complete pickups, send updates you have opted into, and meet legal requirements. We never sell your data. Location sharing by collectors is only active during a trip.'],
   ['Prohibited items', 'We do not accept hazardous, medical, explosive or stolen items. Vehicles require valid ownership documents.'],

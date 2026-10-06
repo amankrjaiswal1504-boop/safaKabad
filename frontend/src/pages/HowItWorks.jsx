@@ -11,7 +11,7 @@ const STEPS = [
   { icon: KeyRound, title: 'Share your door code', text: 'At your door the collector enters the 4-digit code from your pickup page. This proves it is really your ScrapMate collector before anything is weighed.' },
   { icon: Scale, title: 'Weighed in front of you', text: 'Each item is weighed on a digital scale and the reading is photographed. The rate comes from ScrapMate\'s published price list for your city; collectors can\'t change it.' },
   { icon: BadgeCheck, title: 'Review and accept', text: 'See the final amount on your phone with every weight and rate. Accept it, or raise a dispute and our team steps in.' },
-  { icon: CreditCard, title: 'Get paid instantly', text: 'Choose UPI, bank transfer, cash or your ScrapMate wallet. A PDF receipt is emailed and saved in your account.' },
+  { icon: CreditCard, title: 'Get paid instantly', text: 'Choose eSewa, Khalti, bank transfer, cash or your ScrapMate wallet. A PDF receipt is emailed and saved in your account.' },
 ];
 
 export default function HowItWorks() {

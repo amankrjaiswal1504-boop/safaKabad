@@ -6,6 +6,7 @@ import useApi from '../../hooks/useApi';
 import usePageMeta from '../../hooks/usePageMeta';
 import { Badge, Button, Card, EmptyState, ErrorState, Field, Input, Modal, PageHeader, Segmented, SkeletonRows, cx } from '../../components/ui';
 import { fmtDateTime, rupees } from '../../utils/format';
+import { MOBILE_PLACEHOLDER, payoutLabel } from '../../utils/locale';
 
 const REASONS = { pickup_payout: 'Pickup payout', referral: 'Referral reward', withdrawal: 'Withdrawal', refund: 'Refund', bonus: 'Bonus' };
 const W_TONE = { requested: 'amber', processing: 'blue', paid: 'patina', rejected: 'danger' };
@@ -14,7 +15,7 @@ export default function Wallet() {
   usePageMeta({ title: 'Wallet', noindex: true });
   const { data, error, loading, reload } = useApi('/wallet');
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ amount: '', method: 'upi', upiId: '', accountNumber: '', ifsc: '', holderName: '' });
+  const [form, setForm] = useState({ amount: '', method: 'esewa', walletId: '', accountNumber: '', bankName: '', branch: '', holderName: '' });
   const [busy, setBusy] = useState(false);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -24,7 +25,9 @@ export default function Wallet() {
       await api.post('/wallet/withdraw', {
         amount: Number(form.amount),
         method: form.method,
-        ...(form.method === 'upi' ? { upiId: form.upiId } : { bankAccount: { accountNumber: form.accountNumber, ifsc: form.ifsc, holderName: form.holderName } }),
+        ...(form.method === 'bank_transfer'
+          ? { bankAccount: { accountNumber: form.accountNumber, bankName: form.bankName, branch: form.branch || undefined, holderName: form.holderName } }
+          : { walletId: form.walletId }),
       });
       toast.success('Withdrawal requested. Usually processed within a day.');
       setOpen(false);
@@ -55,7 +58,7 @@ export default function Wallet() {
             Withdraw
           </Button>
         </div>
-        {data && data.balance < 50 && <p className="text-xs text-[#aab1b8] mt-3">Minimum withdrawal is ₹50.</p>}
+        {data && data.balance < 50 && <p className="text-xs text-[#aab1b8] mt-3">Minimum withdrawal is Rs. 50.</p>}
       </Card>
 
       <h2 className="font-medium text-steel-900 mb-3">Transactions</h2>
@@ -97,7 +100,7 @@ export default function Wallet() {
               {data.withdrawals.map((w) => (
                 <li key={w._id} className="flex items-center justify-between gap-3 px-5 py-3 text-sm">
                   <span>
-                    {rupees(w.amount)} to {w.method === 'upi' ? w.upiId : `bank ••${w.bankAccount?.accountNumber?.slice(-4)}`}
+                    {rupees(w.amount)} to {w.method === 'bank_transfer' ? `${w.bankAccount?.bankName || 'bank'} ••${w.bankAccount?.accountNumber?.slice(-4)}` : `${payoutLabel(w.method)} ${w.walletId || ''}`}
                     <span className="block text-xs text-steel-500">{fmtDateTime(w.createdAt)}</span>
                   </span>
                   <Badge tone={W_TONE[w.status]}>{w.status}</Badge>
@@ -122,14 +125,17 @@ export default function Wallet() {
           <Field label="Amount" hint={data ? `Available ${rupees(data.balance, { decimals: 2 })}` : ''}>
             {(id) => <Input id={id} type="number" min="50" max={data?.balance} value={form.amount} onChange={(e) => set('amount', e.target.value)} />}
           </Field>
-          <Segmented value={form.method} onChange={(v) => set('method', v)} options={[{ value: 'upi', label: 'UPI' }, { value: 'bank_transfer', label: 'Bank account' }]} />
-          {form.method === 'upi' ? (
-            <Field label="UPI ID">{(id) => <Input id={id} placeholder="name@okaxis" value={form.upiId} onChange={(e) => set('upiId', e.target.value.trim())} />}</Field>
+          <Segmented value={form.method} onChange={(v) => set('method', v)} options={[{ value: 'esewa', label: 'eSewa' }, { value: 'khalti', label: 'Khalti' }, { value: 'bank_transfer', label: 'Bank account' }]} />
+          {form.method !== 'bank_transfer' ? (
+            <Field label={`${payoutLabel(form.method)} ID (mobile number)`}>
+              {(id) => <Input id={id} inputMode="tel" placeholder={MOBILE_PLACEHOLDER} value={form.walletId} onChange={(e) => set('walletId', e.target.value.trim())} />}
+            </Field>
           ) : (
             <div className="grid gap-3">
               <Field label="Account holder name">{(id) => <Input id={id} value={form.holderName} onChange={(e) => set('holderName', e.target.value)} />}</Field>
               <Field label="Account number">{(id) => <Input id={id} inputMode="numeric" value={form.accountNumber} onChange={(e) => set('accountNumber', e.target.value.replace(/\D/g, ''))} />}</Field>
-              <Field label="IFSC">{(id) => <Input id={id} value={form.ifsc} onChange={(e) => set('ifsc', e.target.value.toUpperCase())} maxLength={11} />}</Field>
+              <Field label="Bank name">{(id) => <Input id={id} placeholder="e.g. Nabil Bank" value={form.bankName} onChange={(e) => set('bankName', e.target.value)} />}</Field>
+              <Field label="Branch">{(id) => <Input id={id} value={form.branch} onChange={(e) => set('branch', e.target.value)} />}</Field>
             </div>
           )}
         </div>

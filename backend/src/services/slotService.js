@@ -1,13 +1,13 @@
 const Pickup = require('../models/Pickup');
 const settings = require('./settingsService');
 
-const TZ = 'Asia/Kolkata';
+const { TIMEZONE: TZ, UTC_OFFSET } = require('../config/locale');
 
-function todayIST() {
+function todayLocal() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(new Date());
 }
 
-function hourIST() {
+function hourLocal() {
   return Number(new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hour12: false, timeZone: TZ }).format(new Date()));
 }
 
@@ -33,7 +33,7 @@ function dayRange(iso) {
 // Availability for a date: each slot with remaining capacity and why it's closed.
 async function getAvailability(date, { pinCode, excludePickupId } = {}) {
   const cfg = await settings.get('slots');
-  const today = todayIST();
+  const today = todayLocal();
   const result = { date, open: true, reason: null, slots: [] };
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date))) return { ...result, open: false, reason: 'Invalid date' };
@@ -51,7 +51,7 @@ async function getAvailability(date, { pinCode, excludePickupId } = {}) {
   const bookedBySlot = Object.fromEntries(booked.map((b) => [b._id, b.count]));
 
   const isToday = date === today;
-  const nowHour = hourIST();
+  const nowHour = hourLocal();
   result.slots = cfg.slots.map(({ label, capacity }) => {
     const used = bookedBySlot[label] || 0;
     let reason = null;
@@ -81,8 +81,8 @@ async function assertSlotAvailable(date, slot, opts) {
 async function canReschedule(pickup) {
   const cfg = await settings.get('slots');
   const day = new Date(pickup.scheduledDate).toISOString().slice(0, 10);
-  const start = new Date(`${day}T${String(slotStartHour(pickup.timeSlot)).padStart(2, '0')}:00:00+05:30`);
+  const start = new Date(`${day}T${String(slotStartHour(pickup.timeSlot)).padStart(2, '0')}:00:00${UTC_OFFSET}`);
   return start.getTime() - Date.now() >= cfg.rescheduleCutoffHours * 3600000;
 }
 
-module.exports = { getAvailability, assertSlotAvailable, canReschedule, todayIST, addDays, slotStartHour };
+module.exports = { getAvailability, assertSlotAvailable, canReschedule, todayLocal, addDays, slotStartHour };

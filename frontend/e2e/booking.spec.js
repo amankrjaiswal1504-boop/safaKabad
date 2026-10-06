@@ -13,16 +13,16 @@ test('guest books a pickup with phone OTP and sees the tracking page', async ({ 
   await page.getByRole('button', { name: /^Newspaper/ }).click();
   await page.getByRole('button', { name: /^Copper/ }).click();
   await expect(page.getByText('Your items')).toBeVisible();
-  await expect(page.getByText(/₹\d[\d,]* – ₹\d/).first()).toBeVisible();
+  await expect(page.getByText(/Rs\. \d[\d,]* – Rs\. \d/).first()).toBeVisible();
   await page.getByRole('button', { name: 'Continue' }).click();
 
   // Step 2: address (typed, not searched, so the test needs no network)
   await page.getByRole('textbox', { name: 'House / flat no.', exact: true }).fill('42');
-  await page.getByRole('textbox', { name: 'Street / building', exact: true }).fill('MG Road');
-  await page.getByRole('textbox', { name: 'Locality / area', exact: true }).fill('Indiranagar');
-  await page.getByRole('textbox', { name: 'City', exact: true }).fill('Bengaluru');
-  await page.getByRole('textbox', { name: 'State', exact: true }).fill('Karnataka');
-  await page.getByRole('textbox', { name: 'PIN code', exact: true }).fill('560038');
+  await page.getByRole('textbox', { name: 'Street / building', exact: true }).fill('Baneshwor Marg');
+  await page.getByRole('textbox', { name: 'Locality / area', exact: true }).fill('New Baneshwor');
+  await page.getByRole('textbox', { name: 'City', exact: true }).fill('Kathmandu');
+  await page.getByRole('combobox', { name: 'Province', exact: true }).selectOption('Bagmati');
+  await page.getByRole('textbox', { name: 'Postal code', exact: true }).fill('44600');
   await expect(page.getByText(/we pick up here/i)).toBeVisible();
   await page.getByRole('button', { name: 'Use this address' }).click();
   await page.getByRole('button', { name: 'Continue' }).click();

@@ -14,7 +14,7 @@ const ACTIVE = ['ASSIGNED', 'COLLECTOR_ON_THE_WAY', 'ARRIVED', 'WEIGHING'];
 function dayBounds(iso) {
   return { $gte: new Date(`${iso}T00:00:00.000Z`), $lte: new Date(`${iso}T23:59:59.999Z`) };
 }
-const todayIST = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+const { todayLocal } = require('../config/locale');
 
 async function listAssignedPickups(req, res, next) {
   try {
@@ -22,7 +22,7 @@ async function listAssignedPickups(req, res, next) {
     const view = req.query.view || 'active';
     if (view === 'active') filter.status = { $in: ACTIVE };
     else if (view === 'today') {
-      filter.scheduledDate = dayBounds(todayIST());
+      filter.scheduledDate = dayBounds(todayLocal());
     } else if (view === 'history') filter.status = { $in: ['COMPLETED', 'CANCELLED'] };
     const pickups = await Pickup.find(filter)
       .populate('customer', 'name phone')
@@ -38,7 +38,7 @@ async function listAssignedPickups(req, res, next) {
 // with Google Maps navigation links.
 async function dailyRoute(req, res, next) {
   try {
-    const date = req.query.date || todayIST();
+    const date = req.query.date || todayLocal();
     const me = await User.findById(req.user._id).lean();
     const pickups = await Pickup.find({ collector: req.user._id, status: { $in: ACTIVE }, scheduledDate: dayBounds(date) })
       .populate('customer', 'name phone')
@@ -234,7 +234,7 @@ async function finishPickup(req, res, next) {
     if (req.body.evidencePhotos) pickup.evidencePhotos = req.body.evidencePhotos.slice(0, 6);
     const done = await completePickup(
       pickup,
-      { method: pickup.type === 'donation' ? null : req.body.payoutMethod, upiId: req.body.upiId, bankAccount: req.body.bankAccount },
+      { method: pickup.type === 'donation' ? null : req.body.payoutMethod, walletId: req.body.walletId, bankAccount: req.body.bankAccount },
       req.user
     );
     res.json({ success: true, data: { pickup: done } });

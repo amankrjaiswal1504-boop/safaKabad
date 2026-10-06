@@ -3,6 +3,7 @@ import { Building2, FileCheck2, Search, Users } from 'lucide-react';
 import api from '../../services/api';
 import useApi, { useDebounce } from '../../hooks/useApi';
 import { fmtDate, fmtDateTime, rupees } from '../../utils/format';
+import { NUMBER_LOCALE, TAX_ID_LABEL } from '../../utils/locale';
 import { Badge, Button, Card, DataTable, EmptyState, Field, Input, PageHeader, Pagination, Select, Textarea, cx } from '../../components/ui';
 import { Async, Callout, KeyValue, NumberInput, Toolbar, isBlank, toNumOrNull, useAction, Modal } from './_catalog/shared';
 
@@ -89,7 +90,7 @@ export default function AdminBusiness() {
       header: 'Est. quantity',
       render: (r) => (
         <div className="whitespace-nowrap">
-          <span className="tabular">{r.estimatedQuantityKg ? `${r.estimatedQuantityKg.toLocaleString('en-IN')} kg` : '—'}</span>
+          <span className="tabular">{r.estimatedQuantityKg ? `${r.estimatedQuantityKg.toLocaleString(NUMBER_LOCALE)} kg` : '—'}</span>
           {r.wantsCertificate && (
             <div>
               <Badge tone="patina" className="mt-1">
@@ -272,8 +273,8 @@ function QuoteModal({ quote, onClose, onSaved }) {
           </KeyValue>
           <KeyValue label="City">{quote.city}</KeyValue>
           <KeyValue label="Business type">{pretty(quote.businessType)}</KeyValue>
-          <KeyValue label="GSTIN">{quote.gstin || '—'}</KeyValue>
-          <KeyValue label="Est. quantity">{quote.estimatedQuantityKg ? `${quote.estimatedQuantityKg.toLocaleString('en-IN')} kg` : '—'}</KeyValue>
+          <KeyValue label={TAX_ID_LABEL}>{quote.panVat || '—'}</KeyValue>
+          <KeyValue label="Est. quantity">{quote.estimatedQuantityKg ? `${quote.estimatedQuantityKg.toLocaleString(NUMBER_LOCALE)} kg` : '—'}</KeyValue>
           <KeyValue label="Received">{fmtDateTime(quote.createdAt)}</KeyValue>
           <KeyValue label="Certificate">
             {quote.wantsCertificate ? (
@@ -301,7 +302,7 @@ function QuoteModal({ quote, onClose, onSaved }) {
               </Select>
             )}
           </Field>
-          <Field label="Quoted amount (₹)" error={errors.quotedAmount}>
+          <Field label="Quoted amount (Rs.)" error={errors.quotedAmount}>
             {(id) => <NumberInput id={id} min={0} value={f.quotedAmount} onChange={set('quotedAmount')} invalid={!!errors.quotedAmount} />}
           </Field>
         </div>

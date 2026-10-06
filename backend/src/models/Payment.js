@@ -11,7 +11,7 @@ const paymentSchema = new mongoose.Schema(
     purpose: { type: String, default: 'pickup' }, // pickup | quote | withdrawal
     method: {
       type: String,
-      enum: ['cash', 'upi', 'bank_transfer', 'razorpay', 'wallet'],
+      enum: ['cash', 'esewa', 'khalti', 'bank_transfer', 'wallet'],
       required: true,
     },
     status: {
@@ -20,8 +20,9 @@ const paymentSchema = new mongoose.Schema(
       default: 'pending',
       index: true,
     },
-    razorpayOrderId: { type: String, index: true },
-    razorpayPaymentId: { type: String },
+    // Gateway references (Khalti pidx / transaction id) for online collections.
+    gatewayRef: { type: String, index: true },
+    gatewayTxnId: { type: String },
     payoutReference: { type: String },
     isMock: { type: Boolean, default: false },
     failureReason: { type: String },

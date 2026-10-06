@@ -4,7 +4,7 @@ const { Review, Ngo } = require('../models/platform');
 const Faq = require('../models/Faq');
 const settings = require('../services/settingsService');
 const { checkPin, listAreas } = require('../services/serviceabilityService');
-const { getAvailability, todayIST, addDays } = require('../services/slotService');
+const { getAvailability, todayLocal, addDays } = require('../services/slotService');
 const geo = require('../services/geoService');
 const { leaderboard } = require('../services/referralService');
 const { fetchRates, listServiceCities } = require('../services/rateService');
@@ -23,7 +23,7 @@ async function config(req, res, next) {
         serviceAreas: areas.map((a) => ({ city: a.city, state: a.state, minPickupWeightKg: a.minPickupWeightKg, minPickupValue: a.minPickupValue })),
         features: {
           ai: isAiEnabled(),
-          razorpayKeyId: process.env.RAZORPAY_KEY_ID || null,
+          onlinePayments: process.env.KHALTI_SECRET_KEY ? 'khalti' : 'mock',
           vapidPublicKey: process.env.VAPID_PUBLIC_KEY || null,
           mapsProvider: process.env.MAPS_API_KEY ? 'google' : 'osm',
         },
@@ -44,7 +44,7 @@ async function serviceability(req, res, next) {
 
 async function slots(req, res, next) {
   try {
-    const date = req.query.date || todayIST();
+    const date = req.query.date || todayLocal();
     res.json({ success: true, data: await getAvailability(date, { pinCode: req.query.pin, excludePickupId: req.query.exclude }) });
   } catch (err) {
     next(err);
@@ -55,7 +55,7 @@ async function slots(req, res, next) {
 async function slotCalendar(req, res, next) {
   try {
     const cfg = await settings.get('slots');
-    const today = todayIST();
+    const today = todayLocal();
     const days = [];
     for (let i = 0; i <= cfg.maxDaysAhead; i += 1) {
       const date = addDays(today, i);

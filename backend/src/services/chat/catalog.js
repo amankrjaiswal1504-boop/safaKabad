@@ -7,30 +7,35 @@ function wordRe(word, suffix = '') {
   return new RegExp(`(^|[^\\p{L}])${escapeRegex(word)}${suffix}($|[^\\p{L}])`, 'u');
 }
 
-// Common local / Hindi names for catalogue items -> canonical item name.
+// Common Nepali / local names for catalogue items -> canonical item name.
 const SYNONYMS = {
-  loha: 'Iron', लोहा: 'Iron', लोहे: 'Iron',
-  tamba: 'Copper', tanba: 'Copper', तांबा: 'Copper', ताँबा: 'Copper', तांबे: 'Copper',
-  peetal: 'Brass', pital: 'Brass', पीतल: 'Brass',
-  akhbar: 'Newspaper', akhbaar: 'Newspaper', newspapers: 'Newspaper', raddi: 'Newspaper', अखबार: 'Newspaper', रद्दी: 'Newspaper',
-  gatta: 'Cardboard', carton: 'Cardboard', cartons: 'Cardboard', गत्ता: 'Cardboard',
-  kitab: 'Books', kitaben: 'Books', book: 'Books', किताब: 'Books', किताबें: 'Books',
+  phalam: 'Iron', falam: 'Iron', फलाम: 'Iron',
+  tama: 'Copper', तामा: 'Copper',
+  pittal: 'Brass', pital: 'Brass', पित्तल: 'Brass',
+  patrika: 'Newspaper', akhbar: 'Newspaper', newspapers: 'Newspaper', raddi: 'Newspaper', पत्रिका: 'Newspaper', अखबार: 'Newspaper', रद्दी: 'Newspaper',
+  kartun: 'Cardboard', cartoon: 'Cardboard', carton: 'Cardboard', cartons: 'Cardboard', baksa: 'Cardboard', कार्टुन: 'Cardboard', बाकस: 'Cardboard',
+  kagaj: 'Office Paper', कागज: 'Office Paper',
+  kitab: 'Books', book: 'Books', किताब: 'Books', पुस्तक: 'Books',
   प्लास्टिक: 'Plastic', bottles: 'Plastic',
-  aluminum: 'Aluminium', एल्युमिनियम: 'Aluminium',
-  cans: 'Aluminium Can', can: 'Aluminium Can',
-  kapde: 'Clothes', कपड़े: 'Clothes',
-  kanch: 'Glass', कांच: 'Glass',
+  aluminum: 'Aluminium', almunium: 'Aluminium', एल्मुनियम: 'Aluminium', एल्युमिनियम: 'Aluminium',
+  cans: 'Aluminium Can', can: 'Aluminium Can', क्यान: 'Aluminium Can',
+  luga: 'Clothes', kapada: 'Clothes', लुगा: 'Clothes', कपडा: 'Clothes',
+  sisa: 'Glass', sisi: 'Glass', सिसा: 'Glass', सिसी: 'Glass',
   fridge: 'Refrigerator', फ्रिज: 'Refrigerator',
   ac: 'Air Conditioner', एसी: 'Air Conditioner',
-  tv: 'Television', टीवी: 'Television',
-  'washing machine': 'Washing Machine',
-  computer: 'Desktop CPU', cpu: 'Desktop CPU',
-  laptops: 'Laptop', लैपटॉप: 'Laptop',
+  tv: 'Television', टिभी: 'Television', टीभी: 'Television',
+  'washing machine': 'Washing Machine', वासिङ: 'Washing Machine',
+  computer: 'Desktop CPU', cpu: 'Desktop CPU', कम्प्युटर: 'Desktop CPU',
+  laptops: 'Laptop', ल्यापटप: 'Laptop',
   pankha: 'Fan', पंखा: 'Fan',
-  motorcycle: 'Bike', motorbike: 'Bike', बाइक: 'Bike',
-  scooty: 'Scooter', स्कूटर: 'Scooter',
-  steel: 'Steel', स्टील: 'Steel',
+  motorcycle: 'Bike', motorbike: 'Bike', bike: 'Bike', मोटरसाइकल: 'Bike', बाइक: 'Bike',
+  scooty: 'Scooter', स्कुटर: 'Scooter',
+  gadi: 'Car', गाडी: 'Car', कार: 'Car',
+  steel: 'Steel', स्टिल: 'Steel',
 };
+
+// Nepali postpositions that attach to the noun ("तामाको", "फलामलाई").
+const NE_SUFFIX = '(?:को|का|की|लाई|मा|ले|हरू|हरु)?';
 
 let cache = { at: 0, items: [] };
 const TTL_MS = 60 * 1000;
@@ -62,7 +67,7 @@ async function resolveItemByName(name) {
     items.find((i) => n.includes(normalise(i.name))) ||
     items.find((i) => normalise(i.name).includes(n)) ||
     (() => {
-      const key = Object.keys(SYNONYMS).find((k) => wordRe(k).test(n));
+      const key = Object.keys(SYNONYMS).find((k) => wordRe(k, NE_SUFFIX).test(n));
       return key ? byName(SYNONYMS[key]) : null;
     })() ||
     null
@@ -85,7 +90,7 @@ async function findItemsInText(text) {
     }
   }
   for (const [syn, canonical] of Object.entries(SYNONYMS)) {
-    const re = wordRe(syn);
+    const re = wordRe(syn, NE_SUFFIX);
     if (re.test(remaining)) {
       const item = items.find((i) => i.name === canonical);
       if (item) found.set(String(item._id), item);

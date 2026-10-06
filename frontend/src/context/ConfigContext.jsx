@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
+import { DEFAULT_CITY } from '../utils/locale';
 
 const ConfigContext = createContext(null);
 const CITY_KEY = 'sm-city';
@@ -15,7 +16,7 @@ function readCity() {
 // Public site config (CMS settings, cities, feature flags) + the visitor's city.
 export function ConfigProvider({ children }) {
   const [config, setConfig] = useState(null);
-  const [city, setCityState] = useState(readCity() || 'Bengaluru');
+  const [city, setCityState] = useState(readCity() || DEFAULT_CITY);
 
   useEffect(() => {
     api
@@ -23,9 +24,9 @@ export function ConfigProvider({ children }) {
       .then((res) => {
         setConfig(res.data.data);
         const cities = res.data.data.cities || [];
-        if (cities.length && !cities.includes(readCity() || '')) setCityState(cities.includes('Bengaluru') ? 'Bengaluru' : cities[0]);
+        if (cities.length && !cities.includes(readCity() || '')) setCityState(cities.includes(DEFAULT_CITY) ? DEFAULT_CITY : cities[0]);
       })
-      .catch(() => setConfig({ cities: ['Bengaluru'], support: {}, home: {}, slots: { slots: [] }, features: {} }));
+      .catch(() => setConfig({ cities: [DEFAULT_CITY], support: {}, home: {}, slots: { slots: [] }, features: {} }));
   }, []);
 
   const value = useMemo(

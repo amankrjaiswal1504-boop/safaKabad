@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { en, hi } from './messages';
+import { en, ne } from './messages';
 
-const DICTS = { en, hi };
+const DICTS = { en, ne };
 const KEY = 'sm-lang';
 const I18nContext = createContext(null);
 
@@ -12,7 +12,7 @@ function initialLang() {
   } catch {
     /* ignore */
   }
-  return navigator.language?.startsWith('hi') ? 'hi' : 'en';
+  return navigator.language?.startsWith('ne') ? 'ne' : 'en';
 }
 
 export function I18nProvider({ children }) {
@@ -43,8 +43,8 @@ export function I18nProvider({ children }) {
           /* ignore */
         }
       },
-      // Pick the Hindi field of a record when available (e.g. item.nameHi).
-      tr: (obj, field = 'name') => (lang === 'hi' && obj?.[`${field}Hi`]) || obj?.[field] || '',
+      // Pick the Nepali field of a record when available (e.g. item.nameNe).
+      tr: (obj, field = 'name') => (lang === 'ne' && obj?.[`${field}Ne`]) || obj?.[field] || '',
     }),
     [lang, t]
   );

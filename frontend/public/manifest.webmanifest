@@ -8,7 +8,7 @@
   "orientation": "portrait",
   "background_color": "#F7F6F2",
   "theme_color": "#A44A2A",
-  "lang": "en-IN",
+  "lang": "en-NP",
   "categories": ["shopping", "lifestyle", "utilities"],
   "icons": [
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" },

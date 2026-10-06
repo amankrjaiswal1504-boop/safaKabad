@@ -6,13 +6,14 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { Badge, Button, Card, DataTable, EmptyState, ErrorState, Field, IconButton, Input, Modal, PageHeader, Select, SkeletonRows, StatusBadge, Tabs, Textarea } from '../../components/ui';
 import { fmtDate, fmtDateTime } from '../../utils/format';
+import { MOBILE_PLACEHOLDER, POSTAL_CODE_LABEL, POSTAL_CODE_RE } from '../../utils/locale';
 import { flagLabel, useMutation } from './_ops/shared';
 
 const TYPES = [
-  { value: 'phone', label: 'Phone number', placeholder: '9876543210' },
+  { value: 'phone', label: 'Phone number', placeholder: MOBILE_PLACEHOLDER },
   { value: 'email', label: 'Email address', placeholder: 'someone@example.com' },
   { value: 'ip', label: 'IP address', placeholder: '203.0.113.7' },
-  { value: 'pincode', label: 'PIN code', placeholder: '560038' },
+  { value: 'pincode', label: POSTAL_CODE_LABEL, placeholder: '44600' },
 ];
 const typeLabel = (t) => TYPES.find((x) => x.value === t)?.label || t;
 
@@ -25,7 +26,7 @@ function BlockModal({ initial, onClose, onSaved }) {
   const save = async () => {
     const value = f.value.trim();
     if (value.length < 3) return setError('Enter at least 3 characters');
-    if (f.type === 'pincode' && !/^\d{6}$/.test(value)) return setError('PIN code must be 6 digits');
+    if (f.type === 'pincode' && !POSTAL_CODE_RE.test(value)) return setError('Postal code must be 5 digits');
     if (f.type === 'email' && !/^\S+@\S+\.\S+$/.test(value)) return setError('Enter a valid email');
     setError('');
     const res = await run('add', () => api.post('/admin/fraud/blocklist', { type: f.type, value, ...(f.reason.trim() ? { reason: f.reason.trim() } : {}) }), `${typeLabel(f.type)} blocked`);
@@ -228,7 +229,7 @@ export default function AdminFraud() {
                   <EmptyState
                     icon={ShieldOff}
                     title="Blocklist is empty"
-                    description="Blocked phones, emails, IPs and PIN codes can't sign up or book."
+                    description="Blocked phones, emails, IPs and postal codes can't sign up or book."
                     action={isAdmin ? <Button icon={Plus} onClick={() => setBlocking({ type: 'phone', value: '', reason: '' })}>Add entry</Button> : null}
                   />
                 }

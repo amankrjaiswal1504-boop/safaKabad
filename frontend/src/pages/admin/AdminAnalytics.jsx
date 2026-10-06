@@ -5,6 +5,7 @@ import { useConfig } from '../../context/ConfigContext';
 import { Card, DataTable, EmptyState, ErrorState, PageHeader, Segmented, SectionTitle, Skeleton, Stars, Stat, cx } from '../../components/ui';
 import { BarList, ChartTable, ColumnChart, Funnel, LineChart } from '../../components/charts';
 import { compact, rupees } from '../../utils/format';
+import { CURRENCY_SYMBOL, DATE_LOCALE } from '../../utils/locale';
 import { CityField, ExportButton, FilterBar, pct, qs } from './_ops/shared';
 
 const RANGES = [
@@ -17,8 +18,8 @@ const MONEY_SERIES = [
   { key: 'recyclerValue', label: 'Recycler value', color: 'viz-1', area: true },
   { key: 'payout', label: 'Paid to customers', color: 'viz-2' },
 ];
-const shortDay = (d) => new Date(`${d}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-const money = (v) => `₹${compact(v)}`;
+const shortDay = (d) => new Date(`${d}T00:00:00`).toLocaleDateString(DATE_LOCALE, { day: 'numeric', month: 'short' });
+const money = (v) => `${CURRENCY_SYMBOL} ${compact(v)}`;
 
 function AnalyticsSkeleton() {
   return (
@@ -104,7 +105,7 @@ export default function AdminAnalytics() {
               <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0" aria-hidden />
               <p className="text-steel-700">
                 <span className="font-medium text-steel-900">Margin is understated.</span> {t.missingRecyclerPrice} completed item
-                {t.missingRecyclerPrice === 1 ? '' : 's'} had no recycler price for their city, so they count as ₹0 recycler value. Set recycler
+                {t.missingRecyclerPrice === 1 ? '' : 's'} had no recycler price for their city, so they count as {rupees(0)} recycler value. Set recycler
                 prices on the Prices page.
               </p>
             </div>
@@ -186,12 +187,12 @@ export default function AdminAnalytics() {
 
               <div className="grid lg:grid-cols-2 gap-4">
                 <Card className="min-w-0">
-                  <SectionTitle title="Busiest areas" subtitle="Bookings by city and PIN code" />
+                  <SectionTitle title="Busiest areas" subtitle="Bookings by city and postal code" />
                   <BarList data={data.byArea.map((a) => ({ area: `${a.city || '—'} · ${a.pinCode || '—'}`, pickups: a.pickups }))} label="area" value="pickups" />
                   <ChartTable
                     columns={[
                       { key: 'city', label: 'City' },
-                      { key: 'pinCode', label: 'PIN' },
+                      { key: 'pinCode', label: 'Postal code' },
                       { key: 'pickups', label: 'Bookings' },
                     ]}
                     rows={data.byArea}

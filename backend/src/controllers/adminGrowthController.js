@@ -2,6 +2,7 @@
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const Payment = require('../models/Payment');
+const Pickup = require('../models/Pickup');
 const { Coupon, Review, Ngo, Quote, Withdrawal } = require('../models/platform');
 const { audit } = require('../services/auditService');
 const wallet = require('../services/walletService');
@@ -138,7 +139,7 @@ async function updateQuote(req, res, next) {
       await notify(quote.customer, {
         type: 'quote.ready',
         title: 'Your bulk quote is ready',
-        body: `Quote ${quote.quoteId}: ${quote.quotedAmount != null ? `₹${quote.quotedAmount}` : 'see details'}. ${quote.adminNote || ''}`,
+        body: `Quote ${quote.quoteId}: ${quote.quotedAmount != null ? `Rs. ${quote.quotedAmount}` : 'see details'}. ${quote.adminNote || ''}`,
         link: '/business',
         channels: ['inapp', 'email', 'whatsapp'],
       });
@@ -161,7 +162,8 @@ async function listWithdrawals(req, res, next) {
   }
 }
 
-// Approve = send the payout (RazorpayX or mock). Reject = refund to wallet.
+// Approve = send the payout (provider, mock, or queued for manual settlement).
+// Reject = refund to wallet.
 async function processWithdrawal(req, res, next) {
   try {
     const w = await Withdrawal.findById(req.params.id).populate('user', 'name');
@@ -178,8 +180,8 @@ async function processWithdrawal(req, res, next) {
     } else {
       const result = await gateway.sendPayout({
         amount: w.amount,
-        method: w.method === 'upi' ? 'upi' : 'bank',
-        upiId: w.upiId,
+        method: w.method === 'bank_transfer' ? 'bank' : w.method,
+        walletId: w.walletId,
         bankAccount: w.bankAccount,
         name: w.user.name,
         reference: `WD-${w._id}`,
@@ -204,13 +206,47 @@ async function processWithdrawal(req, res, next) {
     await notify(w.user._id, {
       type: 'wallet.withdrawal',
       title: w.status === 'rejected' ? 'Withdrawal rejected' : 'Withdrawal sent',
-      body: w.status === 'rejected' ? `₹${w.amount} is back in your wallet. ${w.note || ''}` : `₹${w.amount} is on its way to your ${w.method === 'upi' ? 'UPI ID' : 'bank account'}.`,
+      body: w.status === 'rejected' ? `Rs. ${w.amount} is back in your wallet. ${w.note || ''}` : `Rs. ${w.amount} is on its way to your ${{ esewa: 'eSewa', khalti: 'Khalti', bank_transfer: 'bank account' }[w.method] || 'account'}.`,
       link: '/wallet',
       channels: ['inapp', 'push', 'whatsapp'],
     });
     res.json({ success: true, data: { withdrawal: w } });
   } catch (err) {
     if (err.status) return fail(res, err.status, err.message);
+    next(err);
+  }
+}
+
+// Finance marks a manually settled payout (eSewa/Khalti/bank transfer done
+// outside the app) as paid. Updates the linked pickup or withdrawal too.
+async function markPaymentPaid(req, res, next) {
+  try {
+    const payment = await Payment.findOne({ paymentId: req.params.paymentId });
+    if (!payment) return fail(res, 404, 'Payment not found');
+    if (payment.status === 'successful') return fail(res, 409, 'Already paid');
+    if (payment.direction === 'collection') return fail(res, 400, 'Only payouts can be marked paid here');
+    const before = payment.status;
+    payment.status = 'successful';
+    if (req.body.reference) payment.payoutReference = req.body.reference;
+    await payment.save();
+    if (payment.pickup) {
+      await Pickup.updateOne({ _id: payment.pickup }, { 'payout.status': 'paid', 'payout.paidAt': new Date(), ...(req.body.reference ? { 'payout.reference': req.body.reference } : {}) });
+    }
+    if (payment.purpose === 'withdrawal') {
+      await Withdrawal.updateOne({ _id: payment.paymentId.replace(/^WD-/, '') }, { status: 'paid', ...(req.body.reference ? { payoutReference: req.body.reference } : {}) });
+    }
+    await audit(req, 'payment.mark_paid', { entity: 'Payment', entityId: payment.paymentId, before, after: { status: 'successful', reference: req.body.reference } });
+    if (payment.user) {
+      await notify(payment.user, {
+        type: 'payment.paid',
+        title: 'Payment sent',
+        body: `Rs. ${payment.amount} has been paid to your ${{ esewa: 'eSewa', khalti: 'Khalti', bank_transfer: 'bank account' }[payment.method] || 'account'}.`,
+        link: '/wallet',
+        channels: ['inapp', 'push', 'whatsapp'],
+      });
+    }
+    res.json({ success: true, data: { payment } });
+  } catch (err) {
     next(err);
   }
 }
@@ -246,4 +282,5 @@ module.exports = {
   listWithdrawals,
   processWithdrawal,
   listPayments,
+  markPaymentPaid,
 };

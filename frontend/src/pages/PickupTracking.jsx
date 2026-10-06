@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { AlertTriangle, Award, CalendarClock, CalendarPlus, FileDown, KeyRound, Navigation, Phone, Receipt as ReceiptIcon, Star, XCircle } from 'lucide-react';
 import api, { download } from '../services/api';
@@ -13,6 +13,7 @@ import PickupTimeline from '../components/PickupTimeline';
 import MapView from '../components/MapView';
 import SlotPicker from '../components/SlotPicker';
 import { addressLine, fmtDateTime, fmtDay, rupees, unitLabel } from '../utils/format';
+import { payoutLabel } from '../utils/locale';
 
 function RatingForm({ pickupId, onDone }) {
   const [rating, setRating] = useState(0);
@@ -308,7 +309,7 @@ export default function PickupTracking() {
                 <>
                   <div className="text-steel-500 pt-2">Payment</div>
                   <div className="text-steel-900 capitalize">
-                    {pickup.payout.method.replace('_', ' ')} · {pickup.payout.status}
+                    {payoutLabel(pickup.payout.method)} · {pickup.payout.status}
                   </div>
                 </>
               )}

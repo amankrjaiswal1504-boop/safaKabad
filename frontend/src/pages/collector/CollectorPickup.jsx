@@ -49,6 +49,7 @@ import {
   cx,
 } from '../../components/ui';
 import { addressLine, fmtDateTime, fmtDay, rupees, timeAgo, unitLabel } from '../../utils/format';
+import { DEFAULT_CENTER, MOBILE_PLACEHOLDER, PAYOUT_METHODS, cleanPhone, isMobile, payoutLabel } from '../../utils/locale';
 import { enqueue, queuedFor } from './offlineQueue';
 import { customerPhone, navigateUrl, telUrl, useLocationShare, useOfflineSync, whatsappUrl, writeSharePref } from './collectorShared';
 
@@ -62,12 +63,10 @@ const STEPS = [
 
 const CANCEL_REASONS = ['Customer not available', 'Customer cancelled at the door', 'Address not found', 'Items not as described', 'Vehicle issue'];
 
-const PAYOUT_OPTIONS = [
-  { value: 'cash', label: 'Cash', icon: Banknote },
-  { value: 'upi', label: 'UPI', icon: Smartphone },
-  { value: 'bank_transfer', label: 'Bank', icon: Landmark },
-  { value: 'wallet', label: 'Wallet', icon: Wallet },
-];
+const PAYOUT_ICON = { cash: Banknote, esewa: Smartphone, khalti: Smartphone, bank_transfer: Landmark, wallet: Wallet };
+const PAYOUT_SHORT = { bank_transfer: 'Bank', wallet: 'Wallet' };
+const PAYOUT_OPTIONS = PAYOUT_METHODS.map((m) => ({ value: m.value, label: PAYOUT_SHORT[m.value] || m.label, icon: PAYOUT_ICON[m.value] }));
+const isWalletMethod = (m) => m === 'esewa' || m === 'khalti';
 
 const RATE_OPTIONS = [
   { value: 'min', label: 'Low' },
@@ -75,8 +74,6 @@ const RATE_OPTIONS = [
   { value: 'max', label: 'High' },
 ];
 
-const UPI_RE = /^[\w.-]{2,}@[a-z]{2,}$/i;
-const IFSC_RE = /^[A-Z]{4}0[A-Z0-9]{6}$/i;
 
 function readShareRaw() {
   try {
@@ -360,8 +357,8 @@ export default function CollectorPickup() {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelNote, setCancelNote] = useState('');
   const [payoutMethod, setPayoutMethod] = useState('cash');
-  const [upiId, setUpiId] = useState('');
-  const [bank, setBank] = useState({ accountNumber: '', ifsc: '', holderName: '' });
+  const [walletId, setWalletId] = useState('');
+  const [bank, setBank] = useState({ accountNumber: '', bankName: '', branch: '', holderName: '' });
   const [payErrors, setPayErrors] = useState({});
   const [evidence, setEvidence] = useState([]);
   const [sharing, setSharing] = useState(() => readShareRaw() === '1');
@@ -411,8 +408,8 @@ export default function CollectorPickup() {
   // Pre-fill payout from what the customer chose at booking, if any.
   useEffect(() => {
     if (pickup?.payout?.method) setPayoutMethod(pickup.payout.method);
-    if (pickup?.payout?.upiId) setUpiId((v) => v || pickup.payout.upiId);
-  }, [pickup?.payout?.method, pickup?.payout?.upiId]);
+    if (pickup?.payout?.walletId) setWalletId((v) => v || pickup.payout.walletId);
+  }, [pickup?.payout?.method, pickup?.payout?.walletId]);
 
   const update = useCallback((next) => setData((d) => ({ ...d, pickup: mergePickup(d?.pickup, next) })), [setData]);
 
@@ -492,10 +489,11 @@ export default function CollectorPickup() {
   const complete = () => {
     const isDonation = pickup.type === 'donation';
     const e = {};
-    if (!isDonation && payoutMethod === 'upi' && !UPI_RE.test(upiId.trim())) e.upiId = 'Enter a valid UPI ID, e.g. name@okbank';
+    if (!isDonation && isWalletMethod(payoutMethod) && !isMobile(walletId)) e.walletId = `Enter the customer's ${payoutLabel(payoutMethod)} mobile number (10 digits)`;
     if (!isDonation && payoutMethod === 'bank_transfer') {
-      if (!/^\d{9,18}$/.test(bank.accountNumber.trim())) e.accountNumber = '9–18 digits';
-      if (!IFSC_RE.test(bank.ifsc.trim())) e.ifsc = 'e.g. HDFC0001234';
+      if (!/^\d{8,20}$/.test(bank.accountNumber.trim())) e.accountNumber = '8–20 digits';
+      if (!bank.bankName.trim()) e.bankName = 'Enter the bank name';
+      if (!bank.branch.trim()) e.branch = 'Enter the branch';
       if (!bank.holderName.trim()) e.holderName = 'Enter the account holder name';
     }
     setPayErrors(e);
@@ -504,9 +502,14 @@ export default function CollectorPickup() {
       return;
     }
     const body = { payoutMethod: isDonation ? 'cash' : payoutMethod };
-    if (!isDonation && payoutMethod === 'upi') body.upiId = upiId.trim();
+    if (!isDonation && isWalletMethod(payoutMethod)) body.walletId = cleanPhone(walletId);
     if (!isDonation && payoutMethod === 'bank_transfer') {
-      body.bankAccount = { accountNumber: bank.accountNumber.trim(), ifsc: bank.ifsc.trim().toUpperCase(), holderName: bank.holderName.trim() };
+      body.bankAccount = {
+        accountNumber: bank.accountNumber.trim(),
+        bankName: bank.bankName.trim(),
+        branch: bank.branch.trim(),
+        holderName: bank.holderName.trim(),
+      };
     }
     if (evidence.length) body.evidencePhotos = evidence;
     run('complete', async () => {
@@ -717,23 +720,35 @@ export default function CollectorPickup() {
                           setPayoutMethod(v);
                           setPayErrors({});
                         }}
-                        className="w-full grid grid-cols-4 [&>button]:justify-center [&>button]:min-h-[44px] [&>button]:!px-1"
+                        className="w-full grid grid-cols-3 sm:grid-cols-5 [&>button]:justify-center [&>button]:min-h-[44px] [&>button]:!px-1"
                       />
                       <p className="text-xs text-steel-500 mt-1.5">
                         {
                           {
                             cash: 'Hand over the cash now. It is recorded as paid.',
-                            upi: 'Sent instantly to the customer’s UPI ID.',
-                            bank_transfer: 'Sent to the customer’s bank account (IMPS/NEFT).',
+                            esewa: 'Sent to the customer’s eSewa wallet (their mobile number).',
+                            khalti: 'Sent to the customer’s Khalti wallet (their mobile number).',
+                            bank_transfer: 'Sent to the customer’s bank account by our finance team.',
                             wallet: 'Credited to the customer’s ScrapMate wallet.',
                           }[payoutMethod]
                         }
                       </p>
                     </div>
-                    {payoutMethod === 'upi' && (
-                      <Field label="Customer's UPI ID" error={payErrors.upiId} required>
+                    {isWalletMethod(payoutMethod) && (
+                      <Field label={`Customer's ${payoutLabel(payoutMethod)} ID`} hint="Their 10-digit mobile number" error={payErrors.walletId} required>
                         {(fid) => (
-                          <Input id={fid} value={upiId} onChange={(e) => setUpiId(e.target.value)} placeholder="name@okbank" autoCapitalize="none" autoCorrect="off" inputMode="email" invalid={Boolean(payErrors.upiId)} />
+                          <Input
+                            id={fid}
+                            type="tel"
+                            inputMode="numeric"
+                            autoComplete="off"
+                            value={walletId}
+                            onChange={(e) => setWalletId(e.target.value)}
+                            placeholder={MOBILE_PLACEHOLDER}
+                            maxLength={14}
+                            invalid={Boolean(payErrors.walletId)}
+                            className="tabular"
+                          />
                         )}
                       </Field>
                     )}
@@ -745,6 +760,7 @@ export default function CollectorPickup() {
                               id={fid}
                               inputMode="numeric"
                               value={bank.accountNumber}
+                              maxLength={20}
                               onChange={(e) => setBank((b) => ({ ...b, accountNumber: e.target.value.replace(/\D/g, '') }))}
                               invalid={Boolean(payErrors.accountNumber)}
                               className="tabular"
@@ -752,15 +768,20 @@ export default function CollectorPickup() {
                           )}
                         </Field>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <Field label="IFSC" error={payErrors.ifsc} required>
+                          <Field label="Bank name" error={payErrors.bankName} required>
                             {(fid) => (
-                              <Input id={fid} value={bank.ifsc} onChange={(e) => setBank((b) => ({ ...b, ifsc: e.target.value.toUpperCase() }))} maxLength={11} autoCapitalize="characters" invalid={Boolean(payErrors.ifsc)} />
+                              <Input id={fid} value={bank.bankName} onChange={(e) => setBank((b) => ({ ...b, bankName: e.target.value }))} maxLength={80} placeholder="e.g. Nabil Bank" invalid={Boolean(payErrors.bankName)} />
                             )}
                           </Field>
-                          <Field label="Account holder" error={payErrors.holderName} required>
-                            {(fid) => <Input id={fid} value={bank.holderName} onChange={(e) => setBank((b) => ({ ...b, holderName: e.target.value }))} maxLength={80} invalid={Boolean(payErrors.holderName)} />}
+                          <Field label="Branch" error={payErrors.branch} required>
+                            {(fid) => (
+                              <Input id={fid} value={bank.branch} onChange={(e) => setBank((b) => ({ ...b, branch: e.target.value }))} maxLength={80} placeholder="e.g. New Baneshwor" invalid={Boolean(payErrors.branch)} />
+                            )}
                           </Field>
                         </div>
+                        <Field label="Account holder" error={payErrors.holderName} required>
+                          {(fid) => <Input id={fid} value={bank.holderName} onChange={(e) => setBank((b) => ({ ...b, holderName: e.target.value }))} maxLength={80} invalid={Boolean(payErrors.holderName)} />}
+                        </Field>
                       </div>
                     )}
                   </>
@@ -797,7 +818,7 @@ export default function CollectorPickup() {
               <p className="font-head text-3xl font-semibold text-steel-900 tabular mt-2">{rupees(paid, { decimals: paid % 1 ? 2 : 0 })}</p>
               <p className="text-sm text-steel-600 mt-1">
                 {pickup.bonusAmount ? `${rupees(pickup.finalAmount)} + ${rupees(pickup.bonusAmount)} bonus · ` : ''}
-                {pickup.payout?.method ? `${PAYOUT_OPTIONS.find((o) => o.value === pickup.payout.method)?.label || pickup.payout.method}` : ''}
+                {pickup.payout?.method ? payoutLabel(pickup.payout.method) : ''}
                 {pickup.payout?.status ? ` · ${pickup.payout.status}` : ''}
               </p>
             </>
@@ -865,7 +886,7 @@ export default function CollectorPickup() {
         )}
         {markers.length > 0 && (
           <div className="mt-4">
-            <MapView markers={markers} height={180} />
+            <MapView markers={markers} center={DEFAULT_CENTER} height={180} />
           </div>
         )}
       </Card>

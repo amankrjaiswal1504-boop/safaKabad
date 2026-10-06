@@ -3,6 +3,7 @@ import { CalendarClock, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
 import api from '../../services/api';
 import useApi from '../../hooks/useApi';
 import { rupees } from '../../utils/format';
+import { DIAL_CODE, TIMEZONE } from '../../utils/locale';
 import { Badge, Button, Card, Field, IconButton, Input, PageHeader, SectionTitle, Tabs, Textarea, Toggle, cx } from '../../components/ui';
 import { Async, Callout, NumberInput, isBlank, useAction } from './_catalog/shared';
 
@@ -156,7 +157,7 @@ const hour12 = (h) => {
 
 // ---------- Support ----------
 const validateSupport = (v) => ({
-  whatsappNumber: v.whatsappNumber && !/^\d{10,15}$/.test(v.whatsappNumber) ? 'Digits only with country code, e.g. 919876543210' : null,
+  whatsappNumber: v.whatsappNumber && !/^\d{10,15}$/.test(v.whatsappNumber) ? `Digits only with country code, e.g. ${DIAL_CODE}9801234567` : null,
   hoursStart: req(v.hoursStart, { min: 0, max: 23, int: true }),
   hoursEnd: req(v.hoursEnd, { min: 1, max: 24, int: true }) || (Number(v.hoursEnd) <= Number(v.hoursStart) ? 'Must be after the opening hour' : null),
   replyMinutes: req(v.replyMinutes, { min: 1, max: 1440, int: true }),
@@ -165,7 +166,7 @@ const validateSupport = (v) => ({
 });
 
 function SupportCard({ settingKey, initial, onSaved }) {
-  const s = useSection(settingKey, initial, onSaved, validateSupport, (v) => ({ ...v, whatsappNumber: String(v.whatsappNumber || '').replace(/\D/g, '') }));
+  const s = useSection(settingKey, { ...initial, timezone: initial?.timezone || TIMEZONE }, onSaved, validateSupport, (v) => ({ ...v, whatsappNumber: String(v.whatsappNumber || '').replace(/\D/g, '') }));
   return (
     <SectionCard title="Support & WhatsApp" subtitle="Shown in the chat widget, footer and help pages." section={s}>
       <div className="grid sm:grid-cols-2 gap-4">
@@ -176,14 +177,14 @@ function SupportCard({ settingKey, initial, onSaved }) {
               inputMode="numeric"
               value={s.v.whatsappNumber || ''}
               onChange={(e) => s.set('whatsappNumber')(e.target.value.replace(/[^\d]/g, ''))}
-              placeholder="919876543210"
+              placeholder={`${DIAL_CODE}9801234567`}
               invalid={!!s.errors.whatsappNumber}
             />
           )}
         </Field>
         <Text label="Support phone" k="phone" s={s} type="tel" />
         <Text label="Support email" k="email" s={s} type="email" />
-        <Text label="Timezone" k="timezone" s={s} hint="IANA name, e.g. Asia/Kolkata" />
+        <Text label="Timezone" k="timezone" s={s} placeholder={TIMEZONE} hint={`IANA name, e.g. ${TIMEZONE}`} />
         <Num label="Opens at (hour, 0–23)" k="hoursStart" s={s} min={0} max={23} hint={hour12(s.v.hoursStart)} />
         <Num label="Closes at (hour, 1–24)" k="hoursEnd" s={s} min={1} max={24} hint={hour12(s.v.hoursEnd)} />
         <Num label="Typical reply time (minutes)" k="replyMinutes" s={s} min={1} hint="Shown as “We usually reply in …”" />
@@ -304,8 +305,8 @@ function ReferralCard({ settingKey, initial, onSaved }) {
     <SectionCard title="Referrals" subtitle="Wallet credit after the referred friend's first completed pickup." section={s}>
       <Toggle checked={!!s.v.enabled} onChange={s.set('enabled')} label="Referral programme on" />
       <div className="grid grid-cols-2 gap-4">
-        <Num label="Referrer gets (₹)" k="referrerReward" s={s} min={0} />
-        <Num label="New customer gets (₹)" k="refereeReward" s={s} min={0} />
+        <Num label="Referrer gets (Rs.)" k="referrerReward" s={s} min={0} />
+        <Num label="New customer gets (Rs.)" k="refereeReward" s={s} min={0} />
       </div>
     </SectionCard>
   );
@@ -318,7 +319,7 @@ function FirstPickupCard({ settingKey, initial, onSaved }) {
       <Toggle checked={!!s.v.enabled} onChange={s.set('enabled')} label="Bonus on" />
       <div className="grid grid-cols-2 gap-4">
         <Num label="Bonus (%)" k="percent" s={s} min={0} max={100} step={0.5} />
-        <Num label="Max bonus (₹)" k="maxBonus" s={s} min={0} />
+        <Num label="Max bonus (Rs.)" k="maxBonus" s={s} min={0} />
       </div>
       {s.v.enabled && !isBlank(s.v.percent) && (
         <p className="text-sm text-steel-600">
@@ -420,13 +421,13 @@ function CollectorCard({ settingKey, initial, onSaved }) {
   return (
     <SectionCard title="Collector earnings & dispatch" subtitle="How collectors are paid and how new pickups are assigned." section={s}>
       <div className="grid sm:grid-cols-2 gap-4">
-        <Num label="Base fee per pickup (₹)" k="baseFeePerPickup" s={s} min={0} />
+        <Num label="Base fee per pickup (Rs.)" k="baseFeePerPickup" s={s} min={0} />
         <Num label="Commission (% of pickup value)" k="commissionPercent" s={s} min={0} max={50} step={0.5} hint="Individual collectors can have their own rate" />
         <Num label="Weekly bonus after (pickups)" k="weeklyBonusThreshold" s={s} min={0} step={1} />
-        <Num label="Weekly bonus (₹)" k="weeklyBonusAmount" s={s} min={0} />
+        <Num label="Weekly bonus (Rs.)" k="weeklyBonusAmount" s={s} min={0} />
       </div>
       {example != null && <p className="text-sm text-steel-600">A {rupees(500)} pickup earns the collector {rupees(example, { decimals: 2 })}.</p>}
-      <Toggle checked={!!s.v.autoAssign} onChange={s.set('autoAssign')} label="Auto-assign new pickups" description="On booking, assign the best collector: serves that PIN code first, then lightest load that day, then nearest." />
+      <Toggle checked={!!s.v.autoAssign} onChange={s.set('autoAssign')} label="Auto-assign new pickups" description="On booking, assign the best collector: serves that postal code first, then lightest load that day, then nearest." />
     </SectionCard>
   );
 }
@@ -446,7 +447,7 @@ function FraudCard({ settingKey, initial, onSaved }) {
         <Num label="Max cancellations / 30 days" k="maxCancellationsPer30Days" s={s} min={1} step={1} hint="Customer cancellations; then booking is blocked" />
         <Num label="Duplicate window (hours)" k="duplicateWindowHours" s={s} min={0} step={1} hint="Same items, same day: flagged for review" />
       </div>
-      <Callout>Blocked phones, emails and PIN codes are managed on the Fraud & abuse page.</Callout>
+      <Callout>Blocked phones, emails and postal codes are managed on the Fraud & abuse page.</Callout>
     </SectionCard>
   );
 }

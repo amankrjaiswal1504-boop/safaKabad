@@ -38,9 +38,9 @@ async function resetDb() {
   settings.clearCache();
 }
 
-// YYYY-MM-DD n days from today (IST).
+// YYYY-MM-DD n days from today (Nepal time).
 function dayFromNow(n) {
-  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kathmandu' }).format(new Date());
   const d = new Date(`${today}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
@@ -48,16 +48,16 @@ function dayFromNow(n) {
 
 // Minimal world: two customers, an admin, a collector, a few priced items, one pickup owned by Alice.
 async function seedBasics() {
-  const admin = await User.create({ name: 'Admin', email: 'admin@test.dev', phone: '9000000001', password: 'secret12', role: 'admin' });
-  const alice = await User.create({ name: 'Alice Rao', email: 'alice@test.dev', phone: '9000000002', password: 'secret12' });
-  const bob = await User.create({ name: 'Bob Das', email: 'bob@test.dev', phone: '9000000003', password: 'secret12' });
+  const admin = await User.create({ name: 'Admin', email: 'admin@test.dev', phone: '9800000001', password: 'secret12', role: 'admin' });
+  const alice = await User.create({ name: 'Alice Rai', email: 'alice@test.dev', phone: '9800000002', password: 'secret12' });
+  const bob = await User.create({ name: 'Bob Das', email: 'bob@test.dev', phone: '9800000003', password: 'secret12' });
   const collector = await User.create({
     name: 'Ravi Collector',
     email: 'ravi@test.dev',
-    phone: '9000000004',
+    phone: '9800000004',
     password: 'secret12',
     role: 'collector',
-    collectorProfile: { city: 'Bengaluru', servicePinCodes: ['560038'], location: { lat: 12.97, lng: 77.64 } },
+    collectorProfile: { city: 'Kathmandu', servicePinCodes: ['44600'], location: { lat: 27.69, lng: 85.34 } },
   });
 
   const metals = await ScrapCategory.create({ name: 'Normal Recyclables', slug: 'normal-recyclables' });
@@ -67,11 +67,11 @@ async function seedBasics() {
   const fridge = await ScrapItem.create({ category: metals._id, name: 'Refrigerator', unit: 'piece', kgPerUnit: 45 });
   const laptop = await ScrapItem.create({ category: ewaste._id, name: 'Laptop', unit: 'piece', kgPerUnit: 2.5 });
   await ScrapPrice.create([
-    { item: copper._id, city: 'Bengaluru', minPrice: 480, maxPrice: 550, recyclerPrice: 600 },
-    { item: newspaper._id, city: 'Bengaluru', minPrice: 12, maxPrice: 14, recyclerPrice: 17 },
-    { item: fridge._id, city: 'Bengaluru', minPrice: 500, maxPrice: 1200 },
-    { item: laptop._id, city: 'Bengaluru', minPrice: 200, maxPrice: 600 },
-    { item: copper._id, city: 'Pune', minPrice: 470, maxPrice: 540 },
+    { item: copper._id, city: 'Kathmandu', minPrice: 480, maxPrice: 550, recyclerPrice: 600 },
+    { item: newspaper._id, city: 'Kathmandu', minPrice: 12, maxPrice: 14, recyclerPrice: 17 },
+    { item: fridge._id, city: 'Kathmandu', minPrice: 500, maxPrice: 1200 },
+    { item: laptop._id, city: 'Kathmandu', minPrice: 200, maxPrice: 600 },
+    { item: copper._id, city: 'Pokhara', minPrice: 470, maxPrice: 540 },
   ]);
 
   const address = await Address.create({
@@ -79,9 +79,9 @@ async function seedBasics() {
     houseNumber: '1',
     street: 'MG Road',
     locality: 'Indiranagar',
-    city: 'Bengaluru',
-    state: 'Karnataka',
-    pinCode: '560038',
+    city: 'Kathmandu',
+    state: 'Bagmati',
+    pinCode: '44600',
     isDefault: true,
     location: { lat: 12.978, lng: 77.64 },
   });
@@ -91,10 +91,10 @@ async function seedBasics() {
     items: [{ item: newspaper._id, itemName: 'Newspaper', estimatedQuantity: 10 }],
     address: address._id,
     addressSnapshot: address.toObject(),
-    pinCode: '560038',
+    pinCode: '44600',
     scheduledDate: new Date(`${dayFromNow(2)}T00:00:00.000Z`),
     timeSlot: '9:00 AM - 11:00 AM',
-    contactPhone: '9000000002',
+    contactPhone: '9800000002',
     estimatedValueMin: 120,
     estimatedValueMax: 140,
     status: 'BOOKED',
@@ -103,8 +103,8 @@ async function seedBasics() {
   await Faq.create({
     topic: 'payment',
     question: 'How do I get paid?',
-    answer: 'Cash, UPI or bank transfer after weighing.',
-    keywords: ['payment', 'paid', 'upi'],
+    answer: 'Cash, eSewa, Khalti or bank transfer after weighing.',
+    keywords: ['payment', 'paid', 'esewa'],
   });
   await Faq.syncIndexes();
 

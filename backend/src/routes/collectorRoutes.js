@@ -1,7 +1,7 @@
 const express = require('express');
 const c = require('../controllers/collectorController');
 const { protect, authorize } = require('../middleware/auth');
-const { validate, z, pinCode } = require('../middleware/validate');
+const { validate, z, pinCode, phone, bankAccount, payoutMethod } = require('../middleware/validate');
 
 const router = express.Router();
 
@@ -34,9 +34,10 @@ router.put(
   '/pickups/:id/complete',
   validate(
     z.object({
-      payoutMethod: z.enum(['cash', 'upi', 'bank_transfer', 'wallet']).default('cash'),
-      upiId: z.string().trim().max(60).optional(),
-      bankAccount: z.object({ accountNumber: z.string().regex(/^\d{9,18}$/), ifsc: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/i), holderName: z.string().max(80) }).optional(),
+      payoutMethod: payoutMethod.default('cash'),
+      // eSewa / Khalti ID = the customer's mobile number
+      walletId: phone.optional(),
+      bankAccount: bankAccount.optional(),
       evidencePhotos: z.array(z.string().url()).max(6).optional(),
     })
   ),

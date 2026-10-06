@@ -57,9 +57,9 @@ export default function SlotPicker({ pinCode, date, slot, onChange, excludePicku
                 !d.open && 'opacity-40 cursor-not-allowed hover:border-steel-200'
               )}
             >
-              <div className="text-[11px] uppercase tracking-wide text-steel-500">{dt.toLocaleDateString('en-IN', { weekday: 'short' })}</div>
+              <div className="text-[11px] uppercase tracking-wide text-steel-500">{dt.toLocaleDateString('en-GB', { weekday: 'short' })}</div>
               <div className="font-head text-xl font-semibold text-steel-900 leading-tight">{dt.getDate()}</div>
-              <div className="text-[11px] text-steel-500">{dt.toLocaleDateString('en-IN', { month: 'short' })}</div>
+              <div className="text-[11px] text-steel-500">{dt.toLocaleDateString('en-GB', { month: 'short' })}</div>
             </button>
           );
         })}

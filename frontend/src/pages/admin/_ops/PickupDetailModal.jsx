@@ -5,6 +5,7 @@ import api from '../../../services/api';
 import PickupTimeline from '../../../components/PickupTimeline';
 import { Badge, Button, ErrorState, Field, Modal, Select, SkeletonRows, StatusBadge, Textarea, cx } from '../../../components/ui';
 import { STATUS_LABEL, addressLine, fmtDate, fmtDateTime, rupees, unitLabel } from '../../../utils/format';
+import { payoutLabel } from '../../../utils/locale';
 import { flagLabel, useCollectorOptions, useMutation } from './shared';
 
 const ACTIVE = ['BOOKED', 'ASSIGNED', 'COLLECTOR_ON_THE_WAY', 'ARRIVED', 'WEIGHING'];
@@ -203,9 +204,9 @@ export default function PickupDetailModal({ pickupId, onClose, onChanged }) {
                   <Row label="Coupon">{p.coupon?.code ? `${p.coupon.code}${p.coupon.bonusAmount ? ` (+${rupees(p.coupon.bonusAmount)})` : ''}` : '—'}</Row>
                 </div>
                 <div>
-                  <Row label="Payout method">{p.payout?.method ? p.payout.method.replace('_', ' ') : '—'}</Row>
+                  <Row label="Payout method">{p.payout?.method ? payoutLabel(p.payout.method) : '—'}</Row>
                   <Row label="Payout status">{p.payout?.status ? <Badge tone={PAYOUT_TONE[p.payout.status] || 'steel'}>{p.payout.status}</Badge> : '—'}</Row>
-                  {p.payout?.upiId && <Row label="UPI ID">{p.payout.upiId}</Row>}
+                  {p.payout?.walletId && <Row label={`${payoutLabel(p.payout.method)} ID`}>{p.payout.walletId}</Row>}
                   {p.payout?.reference && <Row label="Reference">{p.payout.reference}</Row>}
                   {p.payout?.paidAt && <Row label="Paid at">{fmtDateTime(p.payout.paidAt)}</Row>}
                   <Row label="Customer decision">
@@ -267,7 +268,7 @@ export default function PickupDetailModal({ pickupId, onClose, onChanged }) {
                               <span className="block truncate text-steel-900">{c.name}</span>
                               <span className="block text-xs text-steel-500">
                                 {c.load} today{c.km != null ? ` · ${c.km} km` : ''}
-                                {c.servesPin ? ' · serves PIN' : ''}
+                                {c.servesPin ? ' · serves postal code' : ''}
                               </span>
                             </span>
                             <Button

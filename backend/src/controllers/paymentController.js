@@ -2,9 +2,8 @@ const Payment = require('../models/Payment');
 const { Quote } = require('../models/platform');
 const gateway = require('../services/paymentGateway');
 const { generatePaymentId } = require('../utils/generateId');
-const logger = require('../utils/logger');
 
-// Razorpay checkout is used when a business pays ScrapMate (e.g. a certified
+// Khalti checkout is used when a business pays ScrapMate (e.g. a certified
 // e-waste disposal fee on an accepted quote). Customer payouts for scrap go
 // through bookingService.payOut instead.
 async function createPayment(req, res, next) {
@@ -14,90 +13,62 @@ async function createPayment(req, res, next) {
     if (!quote || quote.quotedAmount == null || quote.quotedAmount <= 0) {
       return res.status(404).json({ success: false, message: 'No payable quote found' });
     }
-    const amount = quote.quotedAmount;
-    const order = await gateway.createOrder({ amount, receipt: quote.quoteId, notes: { quoteId: quote.quoteId } });
+    const paymentId = generatePaymentId();
+    const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').split(',')[0];
+    const order = await gateway.createOrder({
+      amount: quote.quotedAmount,
+      orderId: paymentId,
+      orderName: `ScrapMate quote ${quote.quoteId}`,
+      returnUrl: `${clientUrl}/business?paymentId=${paymentId}`,
+      customer: { name: req.user.name, email: req.user.email || undefined, phone: req.user.phone },
+    });
     const payment = await Payment.create({
-      paymentId: generatePaymentId(),
+      paymentId,
       user: req.user._id,
-      amount,
+      amount: quote.quotedAmount,
       direction: 'collection',
       purpose: 'quote',
-      method: 'razorpay',
+      method: 'khalti',
       status: 'pending',
-      razorpayOrderId: order.id,
+      gatewayRef: order.pidx,
       isMock: order.mock,
     });
-    res.status(201).json({
-      success: true,
-      data: { payment, order: { id: order.id, amount: order.amount, currency: 'INR' }, keyId: process.env.RAZORPAY_KEY_ID || null, mock: order.mock },
-    });
+    res.status(201).json({ success: true, data: { payment, paymentUrl: order.paymentUrl, pidx: order.pidx, mock: order.mock } });
   } catch (err) {
+    if (err.status) return res.status(err.status).json({ success: false, message: err.message });
     next(err);
   }
 }
 
-// Called by the browser after Razorpay checkout succeeds.
+// Called after Khalti redirects back (with ?pidx=...). Always re-checks the
+// status with Khalti's lookup API; the redirect parameters alone are not trusted.
 async function verifyPayment(req, res, next) {
   try {
-    const { paymentId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
+    const { paymentId, pidx } = req.body;
     const payment = await Payment.findOne({ paymentId, user: req.user._id });
     if (!payment) return res.status(404).json({ success: false, message: 'Payment not found' });
     if (payment.status === 'successful') return res.json({ success: true, data: { payment } });
-    const ok =
-      razorpayOrderId === payment.razorpayOrderId &&
-      gateway.verifyCheckoutSignature({ orderId: razorpayOrderId, paymentId: razorpayPaymentId || 'mock', signature: razorpaySignature });
-    if (!ok) {
+    if (pidx !== payment.gatewayRef) return res.status(400).json({ success: false, message: 'Payment reference does not match' });
+    const result = await gateway.verifyPayment(pidx);
+    if (result.status === 'Completed') {
+      payment.status = 'successful';
+      payment.gatewayTxnId = result.transactionId;
+    } else if (['Expired', 'User canceled', 'Failed', 'Refunded'].includes(result.status)) {
       payment.status = 'failed';
-      payment.failureReason = 'Signature verification failed';
-      await payment.save();
-      return res.status(400).json({ success: false, message: 'Payment could not be verified' });
+      payment.failureReason = result.status;
     }
-    payment.status = 'successful';
-    payment.razorpayPaymentId = razorpayPaymentId || `mock_pay_${Date.now()}`;
     await payment.save();
+    if (payment.status !== 'successful') {
+      return res.status(payment.status === 'failed' ? 400 : 202).json({
+        success: payment.status !== 'failed',
+        message: payment.status === 'failed' ? `Payment ${result.status.toLowerCase()}` : 'Payment is still pending',
+        data: { payment },
+      });
+    }
     res.json({ success: true, data: { payment } });
   } catch (err) {
+    if (err.status) return res.status(err.status).json({ success: false, message: err.message });
     next(err);
-  }
-}
-
-// Razorpay webhook (payment.captured / payment.failed / payout.*). Needs the
-// raw body; mounted with express.raw in app.js.
-async function webhook(req, res) {
-  const signature = req.get('x-razorpay-signature');
-  const raw = req.body instanceof Buffer ? req.body : Buffer.from(JSON.stringify(req.body || {}));
-  if (!gateway.verifyWebhookSignature(raw, signature)) {
-    return res.status(400).json({ success: false, message: 'Invalid signature' });
-  }
-  try {
-    const event = JSON.parse(raw.toString('utf8'));
-    const entity = event.payload?.payment?.entity;
-    if (entity?.order_id) {
-      const payment = await Payment.findOne({ razorpayOrderId: entity.order_id });
-      if (payment && payment.status !== 'successful') {
-        if (event.event === 'payment.captured') {
-          payment.status = 'successful';
-          payment.razorpayPaymentId = entity.id;
-        } else if (event.event === 'payment.failed') {
-          payment.status = 'failed';
-          payment.failureReason = entity.error_description;
-        }
-        await payment.save();
-      }
-    }
-    const payout = event.payload?.payout?.entity;
-    if (payout?.id) {
-      const Pickup = require('../models/Pickup');
-      const status = { processed: 'paid', reversed: 'failed', failed: 'failed', rejected: 'failed' }[payout.status];
-      if (status) {
-        await Pickup.updateOne({ 'payout.reference': payout.id }, { 'payout.status': status, ...(status === 'paid' ? { 'payout.paidAt': new Date() } : {}) });
-        await Payment.updateOne({ payoutReference: payout.id }, { status: status === 'paid' ? 'successful' : 'failed' });
-      }
-    }
-    res.json({ success: true });
-  } catch (err) {
-    logger.error({ err: err.message }, 'webhook processing failed');
-    res.status(200).json({ success: false }); // acknowledge; Razorpay retries otherwise
   }
 }
 
@@ -122,4 +93,4 @@ async function myPayments(req, res, next) {
   }
 }
 
-module.exports = { createPayment, verifyPayment, webhook, getPayment, myPayments };
+module.exports = { createPayment, verifyPayment, getPayment, myPayments };

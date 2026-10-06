@@ -176,7 +176,7 @@ export default function SchedulePickup() {
 
   const filteredRates = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return (rates || []).filter((r) => (category === 'all' || r.category?.slug === category) && (!q || r.name.toLowerCase().includes(q) || (r.nameHi || '').includes(q)));
+    return (rates || []).filter((r) => (category === 'all' || r.category?.slug === category) && (!q || r.name.toLowerCase().includes(q) || (r.nameNe || '').includes(q)));
   }, [rates, category, search]);
 
   const addLine = (r) => {

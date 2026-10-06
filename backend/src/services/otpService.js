@@ -16,7 +16,7 @@ function hash(phone, code) {
 }
 
 function smsConfigured() {
-  return Boolean(process.env.SMS_PROVIDER && (process.env.SMS_PROVIDER_KEY || process.env.TWILIO_AUTH_TOKEN));
+  return Boolean(process.env.SMS_PROVIDER && (process.env.SPARROW_SMS_TOKEN || process.env.TWILIO_AUTH_TOKEN));
 }
 
 class OtpError extends Error {

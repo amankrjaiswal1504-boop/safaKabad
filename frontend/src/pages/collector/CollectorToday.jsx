@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useRealtime } from '../../context/RealtimeContext';
 import { Card, EmptyState, ErrorState, IconButton, Segmented, Skeleton, SkeletonRows, Toggle, cx } from '../../components/ui';
 import { rupees } from '../../utils/format';
+import { TIMEZONE } from '../../utils/locale';
 import { PickupCard, useOfflineSync } from './collectorShared';
 
 const VIEWS = [
@@ -17,7 +18,7 @@ const VIEWS = [
 ];
 
 function greeting() {
-  const h = Number(new Intl.DateTimeFormat('en-IN', { hour: 'numeric', hour12: false, timeZone: 'Asia/Kolkata' }).format(new Date()));
+  const h = Number(new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hour12: false, timeZone: TIMEZONE }).format(new Date()));
   if (h < 12) return 'Good morning';
   if (h < 17) return 'Good afternoon';
   return 'Good evening';

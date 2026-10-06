@@ -1,7 +1,7 @@
 const express = require('express');
 const { getProfile, updateProfile, subscribePush, unsubscribePush } = require('../controllers/userController');
 const { protect } = require('../middleware/auth');
-const { validate, z } = require('../middleware/validate');
+const { validate, z, panVat } = require('../middleware/validate');
 
 const router = express.Router();
 
@@ -13,7 +13,7 @@ router.put(
     z.object({
       name: z.string().trim().min(2).max(80).optional(),
       email: z.union([z.string().trim().toLowerCase().email(), z.literal('')]).optional(),
-      language: z.enum(['en', 'hi']).optional(),
+      language: z.enum(['en', 'ne']).optional(),
       accountType: z.enum(['individual', 'business']).optional(),
       notificationPrefs: z
         .object({ email: z.boolean(), whatsapp: z.boolean(), sms: z.boolean(), push: z.boolean() })
@@ -23,9 +23,8 @@ router.put(
         .object({
           companyName: z.string().trim().max(120).optional(),
           businessType: z.string().max(20).optional(),
-          gstin: z
-            .union([z.string().trim().toUpperCase().regex(/^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/, 'Invalid GSTIN'), z.literal('')])
-            .optional(),
+          // Nepal PAN / VAT registration number (9 digits)
+          panVat: panVat.optional(),
           billingAddress: z.string().trim().max(300).optional(),
         })
         .optional(),

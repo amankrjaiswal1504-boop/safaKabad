@@ -6,7 +6,7 @@ import {
   Camera,
   CheckCircle2,
   Clock,
-  IndianRupee,
+  Banknote,
   Leaf,
   MapPin,
   Scale,
@@ -29,14 +29,14 @@ function HeroVisual() {
     <div className="relative h-[360px] hidden lg:block" aria-hidden>
       <div className="absolute right-6 top-2 w-72 rounded-2xl bg-surface shadow-lift border border-steel-100 p-4 rotate-[2deg]">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-steel-500">Today's rates · Bengaluru</span>
+          <span className="text-xs font-medium text-steel-500">Today's rates · Kathmandu</span>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-patina-100 text-patina-700">Live</span>
         </div>
         {[
-          ['Copper', '₹480–550', 'kg'],
-          ['Newspaper', '₹12–14', 'kg'],
-          ['Laptop', '₹200–600', 'pc'],
-          ['Refrigerator', '₹500–1,200', 'pc'],
+          ['Copper', 'Rs. 780–900', 'kg'],
+          ['Newspaper', 'Rs. 15–20', 'kg'],
+          ['Laptop', 'Rs. 300–1,000', 'pc'],
+          ['Refrigerator', 'Rs. 800–2,000', 'pc'],
         ].map(([n, p, u]) => (
           <div key={n} className="flex justify-between text-sm py-2 border-b border-steel-100 last:border-0">
             <span className="text-steel-700">{n}</span>
@@ -67,8 +67,8 @@ function HeroVisual() {
             <CheckCircle2 className="w-5 h-5" />
           </span>
           <div>
-            <div className="text-xs text-steel-500">Paid via UPI</div>
-            <div className="font-head text-xl font-bold text-steel-900">₹2,310</div>
+            <div className="text-xs text-steel-500">Paid via eSewa</div>
+            <div className="font-head text-xl font-bold text-steel-900">Rs. 3,690</div>
           </div>
         </div>
       </div>
@@ -106,7 +106,7 @@ export default function Home() {
   const home = config?.home || {};
   usePageMeta({
     title: 'Sell scrap online with free doorstep pickup',
-    description: 'Check live scrap rates, get an instant estimate and book a free pickup. Digital weighing in front of you and instant UPI payment.',
+    description: 'Check live scrap rates, get an instant estimate and book a free pickup. Digital weighing in front of you and instant eSewa / Khalti payment.',
   });
 
   const trust = [
@@ -116,7 +116,7 @@ export default function Home() {
     { icon: BadgeCheck, text: t('home.trust4') },
   ];
   const steps = [
-    { icon: IndianRupee, t: t('home.how1t'), d: t('home.how1d') },
+    { icon: Banknote, t: t('home.how1t'), d: t('home.how1d') },
     { icon: MapPin, t: t('home.how2t'), d: t('home.how2d') },
     { icon: Scale, t: t('home.how3t'), d: t('home.how3d') },
     { icon: Wallet, t: t('home.how4t'), d: t('home.how4d') },

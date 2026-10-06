@@ -7,6 +7,7 @@ import { ChevronRight, Clock, MapPin, Navigation, Phone, User } from 'lucide-rea
 import api from '../../services/api';
 import { StatusBadge, cx } from '../../components/ui';
 import { addressLine, fmtDay, rupees, unitLabel } from '../../utils/format';
+import { DIAL_CODE } from '../../utils/locale';
 import { flushQueue, readQueue } from './offlineQueue';
 
 // ---------- Links ----------
@@ -23,7 +24,7 @@ export function telUrl(phone) {
 export function whatsappUrl(phone, text = '') {
   if (!phone) return undefined;
   let d = String(phone).replace(/\D/g, '');
-  if (d.length === 10) d = `91${d}`;
+  if (d.length === 10) d = `${DIAL_CODE}${d}`;
   return `https://wa.me/${d}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
 }
 

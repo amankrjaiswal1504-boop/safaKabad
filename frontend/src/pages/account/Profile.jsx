@@ -24,7 +24,7 @@ export default function Profile() {
   usePageMeta({ title: 'Profile & settings', noindex: true });
   const [form, setForm] = useState({ name: user.name, email: user.email || '' });
   const [prefs, setPrefs] = useState({ email: true, whatsapp: true, sms: false, push: true, ...user.notificationPrefs });
-  const [biz, setBiz] = useState({ companyName: '', businessType: 'office', gstin: '', billingAddress: '', ...user.business });
+  const [biz, setBiz] = useState({ companyName: '', businessType: 'office', panVat: '', billingAddress: '', ...user.business });
   const [pw, setPw] = useState({ currentPassword: '', newPassword: '' });
   const [busy, setBusy] = useState('');
 
@@ -137,7 +137,7 @@ export default function Profile() {
       </Card>
 
       <Card>
-        <SectionTitle title={<span className="flex items-center gap-2"><Building2 className="w-4 h-4" aria-hidden /> Business account</span>} subtitle="Get GST details on receipts and volume pricing tiers." />
+        <SectionTitle title={<span className="flex items-center gap-2"><Building2 className="w-4 h-4" aria-hidden /> Business account</span>} subtitle="Get your PAN/VAT number on bills and volume pricing tiers." />
         <Toggle
           checked={user.accountType === 'business'}
           onChange={(v) => save('type', { accountType: v ? 'business' : 'individual' })}
@@ -159,10 +159,10 @@ export default function Profile() {
                   </Select>
                 )}
               </Field>
-              <Field label="GSTIN">{(id) => <Input id={id} value={biz.gstin || ''} maxLength={15} onChange={(e) => setBiz({ ...biz, gstin: e.target.value.toUpperCase() })} />}</Field>
+              <Field label="PAN/VAT no." hint="9 digits">{(id) => <Input id={id} inputMode="numeric" value={biz.panVat || ''} maxLength={9} onChange={(e) => setBiz({ ...biz, panVat: e.target.value.replace(/\D/g, '') })} />}</Field>
               <Field label="Billing address">{(id) => <Input id={id} value={biz.billingAddress || ''} onChange={(e) => setBiz({ ...biz, billingAddress: e.target.value })} />}</Field>
             </div>
-            <Button className="mt-4" loading={busy === 'biz'} onClick={() => save('biz', { business: { companyName: biz.companyName, businessType: biz.businessType, gstin: biz.gstin, billingAddress: biz.billingAddress } })}>
+            <Button className="mt-4" loading={busy === 'biz'} onClick={() => save('biz', { business: { companyName: biz.companyName, businessType: biz.businessType, panVat: biz.panVat, billingAddress: biz.billingAddress } })}>
               Save business details
             </Button>
           </>

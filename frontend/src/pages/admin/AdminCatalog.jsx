@@ -6,6 +6,7 @@ import useApi, { useDebounce } from '../../hooks/useApi';
 import { useConfig } from '../../context/ConfigContext';
 import { useAuth } from '../../context/AuthContext';
 import { rupees, unitLabel } from '../../utils/format';
+import { CURRENCY_SYMBOL } from '../../utils/locale';
 import { Badge, Button, Card, DataTable, EmptyState, Field, IconButton, Input, PageHeader, Pagination, Select, Tabs, Textarea, Toggle } from '../../components/ui';
 import { Async, Callout, ConfirmModal, FormSection, ImageField, NumberInput, Thumb, Toolbar, isBlank, useAction, Modal } from './_catalog/shared';
 
@@ -42,7 +43,7 @@ export default function AdminCatalog() {
 }
 
 // ---------------- Categories ----------------
-const EMPTY_CAT = { name: '', nameHi: '', description: '', icon: 'recycle', image: '', sortOrder: 0, conditionGrading: false, isActive: true };
+const EMPTY_CAT = { name: '', nameNe: '', description: '', icon: 'recycle', image: '', sortOrder: 0, conditionGrading: false, isActive: true };
 
 function Categories({ api: res }) {
   const { can } = useAuth();
@@ -91,7 +92,7 @@ function Categories({ api: res }) {
                       <h3 className="font-semibold text-steel-900 truncate">{c.name}</h3>
                       {!c.isActive && <Badge>Hidden</Badge>}
                     </div>
-                    {c.nameHi && <p className="text-sm text-steel-500">{c.nameHi}</p>}
+                    {c.nameNe && <p className="text-sm text-steel-500">{c.nameNe}</p>}
                   </div>
                   {canEdit && <IconButton label={`Edit ${c.name}`} icon={Pencil} onClick={() => setEditing(c)} />}
                 </div>
@@ -149,7 +150,7 @@ function CategoryForm({ category, onClose, onSaved }) {
     if (Object.keys(er).length) return;
     const body = {
       name: f.name.trim(),
-      nameHi: f.nameHi.trim(),
+      nameNe: f.nameNe.trim(),
       description: f.description.trim(),
       icon: f.icon,
       image: f.image || '',
@@ -185,8 +186,8 @@ function CategoryForm({ category, onClose, onSaved }) {
           <Field label="Name" required error={errors.name}>
             {(id) => <Input id={id} value={f.name} onChange={(e) => set('name')(e.target.value)} invalid={!!errors.name} maxLength={60} />}
           </Field>
-          <Field label="Name in Hindi" hint="Shown when the site is in Hindi">
-            {(id) => <Input id={id} value={f.nameHi} onChange={(e) => set('nameHi')(e.target.value)} maxLength={60} lang="hi" />}
+          <Field label="Nepali name" hint="Shown when the site is in Nepali">
+            {(id) => <Input id={id} value={f.nameNe} onChange={(e) => set('nameNe')(e.target.value)} maxLength={60} lang="ne" />}
           </Field>
         </div>
         <Field label="Description" error={errors.description} hint={`${f.description.length}/300`}>
@@ -279,7 +280,7 @@ function Items({ categories, reloadCategories }) {
           <Thumb src={i.image} fallback={Package} />
           <div className="min-w-0">
             <div className="font-medium text-steel-900">{i.name}</div>
-            {i.nameHi && <div className="text-xs text-steel-500">{i.nameHi}</div>}
+            {i.nameNe && <div className="text-xs text-steel-500">{i.nameNe}</div>}
           </div>
         </div>
       ),
@@ -423,7 +424,7 @@ function Items({ categories, reloadCategories }) {
 const EMPTY_ITEM = {
   categoryId: '',
   name: '',
-  nameHi: '',
+  nameNe: '',
   description: '',
   image: '',
   unit: 'kg',
@@ -445,7 +446,7 @@ function ItemForm({ item, categories, defaultCity, onClose, onSaved }) {
       ...EMPTY_ITEM,
       categoryId: item.category?._id || item.category || '',
       name: item.name || '',
-      nameHi: item.nameHi || '',
+      nameNe: item.nameNe || '',
       description: item.description || '',
       image: item.image || '',
       unit: item.unit || 'kg',
@@ -486,7 +487,7 @@ function ItemForm({ item, categories, defaultCity, onClose, onSaved }) {
     const body = {
       categoryId: f.categoryId,
       name: f.name.trim(),
-      nameHi: f.nameHi.trim(),
+      nameNe: f.nameNe.trim(),
       description: f.description.trim(),
       image: f.image || '',
       unit: f.unit,
@@ -529,8 +530,8 @@ function ItemForm({ item, categories, defaultCity, onClose, onSaved }) {
             <Field label="Name" required error={errors.name}>
               {(id) => <Input id={id} value={f.name} onChange={(e) => set('name')(e.target.value)} invalid={!!errors.name} maxLength={80} />}
             </Field>
-            <Field label="Name in Hindi">
-              {(id) => <Input id={id} value={f.nameHi} onChange={(e) => set('nameHi')(e.target.value)} maxLength={80} lang="hi" />}
+            <Field label="Nepali name">
+              {(id) => <Input id={id} value={f.nameNe} onChange={(e) => set('nameNe')(e.target.value)} maxLength={80} lang="ne" />}
             </Field>
             <Field label="Category" required error={errors.categoryId}>
               {(id) => (
@@ -591,13 +592,13 @@ function ItemForm({ item, categories, defaultCity, onClose, onSaved }) {
                   </Select>
                 )}
               </Field>
-              <Field label={`Min ₹/${unitWord}`} error={errors.minPrice}>
+              <Field label={`Min (${CURRENCY_SYMBOL}/${unitWord})`} error={errors.minPrice}>
                 {(id) => <NumberInput id={id} min={0} step="0.5" value={f.minPrice} onChange={set('minPrice')} invalid={!!errors.minPrice} />}
               </Field>
-              <Field label={`Max ₹/${unitWord}`} error={errors.maxPrice}>
+              <Field label={`Max (${CURRENCY_SYMBOL}/${unitWord})`} error={errors.maxPrice}>
                 {(id) => <NumberInput id={id} min={0} step="0.5" value={f.maxPrice} onChange={set('maxPrice')} invalid={!!errors.maxPrice} />}
               </Field>
-              <Field label="Recycler ₹" error={errors.recyclerPrice} hint="What we sell at">
+              <Field label="Recycler (Rs.)" error={errors.recyclerPrice} hint="What we sell at">
                 {(id) => <NumberInput id={id} min={0} step="0.5" value={f.recyclerPrice} onChange={set('recyclerPrice')} invalid={!!errors.recyclerPrice} />}
               </Field>
             </div>

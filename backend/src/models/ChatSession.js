@@ -23,7 +23,7 @@ const chatSessionSchema = new mongoose.Schema(
     escalated: { type: Boolean, default: false, index: true },
     resolved: { type: Boolean, default: false, index: true },
     consecutiveFailures: { type: Number, default: 0 },
-    language: { type: String, enum: ['en', 'hi'], default: 'en' },
+    language: { type: String, enum: ['en', 'ne'], default: 'en' },
     messageCount: { type: Number, default: 0 },
     lastMessageAt: { type: Date, default: Date.now, index: true },
     lastUserMessage: { type: String, default: '' },

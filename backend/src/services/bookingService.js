@@ -23,6 +23,7 @@ const settings = require('./settingsService');
 const { track } = require('./jobs');
 const { generatePickupId, generatePaymentId } = require('../utils/generateId');
 const { receiptPdf } = require('./pdfService');
+const { cleanPhone, MOBILE_RE } = require('../config/locale');
 
 class BookingError extends Error {
   constructor(message, status = 400) {
@@ -72,7 +73,7 @@ async function createPickupForUser(user, payload, { ip, actor } = {}) {
       throw new BookingError(`Minimum pickup in ${service.area.city} is ${minPickupWeightKg} kg`);
     }
     if (minPickupValue && estimate.max < minPickupValue) {
-      throw new BookingError(`Minimum pickup value in ${service.area.city} is ₹${minPickupValue}`);
+      throw new BookingError(`Minimum pickup value in ${service.area.city} is Rs. ${minPickupValue}`);
     }
   }
 
@@ -165,8 +166,9 @@ async function computeBonus(pickup, customer) {
 }
 
 // Pay the customer. Wallet credits and payment records run in one transaction
-// where supported. UPI/bank use RazorpayX (mock when not configured).
-async function payOut(pickup, customer, { method, upiId, bankAccount }) {
+// where supported. eSewa / Khalti / bank go through the payout provider (see
+// paymentGateway.sendPayout: mock in development, manual settlement otherwise).
+async function payOut(pickup, customer, { method, walletId, bankAccount }) {
   const amount = Math.round(((pickup.finalAmount || 0) + (pickup.bonusAmount || 0)) * 100) / 100;
   const paymentId = generatePaymentId();
   if (pickup.type === 'donation' || amount <= 0) {
@@ -184,12 +186,18 @@ async function payOut(pickup, customer, { method, upiId, bankAccount }) {
       return payment;
     });
   }
-  if (method === 'upi' || method === 'bank_transfer') {
-    if (method === 'upi' && !/^[\w.-]{2,}@[a-z]{2,}$/i.test(upiId || '')) throw new BookingError('Enter a valid UPI ID');
+  if (['esewa', 'khalti', 'bank_transfer'].includes(method)) {
+    const id = cleanPhone(walletId);
+    if (method !== 'bank_transfer' && !MOBILE_RE.test(id)) {
+      throw new BookingError(`Enter the customer's ${method === 'esewa' ? 'eSewa' : 'Khalti'} ID (10-digit mobile number)`);
+    }
+    if (method === 'bank_transfer' && !(bankAccount?.accountNumber && bankAccount?.bankName)) {
+      throw new BookingError('Enter the bank account number and bank name');
+    }
     const result = await gateway.sendPayout({
       amount,
-      method: method === 'upi' ? 'upi' : 'bank',
-      upiId,
+      method: method === 'bank_transfer' ? 'bank' : method,
+      walletId: method === 'bank_transfer' ? undefined : id,
       bankAccount,
       name: customer.name,
       reference: pickup.pickupId,
@@ -207,7 +215,7 @@ async function payOut(pickup, customer, { method, upiId, bankAccount }) {
     });
     pickup.payout = {
       method,
-      upiId,
+      walletId: method === 'bank_transfer' ? undefined : cleanPhone(walletId),
       status: result.status === 'processed' ? 'paid' : paid ? 'processing' : 'failed',
       reference: result.id,
       paidAt: result.status === 'processed' ? new Date() : undefined,

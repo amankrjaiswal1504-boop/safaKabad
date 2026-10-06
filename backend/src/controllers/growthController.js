@@ -39,15 +39,15 @@ async function getWallet(req, res, next) {
 // Debit now (so the money can't be spent twice), pay out after admin approval.
 async function requestWithdrawal(req, res, next) {
   try {
-    const { amount, method, upiId, bankAccount } = req.body;
+    const { amount, method, walletId, bankAccount } = req.body;
     const pending = await Withdrawal.exists({ user: req.user._id, status: { $in: ['requested', 'processing'] } });
     if (pending) return fail(res, 409, 'You already have a withdrawal in progress');
     const withdrawal = await wallet.withTransaction(async (session) => {
-      const [w] = await Withdrawal.create([{ user: req.user._id, amount, method, upiId, bankAccount }], { session });
+      const [w] = await Withdrawal.create([{ user: req.user._id, amount, method, walletId, bankAccount }], { session });
       await wallet.debit(req.user._id, amount, 'withdrawal', { reference: String(w._id) }, session);
       return w;
     });
-    await notifyAdmins({ type: 'withdrawal', title: 'New withdrawal request', body: `₹${amount} by ${req.user.name}`, link: '/admin/finance' });
+    await notifyAdmins({ type: 'withdrawal', title: 'New withdrawal request', body: `Rs. ${amount} by ${req.user.name}`, link: '/admin/finance' });
     res.status(201).json({ success: true, data: { withdrawal } });
   } catch (err) {
     if (err instanceof wallet.WalletError) return fail(res, err.status, err.message);

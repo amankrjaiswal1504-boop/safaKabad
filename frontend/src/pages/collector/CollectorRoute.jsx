@@ -6,6 +6,7 @@ import useApi from '../../hooks/useApi';
 import MapView from '../../components/MapView';
 import { Button, Card, EmptyState, ErrorState, IconButton, Segmented, Skeleton, SkeletonRows, StatusBadge, Toggle, cx } from '../../components/ui';
 import { addressLine, fmtDay, timeAgo, todayISO } from '../../utils/format';
+import { DEFAULT_CENTER } from '../../utils/locale';
 import { telUrl, useLocationShare, useSharePref } from './collectorShared';
 
 function addDays(iso, n) {
@@ -113,7 +114,7 @@ export default function CollectorRoute() {
         />
       ) : (
         <>
-          <MapView markers={markers} line={line} height={280} />
+          <MapView markers={markers} line={line} center={DEFAULT_CENTER} height={280} />
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-steel-600">
             <span className="tabular">
               <strong className="text-steel-900">{stops.length}</strong> stop{stops.length > 1 ? 's' : ''}

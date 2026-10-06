@@ -18,118 +18,121 @@ const platform = require('../models/platform');
 
 const { ServiceArea, Coupon, Ngo, Review, WalletTransaction, RecurringPlan, PriceAlert, Quote, AnalyticsEvent, Setting } = platform;
 
-// city -> price multiplier, state, centre, PIN codes served
+// Nepal cities: price factor vs Kathmandu, province, centre, postal codes served.
+// Postal codes are demo data; edit them in Admin > Service areas.
 const CITIES = [
-  { city: 'Bengaluru', state: 'Karnataka', f: 1.0, center: [12.9716, 77.5946], pins: ['560001', '560008', '560034', '560038', '560066', '560076', '560095', '560102'] },
-  { city: 'Delhi', state: 'Delhi', f: 1.03, center: [28.6139, 77.209], pins: ['110001', '110017', '110019', '110024', '110048', '110085', '110092'] },
-  { city: 'Ghaziabad', state: 'Uttar Pradesh', f: 1.0, center: [28.6692, 77.4538], pins: ['201001', '201002', '201010', '201012', '201014', '201017'] },
-  { city: 'Noida', state: 'Uttar Pradesh', f: 1.01, center: [28.5355, 77.391], pins: ['201301', '201303', '201304', '201307', '201310'] },
-  { city: 'Gurugram', state: 'Haryana', f: 1.02, center: [28.4595, 77.0266], pins: ['122001', '122002', '122003', '122011', '122018'] },
-  { city: 'Mumbai', state: 'Maharashtra', f: 1.05, center: [19.076, 72.8777], pins: ['400001', '400050', '400053', '400058', '400070', '400076', '400097'] },
-  { city: 'Hyderabad', state: 'Telangana', f: 0.98, center: [17.385, 78.4867], pins: ['500001', '500016', '500032', '500034', '500081', '500084'] },
-  { city: 'Chennai', state: 'Tamil Nadu', f: 0.99, center: [13.0827, 80.2707], pins: ['600017', '600020', '600028', '600040', '600042', '600096'] },
-  { city: 'Pune', state: 'Maharashtra', f: 1.02, center: [18.5204, 73.8567], pins: ['411001', '411004', '411014', '411038', '411045', '411057'] },
-  { city: 'Kolkata', state: 'West Bengal', f: 0.97, center: [22.5726, 88.3639], pins: ['700001', '700019', '700029', '700064', '700091', '700156'] },
+  { city: 'Kathmandu', state: 'Bagmati', plate: 'BA', f: 1.0, center: [27.7172, 85.324], pins: ['44600', '44601', '44602', '44603', '44604', '44605', '44606', '44611', '44616', '44617'] },
+  { city: 'Lalitpur', state: 'Bagmati', plate: 'BA', f: 1.0, center: [27.6644, 85.3188], pins: ['44700', '44705', '44707', '44709'] },
+  { city: 'Bhaktapur', state: 'Bagmati', plate: 'BA', f: 0.98, center: [27.671, 85.4298], pins: ['44800', '44804'] },
+  { city: 'Pokhara', state: 'Gandaki', plate: 'GA', f: 0.97, center: [28.2096, 83.9856], pins: ['33700', '33701', '33702'] },
+  { city: 'Bharatpur', state: 'Bagmati', plate: 'BA', f: 0.96, center: [27.6766, 84.4304], pins: ['44200', '44207'] },
+  { city: 'Biratnagar', state: 'Koshi', plate: 'KO', f: 0.95, center: [26.4525, 87.2718], pins: ['56613', '56614'] },
+  { city: 'Dharan', state: 'Koshi', plate: 'KO', f: 0.95, center: [26.8065, 87.2846], pins: ['56700'] },
+  { city: 'Birgunj', state: 'Madhesh', plate: 'MA', f: 0.96, center: [27.0104, 84.8777], pins: ['44300', '44301'] },
+  { city: 'Butwal', state: 'Lumbini', plate: 'LU', f: 0.95, center: [27.7006, 83.4483], pins: ['32907', '32900'] },
+  { city: 'Nepalgunj', state: 'Lumbini', plate: 'LU', f: 0.93, center: [28.05, 81.6167], pins: ['21900'] },
 ];
 
+// Indicative buying prices in Nepali rupees (NPR) for Kathmandu.
 const CATEGORY_DATA = [
   {
     name: 'Normal Recyclables',
-    nameHi: 'सामान्य रीसायकल',
+    nameNe: 'सामान्य पुनःप्रयोग सामग्री',
     icon: 'recycle',
     description: 'Paper, cardboard, plastic, metals, glass and clothes',
     items: [
-      { name: 'Newspaper', nameHi: 'अखबार', unit: 'kg', min: 12, max: 14, co2: 1.0 },
-      { name: 'Cardboard', nameHi: 'गत्ता', unit: 'kg', min: 8, max: 10, co2: 0.9 },
-      { name: 'Office Paper', nameHi: 'ऑफिस पेपर', unit: 'kg', min: 10, max: 12, co2: 1.0 },
-      { name: 'Books', nameHi: 'किताबें', unit: 'kg', min: 8, max: 10, co2: 0.9 },
-      { name: 'Plastic', nameHi: 'प्लास्टिक', unit: 'kg', min: 6, max: 9, co2: 1.5 },
-      { name: 'Iron', nameHi: 'लोहा', unit: 'kg', min: 18, max: 22, co2: 1.5 },
-      { name: 'Steel', nameHi: 'स्टील', unit: 'kg', min: 20, max: 25, co2: 1.6 },
-      { name: 'Aluminium', nameHi: 'एल्युमिनियम', unit: 'kg', min: 100, max: 120, co2: 9 },
-      { name: 'Aluminium Can', nameHi: 'एल्युमिनियम कैन', unit: 'kg', min: 90, max: 110, co2: 9 },
-      { name: 'Brass', nameHi: 'पीतल', unit: 'kg', min: 280, max: 320, co2: 3 },
-      { name: 'Copper', nameHi: 'तांबा', unit: 'kg', min: 480, max: 550, co2: 3.5 },
-      { name: 'Glass', nameHi: 'कांच', unit: 'kg', min: 1, max: 2, co2: 0.3 },
-      { name: 'Clothes', nameHi: 'कपड़े', unit: 'kg', min: 4, max: 6, co2: 3 },
+      { name: 'Newspaper', nameNe: 'पत्रिका', unit: 'kg', min: 15, max: 20, co2: 1.0 },
+      { name: 'Cardboard', nameNe: 'कार्टुन', unit: 'kg', min: 10, max: 14, co2: 0.9 },
+      { name: 'Office Paper', nameNe: 'अफिस कागज', unit: 'kg', min: 14, max: 18, co2: 1.0 },
+      { name: 'Books', nameNe: 'किताब', unit: 'kg', min: 12, max: 16, co2: 0.9 },
+      { name: 'Plastic', nameNe: 'प्लास्टिक', unit: 'kg', min: 10, max: 18, co2: 1.5 },
+      { name: 'Iron', nameNe: 'फलाम', unit: 'kg', min: 30, max: 38, co2: 1.5 },
+      { name: 'Steel', nameNe: 'स्टिल', unit: 'kg', min: 35, max: 45, co2: 1.6 },
+      { name: 'Aluminium', nameNe: 'एल्मुनियम', unit: 'kg', min: 160, max: 200, co2: 9 },
+      { name: 'Aluminium Can', nameNe: 'एल्मुनियम क्यान', unit: 'kg', min: 140, max: 180, co2: 9 },
+      { name: 'Brass', nameNe: 'पित्तल', unit: 'kg', min: 450, max: 520, co2: 3 },
+      { name: 'Copper', nameNe: 'तामा', unit: 'kg', min: 780, max: 900, co2: 3.5 },
+      { name: 'Glass', nameNe: 'सिसा', unit: 'kg', min: 2, max: 4, co2: 0.3 },
+      { name: 'Clothes', nameNe: 'लुगा', unit: 'kg', min: 5, max: 10, co2: 3 },
     ],
   },
   {
     name: 'E-Waste',
-    nameHi: 'ई-कचरा',
+    nameNe: 'इ-फोहोर',
     icon: 'ewaste',
     conditionGrading: true,
     description: 'Laptops, computers, monitors, printers, TVs and gadgets',
     items: [
-      { name: 'Laptop', nameHi: 'लैपटॉप', unit: 'piece', min: 200, max: 600, co2: 30, kg: 2.5 },
-      { name: 'Desktop CPU', nameHi: 'डेस्कटॉप CPU', unit: 'piece', min: 150, max: 400, co2: 40, kg: 8 },
-      { name: 'Monitor', nameHi: 'मॉनिटर', unit: 'piece', min: 80, max: 250, co2: 25, kg: 5 },
-      { name: 'Printer', nameHi: 'प्रिंटर', unit: 'piece', min: 60, max: 200, co2: 15, kg: 6 },
-      { name: 'Scanner', nameHi: 'स्कैनर', unit: 'piece', min: 40, max: 120, co2: 10, kg: 4 },
-      { name: 'Television', nameHi: 'टीवी', unit: 'piece', min: 150, max: 500, co2: 60, kg: 15 },
-      { name: 'Tablet', nameHi: 'टैबलेट', unit: 'piece', min: 50, max: 200, co2: 8, kg: 0.5 },
-      { name: 'Other Electronic Waste', nameHi: 'अन्य ई-कचरा', unit: 'kg', min: 20, max: 60, co2: 12 },
+      { name: 'Laptop', nameNe: 'ल्यापटप', unit: 'piece', min: 300, max: 1000, co2: 30, kg: 2.5 },
+      { name: 'Desktop CPU', nameNe: 'डेस्कटप CPU', unit: 'piece', min: 250, max: 650, co2: 40, kg: 8 },
+      { name: 'Monitor', nameNe: 'मनिटर', unit: 'piece', min: 120, max: 400, co2: 25, kg: 5 },
+      { name: 'Printer', nameNe: 'प्रिन्टर', unit: 'piece', min: 100, max: 300, co2: 15, kg: 6 },
+      { name: 'Scanner', nameNe: 'स्क्यानर', unit: 'piece', min: 60, max: 200, co2: 10, kg: 4 },
+      { name: 'Television', nameNe: 'टिभी', unit: 'piece', min: 250, max: 800, co2: 60, kg: 15 },
+      { name: 'Tablet', nameNe: 'ट्याब्लेट', unit: 'piece', min: 80, max: 300, co2: 8, kg: 0.5 },
+      { name: 'Other Electronic Waste', nameNe: 'अन्य इ-फोहोर', unit: 'kg', min: 30, max: 90, co2: 12 },
     ],
   },
   {
     name: 'Appliances',
-    nameHi: 'घरेलू उपकरण',
+    nameNe: 'घरायसी उपकरण',
     icon: 'appliance',
     conditionGrading: true,
     description: 'Fridges, washing machines, ACs, coolers and more',
     items: [
-      { name: 'Refrigerator', nameHi: 'फ्रिज', unit: 'piece', min: 500, max: 1200, co2: 150, kg: 45 },
-      { name: 'Washing Machine', nameHi: 'वॉशिंग मशीन', unit: 'piece', min: 400, max: 1000, co2: 100, kg: 35 },
-      { name: 'Microwave', nameHi: 'माइक्रोवेव', unit: 'piece', min: 100, max: 300, co2: 20, kg: 12 },
-      { name: 'Air Conditioner', nameHi: 'एसी', unit: 'piece', min: 600, max: 1500, co2: 120, kg: 40 },
-      { name: 'Cooler', nameHi: 'कूलर', unit: 'piece', min: 150, max: 400, co2: 25, kg: 15 },
-      { name: 'Fan', nameHi: 'पंखा', unit: 'piece', min: 60, max: 150, co2: 6, kg: 4 },
-      { name: 'Geyser', nameHi: 'गीज़र', unit: 'piece', min: 150, max: 400, co2: 20, kg: 12 },
-      { name: 'UPS', nameHi: 'यूपीएस', unit: 'piece', min: 100, max: 300, co2: 15, kg: 10 },
-      { name: 'Inverter', nameHi: 'इन्वर्टर', unit: 'piece', min: 200, max: 500, co2: 30, kg: 15 },
-      { name: 'Other Appliances', nameHi: 'अन्य उपकरण', unit: 'piece', min: 50, max: 200, co2: 15, kg: 8 },
+      { name: 'Refrigerator', nameNe: 'फ्रिज', unit: 'piece', min: 800, max: 2000, co2: 150, kg: 45 },
+      { name: 'Washing Machine', nameNe: 'वासिङ मेसिन', unit: 'piece', min: 650, max: 1600, co2: 100, kg: 35 },
+      { name: 'Microwave', nameNe: 'माइक्रोवेभ', unit: 'piece', min: 150, max: 450, co2: 20, kg: 12 },
+      { name: 'Air Conditioner', nameNe: 'एसी', unit: 'piece', min: 1000, max: 2500, co2: 120, kg: 40 },
+      { name: 'Cooler', nameNe: 'कुलर', unit: 'piece', min: 250, max: 650, co2: 25, kg: 15 },
+      { name: 'Fan', nameNe: 'पंखा', unit: 'piece', min: 100, max: 250, co2: 6, kg: 4 },
+      { name: 'Geyser', nameNe: 'गिजर', unit: 'piece', min: 250, max: 650, co2: 20, kg: 12 },
+      { name: 'UPS', nameNe: 'युपिएस', unit: 'piece', min: 150, max: 450, co2: 15, kg: 10 },
+      { name: 'Inverter', nameNe: 'इन्भर्टर', unit: 'piece', min: 300, max: 800, co2: 30, kg: 15 },
+      { name: 'Other Appliances', nameNe: 'अन्य उपकरण', unit: 'piece', min: 80, max: 300, co2: 15, kg: 8 },
     ],
   },
   {
     name: 'Vehicle Scrap',
-    nameHi: 'वाहन स्क्रैप',
+    nameNe: 'पुराना सवारी साधन',
     icon: 'vehicle',
-    description: 'Old bikes, scooters and cars (with RC for deregistration)',
+    description: 'Old motorbikes, scooters and cars (bring the bluebook for deregistration)',
     items: [
-      { name: 'Bike', nameHi: 'बाइक', unit: 'piece', min: 1500, max: 4000, co2: 300, kg: 100 },
-      { name: 'Scooter', nameHi: 'स्कूटर', unit: 'piece', min: 1500, max: 4000, co2: 250, kg: 90 },
-      { name: 'Car', nameHi: 'कार', unit: 'piece', min: 15000, max: 40000, co2: 2000, kg: 900 },
+      { name: 'Bike', nameNe: 'मोटरसाइकल', unit: 'piece', min: 2500, max: 6500, co2: 300, kg: 100 },
+      { name: 'Scooter', nameNe: 'स्कुटर', unit: 'piece', min: 2500, max: 6500, co2: 250, kg: 90 },
+      { name: 'Car', nameNe: 'कार', unit: 'piece', min: 25000, max: 65000, co2: 2000, kg: 900 },
     ],
   },
 ];
 
 const FAQ_DATA = [
-  { topic: 'pricing', question: 'Is the price I see final?', answer: 'No. Rates shown are indicative ranges. The final amount is calculated from the actual weight and condition verified at your door, using the ScrapMate rate for your city.', keywords: ['final', 'price', 'rate', 'exact'] },
+  { topic: 'pricing', question: 'Is the price I see final?', answer: 'No. Rates shown are indicative ranges in Nepali rupees. The final amount is calculated from the actual weight and condition verified at your door, using the ScrapMate rate for your city.', keywords: ['final', 'price', 'rate', 'exact', 'bhau'] },
   { topic: 'pickup', question: 'Is pickup free?', answer: 'Yes. Doorstep pickup is free for every scrap category we support.', keywords: ['free', 'charge', 'fee', 'cost'] },
-  { topic: 'payment', question: 'How do I get paid?', answer: 'Choose cash, UPI, bank transfer or your ScrapMate wallet once the collector has weighed your scrap. A digital receipt is generated straight away.', keywords: ['payment', 'paid', 'upi', 'cash', 'bank', 'money', 'wallet'] },
-  { topic: 'payment', question: 'I have not received my payment. What should I do?', answer: 'Open the pickup in your dashboard to check the payment status. UPI and bank payouts usually arrive within minutes. If it shows paid but you have not received it, contact support on WhatsApp with your pickup ID.', keywords: ['not received', 'missing', 'pending', 'refund'] },
+  { topic: 'payment', question: 'How do I get paid?', answer: 'Choose cash, eSewa, Khalti, bank transfer or your ScrapMate wallet once the collector has weighed your scrap. A digital receipt is generated straight away.', keywords: ['payment', 'paid', 'esewa', 'khalti', 'cash', 'bank', 'money', 'wallet'] },
+  { topic: 'payment', question: 'I have not received my payment. What should I do?', answer: 'Open the pickup in your dashboard to check the payment status. eSewa, Khalti and bank payouts are usually settled the same day. If it shows paid but you have not received it, contact support on WhatsApp with your pickup ID.', keywords: ['not received', 'missing', 'pending', 'refund'] },
   { topic: 'pickup', question: 'Is there a minimum quantity for pickup?', answer: 'Most areas have a small minimum (shown when you book). Large or commercial quantities are welcome too: use the Business page for a bulk quote.', keywords: ['minimum', 'small', 'quantity', 'weight'] },
   { topic: 'pickup', question: 'Can I cancel or reschedule a pickup?', answer: 'Yes. You can reschedule up to 4 hours before your slot, and cancel any time before the collector arrives, from your pickup page or by asking the chat assistant.', keywords: ['cancel', 'reschedule', 'change', 'date'] },
   { topic: 'weighing', question: 'How is my scrap weighed?', answer: 'The collector weighs each item on a digital scale in front of you and photographs the scale reading. You can review the amount and accept or dispute it before payment.', keywords: ['weigh', 'scale', 'weight', 'collector', 'dispute'] },
   { topic: 'safety', question: 'Why do I get a 4-digit code?', answer: 'For your safety, the collector must enter the 4-digit code shown on your pickup page before weighing can start. Only share it with the collector at your door.', keywords: ['otp', 'code', 'pin', 'safety', 'verify'] },
-  { topic: 'account', question: 'I forgot my password.', answer: 'Use "Forgot password" on the login page, or simply log in with your phone number and a one-time code.', keywords: ['password', 'forgot', 'login', 'reset'] },
+  { topic: 'account', question: 'I forgot my password.', answer: 'Use "Forgot password" on the login page, or simply log in with your mobile number and a one-time code.', keywords: ['password', 'forgot', 'login', 'reset'] },
   { topic: 'items', question: 'What items do you not accept?', answer: 'We do not collect hazardous waste (chemicals, medical waste, asbestos), food waste or wet garbage.', keywords: ['not accept', 'hazardous', 'reject', 'garbage'] },
-  { topic: 'business', question: 'Do you work with shops, offices and societies?', answer: 'Yes. Business accounts get recurring pickups, GST invoices, dedicated pricing tiers and certified e-waste disposal certificates. Request a quote on the Business page.', keywords: ['business', 'office', 'shop', 'society', 'bulk', 'gst'] },
+  { topic: 'business', question: 'Do you work with shops, offices and societies?', answer: 'Yes. Business accounts get recurring pickups, PAN/VAT bills, dedicated pricing tiers and certified e-waste disposal certificates. Request a quote on the Business page.', keywords: ['business', 'office', 'shop', 'pasal', 'society', 'bulk', 'vat', 'pan'] },
   { topic: 'donation', question: 'Can I donate instead of selling?', answer: 'Yes. Choose "Donate" when booking and pick one of our partner NGOs. You will get a donation certificate after pickup.', keywords: ['donate', 'ngo', 'charity', 'donation'] },
+  { topic: 'pickup', question: 'Do you pick up during Dashain and Tihar?', answer: 'Pickups run on most days. Festival holidays are shown as closed in the date picker, so you can always see which days are open.', keywords: ['dashain', 'tihar', 'festival', 'holiday'] },
 ];
 
 const NGOS = [
-  { name: 'Green Threads Foundation', description: 'Reuses clothes and textiles for families in need.', accepts: ['normal-recyclables'], registrationNumber: 'NGO/KA/2015/0042' },
-  { name: 'Books For All Trust', description: 'Builds community libraries in government schools.', accepts: ['normal-recyclables'], registrationNumber: 'NGO/DL/2012/0187' },
-  { name: 'Digital Bridge Society', description: 'Refurbishes old laptops and phones for students.', accepts: ['e-waste'], registrationNumber: 'NGO/MH/2018/0311' },
+  { name: 'Sahara Clothing Bank', description: 'Sorts and shares donated clothes with families in need across the Kathmandu valley.', cities: [], accepts: ['normal-recyclables'], registrationNumber: 'SWC 41235' },
+  { name: 'Pustak Ghar Nepal', description: 'Builds community libraries in public schools with donated books.', cities: [], accepts: ['normal-recyclables'], registrationNumber: 'SWC 38517' },
+  { name: 'Digital Saathi Nepal', description: 'Refurbishes old laptops and phones for students in rural schools.', cities: [], accepts: ['e-waste'], registrationNumber: 'SWC 50922' },
 ];
 
 const REVIEWS = [
-  [5, 'Collector came on time, weighed everything in front of me and the UPI payment arrived before he left.'],
-  [5, 'Sold an old fridge and AC in one pickup. The estimate was very close to the final amount.'],
+  [5, 'Collector came on time, weighed everything in front of me and the eSewa payment arrived before he left.'],
+  [5, 'Sold an old fridge and an AC in one pickup. The estimate was very close to the final amount.'],
   [4, 'Smooth process. Liked that I could see the photo of the scale reading on my receipt.'],
-  [5, 'Our society now does a monthly pickup. The GST invoice makes accounting easy.'],
-  [4, 'Booked in Hindi through the chat assistant, very convenient for my parents.'],
+  [5, 'Our society now has a monthly pickup. The VAT bill makes accounting easy.'],
+  [4, 'Booked in Nepali through the chat assistant, very convenient for my parents.'],
   [5, 'Got the e-waste certificate for our office within minutes of the pickup.'],
 ];
 
@@ -147,18 +150,18 @@ async function seed() {
   await Promise.all(models.map((m) => m.deleteMany({})));
 
   console.log('[seed] Creating staff and admin accounts (DEVELOPMENT / DEMO credentials)...');
-  const admin = await User.create({ name: 'Admin User', email: 'admin@scrapmate.dev', phone: '9999900000', password: 'Admin@123', role: 'admin' });
+  const admin = await User.create({ name: 'Admin User', email: 'admin@scrapmate.dev', phone: '9800000000', password: 'Admin@123', role: 'admin' });
   await User.create([
-    { name: 'Sana Support', email: 'support@scrapmate.dev', phone: '9999900010', password: 'Staff@123', role: 'staff', staffRole: 'support' },
-    { name: 'Omar Operations', email: 'ops@scrapmate.dev', phone: '9999900011', password: 'Staff@123', role: 'staff', staffRole: 'operations' },
-    { name: 'Farah Finance', email: 'finance@scrapmate.dev', phone: '9999900012', password: 'Staff@123', role: 'staff', staffRole: 'finance' },
+    { name: 'Sabina Support', email: 'support@scrapmate.dev', phone: '9800000010', password: 'Staff@123', role: 'staff', staffRole: 'support' },
+    { name: 'Oshin Operations', email: 'ops@scrapmate.dev', phone: '9800000011', password: 'Staff@123', role: 'staff', staffRole: 'operations' },
+    { name: 'Firoj Finance', email: 'finance@scrapmate.dev', phone: '9800000012', password: 'Staff@123', role: 'staff', staffRole: 'finance' },
   ]);
 
   console.log('[seed] Creating service areas and collectors...');
   await ServiceArea.insertMany(
-    CITIES.map((c) => ({ city: c.city, state: c.state, pinCodes: c.pins, minPickupWeightKg: 5, minPickupValue: 50, center: { lat: c.center[0], lng: c.center[1] } }))
+    CITIES.map((c) => ({ city: c.city, state: c.state, pinCodes: c.pins, minPickupWeightKg: 5, minPickupValue: 100, center: { lat: c.center[0], lng: c.center[1] } }))
   );
-  const collectorNames = ['Ramesh Kumar', 'Suresh Babu', 'Imran Shaikh', 'Vijay Yadav', 'Anil Gowda', 'Prakash Rao', 'Deepak Singh', 'Manoj Das', 'Karthik R', 'Sanjay Patil', 'Rakesh Paul'];
+  const collectorNames = ['Ram Bahadur Thapa', 'Hari Shrestha', 'Bikash Gurung', 'Suman Tamang', 'Dipak Rai', 'Prakash Magar', 'Kiran Karki', 'Sanjay Yadav', 'Rajesh Chaudhary', 'Nabin Adhikari', 'Sagar Bhandari'];
   const collectors = [];
   for (let i = 0; i < CITIES.length + 1; i += 1) {
     const c = CITIES[i % CITIES.length];
@@ -166,12 +169,13 @@ async function seed() {
       await User.create({
         name: collectorNames[i],
         email: `collector${i + 1}@scrapmate.dev`,
-        phone: `99999001${String(i).padStart(2, '0')}`,
+        phone: `98000001${String(i).padStart(2, '0')}`,
         password: 'Collector@123',
         role: 'collector',
         collectorProfile: {
           city: c.city,
-          vehicleNumber: `${c.state.slice(0, 2).toUpperCase()}-0${i + 1}-AB-${1000 + i * 37}`,
+          // Nepali number plate style, e.g. "BA 2 PA 1037"
+          vehicleNumber: `${c.plate} ${(i % 9) + 1} PA ${1000 + i * 37}`,
           servicePinCodes: c.pins,
           location: { ...jitter(c.center), updatedAt: new Date() },
           isAvailable: true,
@@ -180,12 +184,12 @@ async function seed() {
     );
   }
 
-  console.log('[seed] Creating categories, items and city prices (with history)...');
+  console.log('[seed] Creating categories, items and city prices in NPR (with history)...');
   const itemsByName = {};
   for (const [ci, cat] of CATEGORY_DATA.entries()) {
     const category = await ScrapCategory.create({
       name: cat.name,
-      nameHi: cat.nameHi,
+      nameNe: cat.nameNe,
       slug: slugify(cat.name),
       icon: cat.icon,
       description: cat.description,
@@ -196,7 +200,7 @@ async function seed() {
       const item = await ScrapItem.create({
         category: category._id,
         name: it.name,
-        nameHi: it.nameHi,
+        nameNe: it.nameNe,
         unit: it.unit,
         co2PerUnit: it.co2,
         kgPerUnit: it.kg || 1,
@@ -206,8 +210,8 @@ async function seed() {
         const min = Math.max(1, r2(it.min * c.f));
         const max = Math.max(min, r2(it.max * c.f));
         const price = await ScrapPrice.create({ item: item._id, city: c.city, minPrice: min, maxPrice: max, recyclerPrice: r2(max * 1.18), updatedBy: admin._id });
-        // Three earlier price points so the trends chart has a history.
-        if (['Bengaluru', 'Delhi', 'Mumbai', 'Ghaziabad'].includes(c.city)) {
+        // Earlier price points so the trends chart has a history.
+        if (['Kathmandu', 'Lalitpur', 'Pokhara', 'Biratnagar'].includes(c.city)) {
           const steps = [0.9, 0.95, 0.97];
           let prevMin;
           let prevMax;
@@ -227,59 +231,51 @@ async function seed() {
   }
 
   console.log('[seed] Creating customers, addresses and pickups...');
-  const customer = await User.create({ name: 'Demo Customer', email: 'customer@scrapmate.dev', phone: '9999900003', password: 'Customer@123', role: 'customer', referralCode: 'DEMO50' });
+  const customer = await User.create({ name: 'Demo Customer', email: 'customer@scrapmate.dev', phone: '9800000003', password: 'Customer@123', role: 'customer', referralCode: 'DEMO50' });
   const business = await User.create({
-    name: 'Priya Mehta',
+    name: 'Priya Joshi',
     email: 'business@scrapmate.dev',
-    phone: '9999900004',
+    phone: '9800000004',
     password: 'Business@123',
     role: 'customer',
     accountType: 'business',
-    business: { companyName: 'Sunrise Apartments RWA', businessType: 'society', gstin: '29ABCDE1234F1Z5', billingAddress: 'Indiranagar, Bengaluru 560038', pricingTier: 'silver' },
+    business: { companyName: 'Sunrise Apartments Society', businessType: 'society', panVat: '301234567', billingAddress: 'Bishalnagar, Kathmandu 44606', pricingTier: 'silver' },
   });
-  const extraNames = ['Ananya Rao', 'Farhan Shaikh', 'Priya Kulkarni', 'Rohit Verma', 'Meera Iyer', 'Arjun Nair'];
+  const extraNames = ['Sita Shrestha', 'Anita Gurung', 'Pratik Maharjan', 'Rohan KC', 'Sunita Tamang', 'Bibek Pandey'];
   const others = [];
   for (const [i, name] of extraNames.entries()) {
-    others.push(await User.create({ name, email: `user${i + 1}@scrapmate.dev`, phone: `98888000${String(i).padStart(2, '0')}`, password: 'Customer@123', role: 'customer', referredBy: i < 3 ? customer._id : null, referralRewarded: i < 2 }));
+    others.push(await User.create({ name, email: `user${i + 1}@scrapmate.dev`, phone: `98100000${String(i).padStart(2, '0')}`, password: 'Customer@123', role: 'customer', referredBy: i < 3 ? customer._id : null, referralRewarded: i < 2 }));
   }
 
   const address = await Address.create({
     user: customer._id,
-    houseNumber: '221B',
-    street: 'MG Road',
-    locality: 'Indiranagar',
-    city: 'Bengaluru',
-    state: 'Karnataka',
-    pinCode: '560038',
-    landmark: 'Near Metro Station',
+    houseNumber: 'House 221',
+    street: 'Baneshwor Marg',
+    locality: 'New Baneshwor, Ward 10',
+    city: 'Kathmandu',
+    state: 'Bagmati',
+    pinCode: '44600',
+    landmark: 'Near Baneshwor Chowk',
     addressType: 'home',
     isDefault: true,
-    location: { lat: 12.9784, lng: 77.6408 },
+    location: { lat: 27.6915, lng: 85.342 },
   });
   const bizAddress = await Address.create({
     user: business._id,
-    houseNumber: 'Clubhouse',
-    street: '100 Feet Road',
-    locality: 'Indiranagar',
-    city: 'Bengaluru',
-    state: 'Karnataka',
-    pinCode: '560038',
+    houseNumber: 'Society Clubhouse',
+    street: 'Bishalnagar Marg',
+    locality: 'Bishalnagar, Ward 5',
+    city: 'Kathmandu',
+    state: 'Bagmati',
+    pinCode: '44606',
     isDefault: true,
-    location: { lat: 12.9719, lng: 77.6412 },
+    location: { lat: 27.7174, lng: 85.3354 },
   });
 
-  const mkItems = (lines, weighed) =>
+  const mkItems = (lines) =>
     lines.map(([name, qty, cond]) => {
       const it = itemsByName[name];
-      const rate = 0;
-      return {
-        item: it._id,
-        itemName: it.name,
-        unit: it.unit,
-        estimatedQuantity: qty,
-        condition: cond || null,
-        ...(weighed ? { actualWeight: qty, rateApplied: rate, subtotal: 0 } : {}),
-      };
+      return { item: it._id, itemName: it.name, unit: it.unit, estimatedQuantity: qty, condition: cond || null };
     });
 
   // Upcoming pickup for the demo customer (assigned).
@@ -290,13 +286,13 @@ async function seed() {
     items: mkItems([['Iron', 10], ['Newspaper', 15]]),
     address: address._id,
     addressSnapshot: address.toObject(),
-    pinCode: '560038',
+    pinCode: '44600',
     location: address.location,
     scheduledDate: new Date(`${new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10)}T00:00:00.000Z`),
     timeSlot: '11:00 AM - 1:00 PM',
     contactPhone: customer.phone,
-    estimatedValueMin: 360,
-    estimatedValueMax: 430,
+    estimatedValueMin: 10 * 30 + 15 * 15,
+    estimatedValueMax: 10 * 38 + 15 * 20,
     status: 'ASSIGNED',
     otp: '4321',
     statusHistory: [
@@ -309,14 +305,13 @@ async function seed() {
   let seq = 2;
   const completed = [];
   const histories = [
-    [customer, address, 0, [['Newspaper', 18], ['Cardboard', 9], ['Iron', 6]], 40, 'upi'],
+    [customer, address, 0, [['Newspaper', 18], ['Cardboard', 9], ['Iron', 6]], 40, 'esewa'],
     [customer, address, 0, [['Laptop', 1, 'not_working'], ['Monitor', 2, 'working']], 22, 'wallet'],
     [business, bizAddress, 0, [['Cardboard', 85], ['Plastic', 30], ['Office Paper', 40]], 15, 'bank_transfer'],
     [business, bizAddress, 0, [['Desktop CPU', 4, 'not_working'], ['Printer', 2, 'damaged'], ['Other Electronic Waste', 12]], 8, 'bank_transfer'],
   ];
   others.forEach((u, i) => {
-    const c = CITIES[(i + 1) % CITIES.length];
-    histories.push([u, null, (i + 1) % CITIES.length, [['Newspaper', 10 + i * 3], ['Aluminium', 2 + i], ['Copper', 1]], 5 + i * 4, ['cash', 'upi', 'wallet'][i % 3], c]);
+    histories.push([u, null, (i + 1) % CITIES.length, [['Newspaper', 10 + i * 3], ['Aluminium', 2 + i], ['Copper', 1]], 5 + i * 4, ['cash', 'khalti', 'wallet', 'esewa'][i % 4]]);
   });
   for (const [hi, [user, addr, cityIdx, lines, ago, method]] of histories.entries()) {
     const c = CITIES[cityIdx];
@@ -324,9 +319,9 @@ async function seed() {
       addr ||
       (await Address.create({
         user: user._id,
-        houseNumber: `${12 + hi}`,
+        houseNumber: `House ${12 + hi}`,
         street: 'Main Road',
-        locality: 'Central',
+        locality: `Ward ${hi + 2}`,
         city: c.city,
         state: c.state,
         pinCode: c.pins[hi % c.pins.length],
@@ -371,7 +366,7 @@ async function seed() {
       otpVerifiedAt: when,
       completedAt: when,
       customerDecision: { status: 'accepted', at: when },
-      payout: { method, status: 'paid', reference: `PAY-SEED-${seq}`, paidAt: when, upiId: method === 'upi' ? 'demo@okaxis' : undefined },
+      payout: { method, status: 'paid', reference: `PAY-SEED-${seq}`, paidAt: when, walletId: ['esewa', 'khalti'].includes(method) ? user.phone : undefined },
       coupon: hi === 0 ? { code: 'FIRST5', bonusAmount: bonus } : undefined,
       statusHistory: ['BOOKED', 'ASSIGNED', 'COLLECTOR_ON_THE_WAY', 'ARRIVED', 'WEIGHING', 'COMPLETED'].map((s, si) => ({ status: s, at: new Date(when.getTime() - (5 - si) * 3600000) })),
     });
@@ -386,8 +381,8 @@ async function seed() {
 
   // Referral rewards that were already paid out.
   for (const u of others.slice(0, 2)) {
-    const c = await User.findByIdAndUpdate(customer._id, { $inc: { walletBalance: 50 } }, { new: true });
-    await WalletTransaction.create({ user: customer._id, type: 'credit', amount: 50, balanceAfter: c.walletBalance, reason: 'referral', reference: String(u._id), note: `Referred ${u.name}` });
+    const c = await User.findByIdAndUpdate(customer._id, { $inc: { walletBalance: 100 } }, { new: true });
+    await WalletTransaction.create({ user: customer._id, type: 'credit', amount: 100, balanceAfter: c.walletBalance, reason: 'referral', reference: String(u._id), note: `Referred ${u.name}` });
   }
 
   console.log('[seed] Reviews, coupons, NGOs, FAQs, quotes, plans and alerts...');
@@ -403,10 +398,10 @@ async function seed() {
   }
 
   await Coupon.insertMany([
-    { code: 'FIRST5', description: '+5% on your first pickup', type: 'percent', value: 5, maxBonus: 200, firstPickupOnly: true, perUserLimit: 1 },
-    { code: 'BULK50', description: '+₹50 on pickups of 50 kg or more', type: 'flat', value: 50, minWeightKg: 50, perUserLimit: 5 },
-    { code: 'DIWALI10', description: 'Festival bonus: +10% (max ₹300)', type: 'percent', value: 10, maxBonus: 300, perUserLimit: 1, validTo: new Date(Date.now() + 45 * 86400000) },
-    { code: 'EWASTE100', description: '+₹100 when you recycle e-waste worth ₹500+', type: 'flat', value: 100, minOrderValue: 500, perUserLimit: 2 },
+    { code: 'FIRST5', description: '+5% on your first pickup', type: 'percent', value: 5, maxBonus: 300, firstPickupOnly: true, perUserLimit: 1 },
+    { code: 'BULK100', description: '+Rs. 100 on pickups of 50 kg or more', type: 'flat', value: 100, minWeightKg: 50, perUserLimit: 5 },
+    { code: 'DASHAIN10', description: 'Dashain-Tihar bonus: +10% (max Rs. 500)', type: 'percent', value: 10, maxBonus: 500, perUserLimit: 1, validTo: new Date(Date.now() + 45 * 86400000) },
+    { code: 'EWASTE150', description: '+Rs. 150 when you recycle e-waste worth Rs. 800+', type: 'flat', value: 150, minOrderValue: 800, perUserLimit: 2 },
   ]);
   await Ngo.insertMany(NGOS);
   await Faq.insertMany(FAQ_DATA.map((f, i) => ({ ...f, order: i })));
@@ -417,8 +412,8 @@ async function seed() {
     companyName: business.business.companyName,
     phone: business.phone,
     email: business.email,
-    city: 'Bengaluru',
-    gstin: business.business.gstin,
+    city: 'Kathmandu',
+    panVat: business.business.panVat,
     businessType: 'society',
     description: 'Monthly cardboard and plastic from 240 flats, plus old office electronics once a quarter.',
     estimatedQuantityKg: 600,
@@ -427,7 +422,7 @@ async function seed() {
     quotedAmount: 0,
     adminNote: 'Silver tier pricing (+3%), monthly pickup on the first Saturday.',
   });
-  await Quote.create({ quoteId: 'QT-SEED-0002', contactName: 'Vikram Shah', companyName: 'Shah Kirana Store', phone: '9876500011', city: 'Ghaziabad', businessType: 'kirana', description: 'About 150 kg of cartons every week.', estimatedQuantityKg: 150 });
+  await Quote.create({ quoteId: 'QT-SEED-0002', contactName: 'Bikram Shrestha', companyName: 'Shrestha Kirana Pasal', phone: '9841000011', city: 'Lalitpur', businessType: 'kirana', description: 'About 150 kg of cartons every week.', estimatedQuantityKg: 150 });
   await RecurringPlan.create({
     customer: business._id,
     address: bizAddress._id,
@@ -438,7 +433,7 @@ async function seed() {
     contactPhone: business.phone,
     nextRunDate: new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth() + 1, 5)),
   });
-  await PriceAlert.create({ user: customer._id, item: itemsByName.Copper._id, city: 'Bengaluru', direction: 'above', threshold: 560 });
+  await PriceAlert.create({ user: customer._id, item: itemsByName.Copper._id, city: 'Kathmandu', direction: 'above', threshold: 920 });
 
   console.log('[seed] Sample chat tickets and analytics events...');
   const session = await ChatSession.create({ user: customer._id, escalated: true, language: 'en', messageCount: 2, lastUserMessage: 'My payment for the last pickup is showing pending' });
@@ -447,8 +442,8 @@ async function seed() {
     { session: session._id, role: 'assistant', content: "I'm sorry for the trouble. I've passed this to our support team (ticket **TKT-SEED-0001**).", mode: 'system', escalated: true },
   ]);
   await SupportTicket.create([
-    { ticketId: 'TKT-SEED-0001', user: customer._id, session: session._id, summary: 'Customer says UPI payout for SM-2026-000002 shows pending.', reason: 'user_request', pickupId: 'SM-2026-000002' },
-    { ticketId: 'TKT-SEED-0002', summary: 'Anonymous visitor asked about bulk e-waste pickup from a factory in Pune.', reason: 'assistant_handoff', status: 'in_progress' },
+    { ticketId: 'TKT-SEED-0001', user: customer._id, session: session._id, summary: 'Customer says the eSewa payout for SM-2026-000002 shows pending.', reason: 'user_request', pickupId: 'SM-2026-000002' },
+    { ticketId: 'TKT-SEED-0002', summary: 'Anonymous visitor asked about bulk e-waste pickup from a factory in Biratnagar.', reason: 'assistant_handoff', status: 'in_progress' },
   ]);
   const events = [];
   for (let d = 0; d < 30; d += 1) {
@@ -463,8 +458,8 @@ async function seed() {
   console.log('\n[seed] Done! Demo credentials (DEVELOPMENT ONLY):');
   console.log('  Admin:      admin@scrapmate.dev / Admin@123');
   console.log('  Staff:      support@ / ops@ / finance@scrapmate.dev / Staff@123');
-  console.log('  Collectors: collector1..11@scrapmate.dev / Collector@123  (collector1 = Bengaluru)');
-  console.log('  Customer:   customer@scrapmate.dev / Customer@123  (or phone 9999900003 + OTP)');
+  console.log('  Collectors: collector1..11@scrapmate.dev / Collector@123  (collector1 = Kathmandu)');
+  console.log('  Customer:   customer@scrapmate.dev / Customer@123  (or mobile 9800000003 + OTP)');
   console.log('  Business:   business@scrapmate.dev / Business@123\n');
 
   await mongoose.connection.close();

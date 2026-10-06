@@ -5,6 +5,7 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar, Badge, Button, Card, DataTable, EmptyState, ErrorState, Field, Input, Modal, PageHeader, SectionTitle, Select, Toggle } from '../../components/ui';
 import { timeAgo } from '../../utils/format';
+import { MOBILE_PLACEHOLDER, isMobile } from '../../utils/locale';
 import { useMutation } from './_ops/shared';
 
 const ROLE_INFO = {
@@ -47,7 +48,7 @@ function CreateStaffModal({ open, roles, onClose, onSaved }) {
     const e = {};
     if (f.name.trim().length < 2) e.name = 'Enter the full name';
     if (!/^\S+@\S+\.\S+$/.test(f.email.trim())) e.email = 'Enter a valid email';
-    if (!/^[6-9]\d{9}$/.test(f.phone.replace(/[\s-]/g, '').replace(/^\+?91(?=\d{10}$)/, ''))) e.phone = 'Enter a valid 10-digit mobile number';
+    if (!isMobile(f.phone)) e.phone = 'Enter a valid 10-digit mobile number';
     if (f.password.length < 8) e.password = 'At least 8 characters';
     setErrors(e);
     if (Object.keys(e).length) return;
@@ -86,7 +87,7 @@ function CreateStaffModal({ open, roles, onClose, onSaved }) {
           {(id) => <Input id={id} value={f.name} onChange={set('name')} invalid={Boolean(errors.name)} autoComplete="off" />}
         </Field>
         <Field label="Mobile number" required error={errors.phone}>
-          {(id) => <Input id={id} type="tel" value={f.phone} onChange={set('phone')} invalid={Boolean(errors.phone)} />}
+          {(id) => <Input id={id} type="tel" value={f.phone} onChange={set('phone')} invalid={Boolean(errors.phone)} placeholder={MOBILE_PLACEHOLDER} />}
         </Field>
         <Field label="Work email" required error={errors.email}>
           {(id) => <Input id={id} type="email" value={f.email} onChange={set('email')} invalid={Boolean(errors.email)} autoComplete="off" />}

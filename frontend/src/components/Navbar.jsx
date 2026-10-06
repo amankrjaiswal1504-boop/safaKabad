@@ -122,13 +122,13 @@ export function PreferenceButtons() {
     <>
       <button
         type="button"
-        onClick={() => setLang(lang === 'en' ? 'hi' : 'en')}
+        onClick={() => setLang(lang === 'en' ? 'ne' : 'en')}
         className="h-9 px-2.5 inline-flex items-center gap-1.5 rounded-lg text-sm font-medium text-steel-700 hover:bg-steel-100"
-        aria-label={`${t('nav.language')}: ${lang === 'en' ? 'English' : 'हिंदी'}`}
+        aria-label={`${t('nav.language')}: ${lang === 'en' ? 'English' : 'नेपाली'}`}
         title={t('nav.language')}
       >
         <Globe className="w-4 h-4" aria-hidden />
-        {lang === 'en' ? 'हिं' : 'EN'}
+        {lang === 'en' ? 'ने' : 'EN'}
       </button>
       <button type="button" onClick={toggle} className="w-9 h-9 inline-flex items-center justify-center rounded-lg text-steel-600 hover:bg-steel-100" aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'} title={t('nav.theme')}>
         {dark ? <Sun className="w-[18px] h-[18px]" aria-hidden /> : <Moon className="w-[18px] h-[18px]" aria-hidden />}

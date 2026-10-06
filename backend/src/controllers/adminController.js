@@ -9,6 +9,7 @@ const { pickupStatusChanged, notify } = require('../services/notificationService
 const { releaseCoupon } = require('../services/pickupService');
 const { createPickupForUser, BookingError } = require('../services/bookingService');
 const { STAFF_ROLES } = require('../models/User');
+const { TIMEZONE, todayLocal } = require('../config/locale');
 
 const ACTIVE = ['BOOKED', 'ASSIGNED', 'COLLECTOR_ON_THE_WAY', 'ARRIVED', 'WEIGHING'];
 const fail = (res, status, message) => res.status(status).json({ success: false, message });
@@ -26,7 +27,7 @@ async function dashboard(req, res, next) {
         { $match: { createdAt: { $gte: since } } },
         {
           $group: {
-            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: 'Asia/Kolkata' } },
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: TIMEZONE } },
             bookings: { $sum: 1 },
             completed: { $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] } },
             value: { $sum: { $ifNull: ['$finalAmount', 0] } },
@@ -36,8 +37,8 @@ async function dashboard(req, res, next) {
       ]),
       Pickup.countDocuments({
         scheduledDate: (() => {
-          // Pickup dates are stored as the IST calendar day at 00:00Z.
-          const d = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+          // Pickup dates are stored as the Nepal calendar day at 00:00Z.
+          const d = todayLocal();
           return { $gte: new Date(`${d}T00:00:00Z`), $lte: new Date(`${d}T23:59:59Z`) };
         })(),
         status: { $ne: 'CANCELLED' },

@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useConfig } from '../../context/ConfigContext';
 import { Badge, Button, Card, DataTable, EmptyState, ErrorState, Field, Input, Modal, PageHeader, Pagination, Select, StatusBadge, Textarea } from '../../components/ui';
 import { STATUS_LABEL, fmtDate, rupees } from '../../utils/format';
+import { CURRENCY_SYMBOL, NUMBER_LOCALE } from '../../utils/locale';
 import { AssignModal, CityField, ExportButton, FilterBar, SearchField, flagLabel, qs, useMutation } from './_ops/shared';
 import PickupDetailModal from './_ops/PickupDetailModal';
 
@@ -139,7 +140,7 @@ export default function AdminPickups() {
           <span className="tabular text-steel-900">{rupees(p.finalAmount + (p.bonusAmount || 0))}</span>
         ) : (
           <span className="tabular text-steel-500 whitespace-nowrap">
-            {rupees(p.estimatedValueMin)}–{rupees(p.estimatedValueMax).replace('₹', '')}
+            {rupees(p.estimatedValueMin)}–{rupees(p.estimatedValueMax).replace(`${CURRENCY_SYMBOL} `, '')}
           </span>
         ),
     },
@@ -164,12 +165,12 @@ export default function AdminPickups() {
     <div>
       <PageHeader
         title="Pickups"
-        subtitle={data?.pagination ? `${data.pagination.total.toLocaleString('en-IN')} matching pickups` : 'Search, filter and manage every pickup'}
+        subtitle={data?.pagination ? `${data.pagination.total.toLocaleString(NUMBER_LOCALE)} matching pickups` : 'Search, filter and manage every pickup'}
         actions={<ExportButton path={`/admin/pickups?${exportQuery}`} filename="pickups.csv" />}
       />
 
       <FilterBar>
-        <SearchField value={searchText} onChange={setSearchText} placeholder="Pickup ID, phone, locality or PIN" />
+        <SearchField value={searchText} onChange={setSearchText} placeholder="Pickup ID, phone, locality or postal code" />
         <Field label="Status" className="w-full sm:w-44">
           {(id) => (
             <Select id={id} value={f.status} onChange={(e) => update({ status: e.target.value })}>

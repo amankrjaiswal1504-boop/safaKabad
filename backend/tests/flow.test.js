@@ -54,10 +54,10 @@ describe('auth', () => {
     expect(bad.status).toBe(400);
     const ok = await request(app)
       .post('/api/auth/register')
-      .send({ name: 'Neha Jain', email: 'neha@test.dev', phone: '+91 98765 43210', password: 'longpassword', referralCode: (await User.findById(w.alice._id)).referralCode });
+      .send({ name: 'Neha Jain', email: 'neha@test.dev', phone: '+977 98412 34567', password: 'longpassword', referralCode: (await User.findById(w.alice._id)).referralCode });
     expect(ok.status).toBe(201);
     const neha = await User.findOne({ email: 'neha@test.dev' });
-    expect(neha.phone).toBe('9876543210');
+    expect(neha.phone).toBe('9841234567');
     expect(String(neha.referredBy)).toBe(String(w.alice._id));
     expect(ok.headers['set-cookie'].join(';')).toMatch(/scrapmate_refresh/);
   });
@@ -82,12 +82,12 @@ describe('auth', () => {
   });
 
   it('logs in with a phone OTP and creates the account on first use', async () => {
-    const req1 = await request(app).post('/api/auth/otp/request').send({ phone: '9811112222' }).expect(200);
+    const req1 = await request(app).post('/api/auth/otp/request').send({ phone: '9811122222' }).expect(200);
     expect(req1.body.data.isNewUser).toBe(true);
-    const wrong = await request(app).post('/api/auth/otp/verify').send({ phone: '9811112222', code: '000000' });
+    const wrong = await request(app).post('/api/auth/otp/verify').send({ phone: '9811122222', code: '000000' });
     expect(wrong.status).toBe(400);
-    const ok = await request(app).post('/api/auth/otp/verify').send({ phone: '9811112222', code: req1.body.data.devCode, name: 'Kiran' }).expect(201);
-    expect(ok.body.data.user).toMatchObject({ name: 'Kiran', phone: '9811112222', phoneVerified: true, role: 'customer' });
+    const ok = await request(app).post('/api/auth/otp/verify').send({ phone: '9811122222', code: req1.body.data.devCode, name: 'Kiran' }).expect(201);
+    expect(ok.body.data.user).toMatchObject({ name: 'Kiran', phone: '9811122222', phoneVerified: true, role: 'customer' });
   });
 
   it('resets a password with an emailed, single-use token', async () => {
@@ -113,7 +113,7 @@ describe('booking -> door OTP -> weighing -> payout', () => {
     expect(otp).toMatch(/^\d{4}$/);
     expect(res.body.data.pickup.estimatedValueMin).toBe(5 * 480);
 
-    // Auto-assigned to the collector who serves PIN 560038.
+    // Auto-assigned to the collector who serves postal code 44600.
     let p = await Pickup.findOne({ pickupId });
     expect(p.status).toBe('ASSIGNED');
     expect(String(p.collector)).toBe(String(w.collector._id));
@@ -187,20 +187,20 @@ describe('booking -> door OTP -> weighing -> payout', () => {
   it('applies the condition multiplier for graded e-waste', async () => {
     const res = await request(app)
       .post('/api/scrap/estimate')
-      .send({ city: 'Bengaluru', items: [{ itemId: String(w.laptop._id), estimatedQuantity: 1, condition: 'damaged' }] });
+      .send({ city: 'Kathmandu', items: [{ itemId: String(w.laptop._id), estimatedQuantity: 1, condition: 'damaged' }] });
     expect(res.body.data.min).toBe(Math.round(200 * 0.35));
     expect(res.body.data.max).toBe(Math.round(600 * 0.35));
   });
 
   it('books as a guest with phone OTP and signs them in', async () => {
-    const otp = await request(app).post('/api/auth/otp/request').send({ phone: '9822223333', purpose: 'booking' });
+    const otp = await request(app).post('/api/auth/otp/request').send({ phone: '9802223333', purpose: 'booking' });
     const res = await request(app)
       .post('/api/pickups/guest')
       .send({
-        phone: '9822223333',
+        phone: '9802223333',
         code: otp.body.data.devCode,
         name: 'Guest Gupta',
-        address: { houseNumber: '7', street: 'Park St', locality: 'HSR', city: 'Bengaluru', state: 'Karnataka', pinCode: '560102' },
+        address: { houseNumber: '7', street: 'Park St', locality: 'Baneshwor', city: 'Kathmandu', state: 'Bagmati', pinCode: '44600' },
         items: [{ itemId: String(w.newspaper._id), estimatedQuantity: 20 }],
         scheduledDate: dayFromNow(2),
         timeSlot: '2:00 PM - 4:00 PM',
@@ -212,8 +212,8 @@ describe('booking -> door OTP -> weighing -> payout', () => {
 });
 
 describe('slots, serviceability and fraud controls', () => {
-  it('rejects unserviceable PIN codes once areas are configured', async () => {
-    await ServiceArea.create({ city: 'Pune', pinCodes: ['411001'] });
+  it('rejects unserviceable postal codes once areas are configured', async () => {
+    await ServiceArea.create({ city: 'Pokhara', pinCodes: ['33700'] });
     const res = await book(w.alice);
     expect(res.status).toBe(400);
     expect(res.body.message).toMatch(/don't pick up/);
@@ -247,8 +247,8 @@ describe('slots, serviceability and fraud controls', () => {
   });
 
   it('blocks blocklisted phones from requesting OTPs', async () => {
-    await Blocklist.create({ type: 'phone', value: '9833334444' });
-    const res = await request(app).post('/api/auth/otp/request').send({ phone: '9833334444' });
+    await Blocklist.create({ type: 'phone', value: '9803334444' });
+    const res = await request(app).post('/api/auth/otp/request').send({ phone: '9803334444' });
     expect(res.status).toBe(403);
   });
 });
@@ -264,10 +264,10 @@ describe('coupons and wallet', () => {
 
   it('debits on withdrawal request and refunds on rejection', async () => {
     await User.updateOne({ _id: w.alice._id }, { walletBalance: 500 });
-    const res = await request(app).post('/api/wallet/withdraw').set(as(w.alice)).send({ amount: 300, method: 'upi', upiId: 'alice@okhdfc' });
+    const res = await request(app).post('/api/wallet/withdraw').set(as(w.alice)).send({ amount: 300, method: 'esewa', walletId: '9800000002' });
     expect(res.status).toBe(201);
     expect((await User.findById(w.alice._id)).walletBalance).toBe(200);
-    const tooMuch = await request(app).post('/api/wallet/withdraw').set(as(w.alice)).send({ amount: 300, method: 'upi', upiId: 'alice@okhdfc' });
+    const tooMuch = await request(app).post('/api/wallet/withdraw').set(as(w.alice)).send({ amount: 300, method: 'esewa', walletId: '9800000002' });
     expect(tooMuch.status).toBe(409);
     const wd = await Withdrawal.findOne({ user: w.alice._id });
     await request(app).post(`/api/admin/withdrawals/${wd._id}`).set(as(w.admin)).send({ action: 'reject' }).expect(200);
@@ -277,10 +277,10 @@ describe('coupons and wallet', () => {
 
 describe('admin permissions and analytics', () => {
   it('gives staff only their role permissions', async () => {
-    const support = await User.create({ name: 'Sam', email: 'sam@test.dev', phone: '9000000009', password: 'secret12', role: 'staff', staffRole: 'support' });
-    const finance = await User.create({ name: 'Fin', email: 'fin@test.dev', phone: '9000000010', password: 'secret12', role: 'staff', staffRole: 'finance' });
+    const support = await User.create({ name: 'Sam', email: 'sam@test.dev', phone: '9800000009', password: 'secret12', role: 'staff', staffRole: 'support' });
+    const finance = await User.create({ name: 'Fin', email: 'fin@test.dev', phone: '9800000010', password: 'secret12', role: 'staff', staffRole: 'finance' });
     await request(app).get('/api/admin/support/tickets').set(as(support)).expect(200);
-    await request(app).post('/api/admin/prices/bulk').set(as(support)).send({ city: 'Bengaluru', percentChange: 5 }).expect(403);
+    await request(app).post('/api/admin/prices/bulk').set(as(support)).send({ city: 'Kathmandu', percentChange: 5 }).expect(403);
     await request(app).get('/api/admin/analytics').set(as(finance)).expect(200);
     await request(app).get('/api/admin/settings').set(as(finance)).expect(403);
     await request(app).get('/api/admin/dashboard').set(as(w.collector)).expect(403);
@@ -291,7 +291,7 @@ describe('admin permissions and analytics', () => {
     await request(app)
       .put(`/api/admin/scrap-items/${w.copper._id}`)
       .set(as(w.admin))
-      .send({ city: 'Bengaluru', minPrice: 500, maxPrice: 560 })
+      .send({ city: 'Kathmandu', minPrice: 500, maxPrice: 560 })
       .expect(200);
     const hist = await request(app).get('/api/admin/prices/history').set(as(w.admin));
     expect(hist.body.data.history[0]).toMatchObject({ newMinPrice: 500, newMaxPrice: 560, oldMinPrice: 480 });

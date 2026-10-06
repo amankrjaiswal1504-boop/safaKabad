@@ -26,7 +26,7 @@ function fromNominatim(r) {
     street: a.road || a.pedestrian || '',
     locality: a.suburb || a.neighbourhood || a.quarter || a.village || '',
     city: a.city || a.town || a.city_district || a.county || '',
-    state: a.state || '',
+    state: (a.state || a.province || '').replace(/\s*Province$/i, ''),
     pinCode: (a.postcode || '').replace(/\s/g, ''),
   };
 }
@@ -41,7 +41,7 @@ function fromGoogle(r) {
     street: get('route'),
     locality: get('sublocality') || get('sublocality_level_1') || get('neighborhood'),
     city: get('locality') || get('administrative_area_level_2'),
-    state: get('administrative_area_level_1'),
+    state: get('administrative_area_level_1').replace(/\s*Province$/i, ''),
     pinCode: get('postal_code'),
   };
 }
@@ -52,11 +52,11 @@ async function search(q) {
   return cached(`s:${query.toLowerCase()}`, async () => {
     try {
       if (process.env.MAPS_API_KEY) {
-        const url = `https://maps.googleapis.com/maps/api/geocode/json?region=in&address=${encodeURIComponent(query)}&key=${process.env.MAPS_API_KEY}`;
+        const url = `https://maps.googleapis.com/maps/api/geocode/json?region=np&components=country:NP&address=${encodeURIComponent(query)}&key=${process.env.MAPS_API_KEY}`;
         const data = await (await fetch(url)).json();
         return (data.results || []).slice(0, 5).map(fromGoogle);
       }
-      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&countrycodes=in&limit=5&q=${encodeURIComponent(query)}`;
+      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&countrycodes=np&limit=5&q=${encodeURIComponent(query)}`;
       const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'en' } });
       if (!res.ok) throw new Error(`Nominatim ${res.status}`);
       return (await res.json()).map(fromNominatim);

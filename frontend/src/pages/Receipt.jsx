@@ -7,6 +7,7 @@ import { download } from '../services/api';
 import { LogoMark } from '../components/Logo';
 import { Button, ErrorState, Skeleton } from '../components/ui';
 import { addressLine, fmtDate, rupees, unitLabel } from '../utils/format';
+import { payoutLabel } from '../utils/locale';
 
 export default function Receipt() {
   const { id } = useParams();
@@ -94,7 +95,7 @@ export default function Receipt() {
                 <span>Total paid</span>
                 <span className="tabular">{rupees(total, { decimals: 2 })}</span>
               </div>
-              {p.payout?.method && <div className="text-xs text-steel-500 text-right capitalize">via {p.payout.method.replace('_', ' ')}</div>}
+              {p.payout?.method && <div className="text-xs text-steel-500 text-right">via {payoutLabel(p.payout.method)}</div>}
             </div>
           )}
           <p className="text-xs text-steel-500 text-center border-t border-steel-100 pt-4 mt-6">

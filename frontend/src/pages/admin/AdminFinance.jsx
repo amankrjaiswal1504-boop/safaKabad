@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Banknote, Check, CreditCard, FlaskConical, Landmark, X } from 'lucide-react';
+import { Banknote, Check, CheckCheck, CreditCard, FlaskConical, Landmark, X } from 'lucide-react';
 import api from '../../services/api';
 import useApi from '../../hooks/useApi';
 import { useAuth } from '../../context/AuthContext';
 import { fmtDateTime, rupees } from '../../utils/format';
-import { Badge, Button, DataTable, EmptyState, Field, PageHeader, Pagination, Segmented, Select, Tabs, Textarea } from '../../components/ui';
+import { PAYOUT_METHODS, payoutLabel } from '../../utils/locale';
+import { Badge, Button, DataTable, EmptyState, Field, Input, PageHeader, Pagination, Segmented, Select, Tabs, Textarea } from '../../components/ui';
 import { Async, Callout, ConfirmModal, KeyValue, Toolbar, maskAccount, useAction } from './_catalog/shared';
 
 const W_STATUS = {
@@ -14,7 +15,6 @@ const W_STATUS = {
   rejected: { label: 'Rejected', tone: 'danger' },
 };
 const P_STATUS = { pending: 'amber', successful: 'patina', failed: 'danger' };
-const METHOD = { upi: 'UPI', bank_transfer: 'Bank transfer', cash: 'Cash', razorpay: 'Razorpay', wallet: 'Wallet' };
 const pretty = (s) => String(s || '').replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
 
 const TestBadge = () => (
@@ -37,9 +37,10 @@ export default function AdminFinance() {
 }
 
 function destination(w) {
-  if (w.method === 'upi') return { title: 'UPI', detail: w.upiId || '—' };
+  if (w.method === 'esewa' || w.method === 'khalti') return { title: payoutLabel(w.method), label: `${payoutLabel(w.method)} ID`, detail: w.walletId || '—' };
   const b = w.bankAccount || {};
-  return { title: 'Bank', detail: `${maskAccount(b.accountNumber)}${b.ifsc ? ` · ${b.ifsc}` : ''}`, holder: b.holderName };
+  const bank = [b.bankName, b.branch].filter(Boolean).join(', ');
+  return { title: 'Bank', label: 'Account', detail: maskAccount(b.accountNumber), bank, holder: b.holderName };
 }
 
 function Withdrawals() {
@@ -64,7 +65,9 @@ function Withdrawals() {
       success: (out) => {
         const s = out.data.data.withdrawal?.status;
         if (action === 'reject') return `Rejected. ${rupees(w.amount)} returned to ${w.user?.name || 'the customer'}'s wallet`;
-        return s === 'paid' ? `${rupees(w.amount)} paid to ${w.user?.name || 'customer'}` : 'Payout sent, waiting for the bank to confirm';
+        return s === 'paid'
+          ? `${rupees(w.amount)} paid to ${w.user?.name || 'customer'}`
+          : 'Approved. Once the money is sent, mark the payout paid in the Payments tab';
       },
     });
     if (r.ok) {
@@ -96,6 +99,7 @@ function Withdrawals() {
               <span className="text-xs text-steel-500 mr-1">{d.title}</span>
               <span className="tabular">{d.detail}</span>
             </div>
+            {d.bank && <div className="text-xs text-steel-500">{d.bank}</div>}
             {d.holder && <div className="text-xs text-steel-500">{d.holder}</div>}
           </div>
         );
@@ -183,11 +187,15 @@ function Withdrawals() {
               <KeyValue label="Amount">
                 <span className="font-semibold tabular">{rupees(acting.w.amount)}</span>
               </KeyValue>
-              <KeyValue label={d.title === 'UPI' ? 'UPI ID' : 'Account'}>{d.detail}</KeyValue>
+              <KeyValue label={d.label}>{d.detail}</KeyValue>
+              {d.bank && <KeyValue label="Bank & branch">{d.bank}</KeyValue>}
               {d.holder && <KeyValue label="Account holder">{d.holder}</KeyValue>}
             </dl>
             {acting.action === 'approve' ? (
-              <Callout icon={Banknote}>The payout is sent right away through the payment gateway. This can't be undone.</Callout>
+              <Callout icon={Banknote}>
+                If a payout provider is configured, the money is sent right away. Otherwise the finance team sends it by eSewa, Khalti or bank transfer and
+                then marks the payout paid in the Payments tab. This can't be undone.
+              </Callout>
             ) : (
               <Callout tone="amber">The amount goes back to the customer's ScrapMate wallet and they are notified.</Callout>
             )}
@@ -214,6 +222,26 @@ function Payments() {
   }, [page, status, method]);
   const res = useApi('/admin/payments', { params });
   const anyMock = res.data?.payments?.some((p) => p.isMock);
+  const [marking, setMarking] = useState(null);
+  const [reference, setReference] = useState('');
+  const { busy, run } = useAction();
+
+  function openMarkPaid(p) {
+    setReference('');
+    setMarking(p);
+  }
+
+  async function confirmMarkPaid() {
+    const body = {};
+    if (reference.trim()) body.reference = reference.trim();
+    const r = await run('mark', () => api.put(`/admin/payments/${encodeURIComponent(marking.paymentId)}/mark-paid`, body), {
+      success: `${rupees(marking.amount)} marked paid`,
+    });
+    if (r.ok) {
+      setMarking(null);
+      res.reload();
+    }
+  }
 
   const columns = [
     {
@@ -223,6 +251,11 @@ function Payments() {
         <div className="whitespace-nowrap">
           <div className="font-mono text-xs text-steel-900">{p.paymentId}</div>
           <div className="text-xs text-steel-500">{fmtDateTime(p.createdAt)}</div>
+          {p.gatewayRef && (
+            <div className="text-xs text-steel-500 font-mono" title="Khalti reference">
+              {p.gatewayRef}
+            </div>
+          )}
         </div>
       ),
     },
@@ -251,7 +284,7 @@ function Payments() {
         );
       },
     },
-    { key: 'method', header: 'Method', render: (p) => <span className="text-steel-700 whitespace-nowrap">{METHOD[p.method] || pretty(p.method)}</span> },
+    { key: 'method', header: 'Method', render: (p) => <span className="text-steel-700 whitespace-nowrap">{payoutLabel(p.method)}</span> },
     {
       key: 'status',
       header: 'Status',
@@ -264,6 +297,17 @@ function Payments() {
           {p.payoutReference && <div className="text-xs text-steel-500 mt-1 font-mono">{p.payoutReference}</div>}
         </div>
       ),
+    },
+    {
+      key: 'actions',
+      header: <span className="sr-only">Actions</span>,
+      className: 'text-right',
+      render: (p) =>
+        p.status === 'pending' && p.direction === 'payout' ? (
+          <Button size="sm" variant="outline" icon={CheckCheck} onClick={() => openMarkPaid(p)}>
+            Mark paid
+          </Button>
+        ) : null,
     },
   ];
 
@@ -284,15 +328,19 @@ function Payments() {
           {(id) => (
             <Select id={id} value={method} onChange={(e) => setMethod(e.target.value)}>
               <option value="">All methods</option>
-              {Object.entries(METHOD).map(([v, l]) => (
-                <option key={v} value={v}>
-                  {l}
+              {PAYOUT_METHODS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
                 </option>
               ))}
             </Select>
           )}
         </Field>
       </Toolbar>
+      <Callout icon={Banknote} className="mb-4">
+        Online collections come in through Khalti. Payouts by eSewa, Khalti or bank transfer are settled by the finance team and then marked paid here,
+        unless a payout provider is configured to send them automatically.
+      </Callout>
       {anyMock && (
         <Callout icon={FlaskConical} tone="amber" className="mb-4">
           Payments marked <strong>Test mode</strong> went through the mock gateway: no real money moved.
@@ -312,6 +360,34 @@ function Payments() {
         />
       )}
       <Pagination pagination={res.data?.pagination} onPage={setPage} />
+
+      <ConfirmModal
+        open={!!marking}
+        onClose={() => setMarking(null)}
+        title="Mark payout paid"
+        confirmLabel="Mark paid"
+        busy={busy === 'mark'}
+        onConfirm={confirmMarkPaid}
+      >
+        {marking && (
+          <>
+            <dl className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-surface-2 border border-steel-100">
+              <KeyValue label="Customer">{marking.user?.name || '—'}</KeyValue>
+              <KeyValue label="Amount">
+                <span className="font-semibold tabular">{rupees(marking.amount)}</span>
+              </KeyValue>
+              <KeyValue label="Method">{payoutLabel(marking.method)}</KeyValue>
+              <KeyValue label="Payment">
+                <span className="font-mono text-xs">{marking.paymentId}</span>
+              </KeyValue>
+            </dl>
+            <Callout icon={Banknote}>Only confirm once the money has reached the customer. This can't be undone.</Callout>
+            <Field label="Reference / transaction ID" hint="Optional, e.g. the eSewa, Khalti or bank transaction ID">
+              {(id) => <Input id={id} value={reference} maxLength={100} onChange={(e) => setReference(e.target.value)} autoComplete="off" />}
+            </Field>
+          </>
+        )}
+      </ConfirmModal>
     </>
   );
 }

@@ -10,7 +10,7 @@ const QUICK_REPLIES = [
   { label: 'What can I sell?', message: 'What can I sell?' },
   { label: 'Payment help', message: 'How do I get paid?' },
   { label: 'Talk to a human', message: 'I want to talk to a human' },
-  { label: 'हिंदी में बात करें', message: 'नमस्ते, मुझे कबाड़ बेचना है' },
+  { label: 'नेपालीमा कुरा गर्नुहोस्', message: 'नमस्ते, मलाई कबाडी बेच्नु छ' },
 ];
 
 const MAX_LEN = 1000;
@@ -165,7 +165,7 @@ export default function ChatPanel({ chat, user, whatsappHref, whatsappNumber, on
           <div>
             <div className="bg-surface border border-steel-100 rounded-lg p-3 text-sm text-steel-700">
               Hi{user ? ` ${user.name.split(' ')[0]}` : ''}! I can check scrap rates, estimate your payout, book or track a
-              pickup, and help with payments. Ask in English or हिंदी.
+              pickup, and help with payments. Ask in English or नेपाली.
             </div>
             <div className="flex flex-wrap gap-2 mt-3">
               {QUICK_REPLIES.map((q) => (

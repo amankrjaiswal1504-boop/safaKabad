@@ -18,7 +18,7 @@ const TOOL_DEFINITIONS = [
     input_schema: {
       type: 'object',
       properties: {
-        city: { type: 'string', description: 'City name, e.g. "Bengaluru". Omit to use the user\'s city or the default city.' },
+        city: { type: 'string', description: 'City name, e.g. "Kathmandu". Omit to use the user\'s city or the default city.' },
         search: { type: 'string', description: 'Optional item name filter, e.g. "copper".' },
         category: { type: 'string', description: 'Optional category name, e.g. "E-Waste".' },
       },
@@ -198,7 +198,7 @@ const EXECUTORS = {
     ctx.cards.push({ type: 'rates', city, rates: top.slice(0, 8), more: Math.max(0, rates.length - 8) });
     return {
       city,
-      currency: 'INR',
+      currency: 'NPR',
       rates: top,
       totalMatches: rates.length,
       note: 'Indicative rates per unit. Final amount depends on actual weight and condition at pickup.',
@@ -232,7 +232,7 @@ const EXECUTORS = {
     }
     return {
       city,
-      currency: 'INR',
+      currency: 'NPR',
       lines,
       totalMin: est.min,
       totalMax: est.max,

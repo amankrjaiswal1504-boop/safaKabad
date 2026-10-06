@@ -160,7 +160,7 @@ function NgoForm({ ngo, onClose, onSaved }) {
           <Field label="Name" required error={errors.name}>
             {(id) => <Input id={id} value={f.name} onChange={(e) => set('name')(e.target.value)} maxLength={120} invalid={!!errors.name} />}
           </Field>
-          <Field label="Registration number" hint="e.g. 12A / 80G or trust registration">
+          <Field label="Registration number" hint="e.g. Social Welfare Council (SWC) or District Administration Office registration">
             {(id) => <Input id={id} value={f.registrationNumber} onChange={(e) => set('registrationNumber')(e.target.value)} maxLength={60} />}
           </Field>
         </div>

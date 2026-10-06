@@ -6,7 +6,7 @@ import {
   CalendarCheck,
   CircleCheckBig,
   ClipboardList,
-  IndianRupee,
+  Banknote,
   KanbanSquare,
   ShieldAlert,
   Truck,
@@ -18,13 +18,14 @@ import { useAuth } from '../../context/AuthContext';
 import { Card, ErrorState, PageHeader, SectionTitle, Skeleton, Stat, Button, cx } from '../../components/ui';
 import { BarList, ChartTable, LineChart } from '../../components/charts';
 import { STATUS_LABEL, compact, fmtDay, rupees, todayISO } from '../../utils/format';
+import { DATE_LOCALE } from '../../utils/locale';
 
 const STATUS_ORDER = ['BOOKED', 'ASSIGNED', 'COLLECTOR_ON_THE_WAY', 'ARRIVED', 'WEIGHING', 'COMPLETED', 'CANCELLED'];
 const SERIES = [
   { key: 'bookings', label: 'Bookings', color: 'viz-1', area: true },
   { key: 'completed', label: 'Completed', color: 'viz-2' },
 ];
-const shortDay = (d) => new Date(`${d}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+const shortDay = (d) => new Date(`${d}T00:00:00`).toLocaleDateString(DATE_LOCALE, { day: 'numeric', month: 'short' });
 
 function DashboardSkeleton() {
   return (
@@ -109,7 +110,7 @@ export default function AdminDashboard() {
             <Stat label="Completed" value={compact(data.completedPickups)} icon={CircleCheckBig} tone="patina" hint={`${compact(data.cancelledPickups)} cancelled all-time`} />
             <Stat label="Customers" value={compact(data.totalCustomers)} icon={Users} />
             <Stat label="Collectors" value={compact(data.totalCollectors)} icon={ClipboardList} />
-            <Stat label="Paid out" value={rupees(data.totalAmountPaid)} icon={IndianRupee} tone="patina" hint="Successful payouts, all-time" />
+            <Stat label="Paid out" value={rupees(data.totalAmountPaid)} icon={Banknote} tone="patina" hint="Successful payouts, all-time" />
             <Stat label="Flagged (active)" value={compact(data.flaggedActive)} icon={ShieldAlert} tone={data.flaggedActive ? 'amber' : 'steel'} hint="Fraud or abuse signals" />
           </section>
 

@@ -6,6 +6,7 @@ const { Notification } = require('../models/platform');
 const { emitTo } = require('../socket');
 const { sendEmail, sendWhatsApp, sendSms, sendPush } = require('./channels');
 const logger = require('../utils/logger');
+const { TIMEZONE } = require('../config/locale');
 
 const CLIENT_URL = () => process.env.CLIENT_URL || 'http://localhost:5173';
 
@@ -23,7 +24,7 @@ const STATUS_COPY = {
 };
 
 function fmtDate(d) {
-  return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  return new Date(d).toLocaleDateString('en-GB', { timeZone: TIMEZONE, day: 'numeric', month: 'short' });
 }
 
 async function notify(userId, { type, title, body, link = '', channels = ['inapp', 'email', 'whatsapp', 'push'], emailAttachments }) {

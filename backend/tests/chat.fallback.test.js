@@ -42,19 +42,19 @@ describe('rates and estimates come from the database', () => {
     const res = await ask(request(app), 'what is the copper rate?');
     expect(res.status).toBe(200);
     const [rates] = cardsOf(res, 'rates');
-    expect(rates.city).toBe('Bengaluru');
+    expect(rates.city).toBe('Kathmandu');
     expect(rates.rates).toEqual([expect.objectContaining({ name: 'Copper', minPrice: 480, maxPrice: 550 })]);
   });
 
-  it('understands Hindi item names and replies in Hindi', async () => {
-    const res = await ask(request(app), 'तांबे का भाव क्या है?');
+  it('understands Nepali item names and replies in Nepali', async () => {
+    const res = await ask(request(app), 'तामाको भाउ कति हो?');
     expect(cardsOf(res, 'rates')[0].rates[0].name).toBe('Copper');
     expect(res.body.data.message.content).toMatch(/[ऀ-ॿ]/);
   });
 
   it('uses a city named in the message', async () => {
-    const res = await ask(request(app), 'copper price in Pune');
-    expect(cardsOf(res, 'rates')[0]).toMatchObject({ city: 'Pune', rates: [expect.objectContaining({ minPrice: 470 })] });
+    const res = await ask(request(app), 'copper price in Pokhara');
+    expect(cardsOf(res, 'rates')[0]).toMatchObject({ city: 'Pokhara', rates: [expect.objectContaining({ minPrice: 470 })] });
   });
 
   it('estimates value using the booking maths', async () => {
@@ -69,7 +69,7 @@ describe('rates and estimates come from the database', () => {
 
   it('answers from the admin-editable FAQ', async () => {
     const res = await ask(request(app), 'how do I get paid?');
-    expect(res.body.data.message.content).toContain('Cash, UPI or bank transfer after weighing.');
+    expect(res.body.data.message.content).toContain('Cash, eSewa, Khalti or bank transfer after weighing.');
   });
 });
 
@@ -93,7 +93,7 @@ describe('account data requires login and ownership', () => {
 
   it('enforces ownership inside the tools themselves', async () => {
     const session = await ChatSession.create({ user: world.bob._id });
-    const ctx = { user: world.bob, session, cards: [], defaultCity: 'Bengaluru' };
+    const ctx = { user: world.bob, session, cards: [], defaultCity: 'Kathmandu' };
     for (const [tool, input] of [
       ['track_pickup', { pickup_id: 'SM-2026-000001' }],
       ['cancel_pickup', { pickup_id: 'SM-2026-000001' }],
@@ -103,7 +103,7 @@ describe('account data requires login and ownership', () => {
       expect(result.error).toBe('not_found');
     }
     expect(ctx.cards).toHaveLength(0);
-    const anon = { user: null, session, cards: [], defaultCity: 'Bengaluru' };
+    const anon = { user: null, session, cards: [], defaultCity: 'Kathmandu' };
     expect((await runTool('get_my_pickups', {}, anon)).result.error).toBe('login_required');
   });
 });

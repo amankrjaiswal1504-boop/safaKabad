@@ -5,8 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n/I18nContext';
 import { Button, Field, Input } from './ui';
 import OtpInput from './OtpInput';
-
-const clean = (p) => p.replace(/[\s-]/g, '').replace(/^\+?91(?=\d{10}$)/, '');
+import { DIAL_CODE, MOBILE_PLACEHOLDER, MOBILE_RE, cleanPhone as clean } from '../utils/locale';
 
 // Phone + OTP. purpose 'login' signs in (creating the account if new);
 // purpose 'booking' only verifies and hands the code to onVerified (guest booking).
@@ -32,7 +31,7 @@ export default function PhoneOtpForm({ purpose = 'login', onVerified, askName = 
   async function send(e) {
     e?.preventDefault();
     const p = clean(phone);
-    if (!/^[6-9]\d{9}$/.test(p)) return setError('Enter a valid 10-digit mobile number');
+    if (!MOBILE_RE.test(p)) return setError(`Enter a valid 10-digit mobile number (${MOBILE_PLACEHOLDER})`);
     setError('');
     setBusy(true);
     try {
@@ -76,8 +75,8 @@ export default function PhoneOtpForm({ purpose = 'login', onVerified, askName = 
         <Field label={t('auth.phone')} error={error}>
           {(id) => (
             <div className="flex">
-              <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-steel-300 bg-steel-100 text-sm text-steel-600">+91</span>
-              <Input id={id} value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel-national" placeholder="98765 43210" className="rounded-l-none" maxLength={14} autoFocus />
+              <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-steel-300 bg-steel-100 text-sm text-steel-600">+{DIAL_CODE}</span>
+              <Input id={id} value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel-national" placeholder={MOBILE_PLACEHOLDER} className="rounded-l-none" maxLength={14} autoFocus />
             </div>
           )}
         </Field>
@@ -91,7 +90,7 @@ export default function PhoneOtpForm({ purpose = 'login', onVerified, askName = 
   return (
     <form onSubmit={verify} className="space-y-4" noValidate>
       <div className="text-sm text-steel-600 flex items-center gap-2">
-        Code sent to <span className="font-medium text-steel-900">+91 {clean(phone)}</span>
+        Code sent to <span className="font-medium text-steel-900">+{DIAL_CODE} {clean(phone)}</span>
         <button type="button" onClick={() => setStage('phone')} className="text-rust-600 inline-flex items-center gap-1 text-xs font-medium" aria-label="Change number">
           <Pencil className="w-3 h-3" aria-hidden /> Change
         </button>

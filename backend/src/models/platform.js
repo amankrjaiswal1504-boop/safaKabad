@@ -140,9 +140,9 @@ const withdrawalSchema = new mongoose.Schema(
   {
     user: { type: ObjectId, ref: 'User', required: true, index: true },
     amount: { type: Number, required: true, min: 1 },
-    method: { type: String, enum: ['upi', 'bank_transfer'], required: true },
-    upiId: String,
-    bankAccount: { accountNumber: String, ifsc: String, holderName: String },
+    method: { type: String, enum: ['esewa', 'khalti', 'bank_transfer'], required: true },
+    walletId: String, // eSewa / Khalti ID (mobile number)
+    bankAccount: { accountNumber: String, bankName: String, branch: String, holderName: String },
     status: { type: String, enum: ['requested', 'processing', 'paid', 'rejected'], default: 'requested', index: true },
     payoutReference: String,
     isMock: { type: Boolean, default: false },
@@ -180,7 +180,7 @@ const quoteSchema = new mongoose.Schema(
     phone: { type: String, required: true },
     email: { type: String, default: '' },
     city: { type: String, required: true },
-    gstin: { type: String, default: '' },
+    panVat: { type: String, default: '' }, // Nepal PAN/VAT number
     businessType: { type: String, default: 'other' },
     description: { type: String, required: true },
     estimatedQuantityKg: { type: Number, default: 0 },

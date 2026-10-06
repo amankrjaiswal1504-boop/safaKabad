@@ -22,7 +22,6 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const growthRoutes = require('./routes/growthRoutes');
-const { webhook } = require('./controllers/paymentController');
 const { sitemap } = require('./controllers/publicController');
 
 const app = express();
@@ -57,9 +56,6 @@ app.use(
     credentials: true,
   })
 );
-
-// Razorpay webhook needs the exact raw body for signature verification.
-app.post('/api/payments/webhook', express.raw({ type: 'application/json', limit: '1mb' }), webhook);
 
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: false, limit: '100kb' }));

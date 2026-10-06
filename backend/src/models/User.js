@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema(
     },
     staffRole: { type: String, enum: [...STAFF_ROLES, null], default: null },
     isActive: { type: Boolean, default: true },
-    language: { type: String, enum: ['en', 'hi'], default: 'en' },
+    language: { type: String, enum: ['en', 'ne'], default: 'en' },
 
     // Customer growth/retention
     walletBalance: { type: Number, default: 0, min: 0 },
@@ -39,7 +39,7 @@ const userSchema = new mongoose.Schema(
     business: {
       companyName: String,
       businessType: { type: String, enum: ['kirana', 'office', 'society', 'factory', 'other', null], default: null },
-      gstin: String,
+      panVat: String, // Nepal PAN/VAT number (9 digits)
       billingAddress: String,
       pricingTier: { type: String, default: 'standard' },
     },

@@ -139,7 +139,7 @@ export function LineChart({ data, x, series, height = 220, format = compact, xFo
 }
 
 // Min-max price band over time (rate trends).
-export function RangeChart({ points, height = 200, format = (v) => `₹${v}` }) {
+export function RangeChart({ points, height = 200, format = (v) => `Rs. ${v}` }) {
   const ref = useRef(null);
   const [hover, setHover] = useState(null);
   const H = height;
@@ -199,14 +199,14 @@ export function RangeChart({ points, height = 200, format = (v) => `₹${v}` }) 
         <path d={stepPath('min')} fill="none" stroke="rgb(var(--viz-1))" strokeWidth="2" strokeOpacity="0.55" />
         {[points[0], points.at(-1)].map((p, i) => (
           <text key={i} x={sx(p.date)} y={H - 6} textAnchor={i ? 'end' : 'start'} className="fill-steel-500 text-[11px]">
-            {new Date(p.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+            {new Date(p.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
           </text>
         ))}
         {hover != null && <line x1={sx(points[hover].date)} x2={sx(points[hover].date)} y1={pad.t} y2={H - pad.b} stroke="rgb(var(--steel-400))" />}
       </svg>
       {hover != null && ref.current && (
         <Tooltip x={(sx(points[hover].date) / W) * ref.current.clientWidth} y={(sy(points[hover].max) / H) * ref.current.clientHeight} width={ref.current.clientWidth}>
-          <div className="text-steel-500 mb-0.5">{new Date(points[hover].date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+          <div className="text-steel-500 mb-0.5">{new Date(points[hover].date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
           <div className="font-semibold text-steel-900 tabular">
             {format(points[hover].min)} – {format(points[hover].max)}
           </div>

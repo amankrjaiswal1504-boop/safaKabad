@@ -24,7 +24,7 @@ export default function SellScrapCity() {
   usePageMeta({
     title: city ? `Sell scrap online in ${city} — doorstep pickup` : 'Sell scrap online',
     description: city
-      ? `Sell scrap in ${city} at today's best rates. ${top.map((r) => `${r.name} ₹${r.minPrice}-${r.maxPrice}/${r.unit}`).join(', ')}. Free pickup, digital weighing, instant UPI payment.`
+      ? `Sell scrap in ${city} at today's best rates. ${top.map((r) => `${r.name} Rs. ${r.minPrice}-${r.maxPrice}/${r.unit}`).join(', ')}. Free pickup, digital weighing, instant eSewa / Khalti payment.`
       : undefined,
   });
 
@@ -70,7 +70,7 @@ export default function SellScrapCity() {
               Book a free doorstep pickup anywhere in {city}. A verified ScrapMate collector weighs your scrap in front of you and pays instantly.
             </p>
             <ul className="mt-6 space-y-2 text-sm text-[#dfe3e6]">
-              {['Free pickup, same-day or next-day slots', 'Digital weighing with photo proof', 'UPI, bank, cash or wallet payment', `${data?.itemCount || 30}+ items: paper, metals, e-waste, appliances, vehicles`].map((x) => (
+              {['Free pickup, same-day or next-day slots', 'Digital weighing with photo proof', 'eSewa, Khalti, bank, cash or wallet payment', `${data?.itemCount || 30}+ items: paper, metals, e-waste, appliances, vehicles`].map((x) => (
                 <li key={x} className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-[#7fd39a]" aria-hidden /> {x}
                 </li>

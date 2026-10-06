@@ -5,8 +5,9 @@ import useApi from '../../hooks/useApi';
 import { ColumnChart, ChartTable } from '../../components/charts';
 import { Card, EmptyState, ErrorState, IconButton, SectionTitle, Skeleton, SkeletonRows, Stars, cx } from '../../components/ui';
 import { fmtDate, fmtDateTime, rupees } from '../../utils/format';
+import { DATE_LOCALE } from '../../utils/locale';
 
-const weekLabel = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+const weekLabel = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString(DATE_LOCALE, { day: 'numeric', month: 'short' });
 
 // Fill weeks with no completed pickups so the chart shows a steady timeline.
 function lastWeeks(statements, n) {

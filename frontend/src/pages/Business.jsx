@@ -12,7 +12,7 @@ import { fmtDate, rupees } from '../utils/format';
 const PERKS = [
   { icon: Repeat, t: 'Recurring pickups', d: 'Weekly or monthly pickups that book themselves.' },
   { icon: TrendingUp, t: 'Better rates', d: 'Volume pricing tiers: up to +6% over standard rates.' },
-  { icon: Receipt, t: 'GST invoices', d: 'Invoices and receipts with your GSTIN for every pickup.' },
+  { icon: Receipt, t: 'VAT bills', d: 'Bills and receipts with your PAN/VAT number for every pickup.' },
   { icon: FileCheck2, t: 'E-waste certificates', d: 'Certified disposal certificates for audits and compliance.' },
 ];
 
@@ -57,14 +57,14 @@ function MyQuotes() {
 export default function Business() {
   const { user } = useAuth();
   const { city } = useConfig();
-  usePageMeta({ title: 'Scrap pickup for businesses', description: 'Bulk scrap pickup for shops, offices, housing societies and factories. GST invoices, recurring pickups, volume pricing and certified e-waste disposal.' });
+  usePageMeta({ title: 'Scrap pickup for businesses', description: 'Bulk scrap pickup for shops, offices, housing societies and factories. PAN/VAT bills, recurring pickups, volume pricing and certified e-waste disposal.' });
   const [form, setForm] = useState({
     contactName: user?.name || '',
     companyName: user?.business?.companyName || '',
     phone: user?.phone || '',
     email: user?.email || '',
     city,
-    gstin: user?.business?.gstin || '',
+    panVat: user?.business?.panVat || '',
     businessType: user?.business?.businessType || 'office',
     description: '',
     estimatedQuantityKg: '',
@@ -164,8 +164,8 @@ export default function Business() {
                 <Field label="City" required error={errors.city}>
                   {(id) => <Input id={id} value={form.city} onChange={(e) => set('city', e.target.value)} />}
                 </Field>
-                <Field label="GSTIN" error={errors.gstin}>
-                  {(id) => <Input id={id} value={form.gstin} onChange={(e) => set('gstin', e.target.value.toUpperCase())} maxLength={15} />}
+                <Field label="PAN/VAT no." error={errors.panVat}>
+                  {(id) => <Input id={id} inputMode="numeric" value={form.panVat} onChange={(e) => set('panVat', e.target.value.replace(/\D/g, ''))} maxLength={9} />}
                 </Field>
               </div>
               <Field label="Type of business">

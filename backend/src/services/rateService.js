@@ -38,7 +38,7 @@ async function fetchRates({ city, search, category } = {}) {
   }
 
   const items = await ScrapItem.find(itemFilter)
-    .populate({ path: 'category', select: 'name nameHi slug icon conditionGrading isActive sortOrder' })
+    .populate({ path: 'category', select: 'name nameNe slug icon conditionGrading isActive sortOrder' })
     .lean();
   const activeItems = items.filter((i) => i.category && i.category.isActive !== false);
   const prices = await ScrapPrice.find({
@@ -55,7 +55,7 @@ async function fetchRates({ city, search, category } = {}) {
       return {
         itemId: item._id,
         name: item.name,
-        nameHi: item.nameHi,
+        nameNe: item.nameNe,
         image: item.image,
         unit: item.unit,
         category: item.category,

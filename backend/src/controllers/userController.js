@@ -25,7 +25,7 @@ async function updateProfile(req, res, next) {
         ...user.business?.toObject?.(),
         companyName: business.companyName,
         businessType: BUSINESS_TYPES.includes(business.businessType) ? business.businessType : 'other',
-        gstin: business.gstin,
+        panVat: business.panVat,
         billingAddress: business.billingAddress,
         // pricingTier is set by admins only
         pricingTier: user.business?.pricingTier || 'standard',

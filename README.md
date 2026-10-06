@@ -1,9 +1,14 @@
 # ScrapMate — Doorstep Scrap Collection & Recycling Platform
 
 Customers check live scrap rates, book a free doorstep pickup, verify the collector with a
-door code, watch their scrap being weighed (with photo proof) and get paid instantly by UPI,
-bank, cash or wallet. Collectors run their day from a mobile partner app. Admins and staff
+door code, watch their scrap being weighed (with photo proof) and get paid instantly by eSewa,
+Khalti, bank transfer, cash or wallet. Collectors run their day from a mobile partner app. Admins and staff
 run operations, pricing, payouts, support and analytics.
+
+Built for **Nepal**: prices in Nepali rupees (Rs.), +977 mobile numbers, 5-digit postal codes
+and the 7 provinces, Nepal time (UTC+05:45), English + नेपाली, eSewa / Khalti / bank
+payouts, Sparrow SMS for OTPs and PAN/VAT details for businesses. Country settings live in
+`backend/src/config/locale.js` and `frontend/src/utils/locale.js`.
 
 An original project: branding, copy, design and code are our own. It is not affiliated with,
 and copies nothing from, any existing scrap-collection company.
@@ -30,17 +35,17 @@ and copies nothing from, any existing scrap-collection company.
 ## 1. Features
 
 Everything runs locally **without any paid keys**: each external service (AI, SMS, WhatsApp,
-email, Razorpay, Cloudinary, maps, web push) has an env var and a working fallback (console
+email, Khalti, payouts, Cloudinary, maps, web push) has an env var and a working fallback (console
 log, mock, local file, or OpenStreetMap).
 
-**Customer website (English + हिंदी, light/dark mode, installable PWA)**
+**Customer website (English + नेपाली, light/dark mode, installable PWA)**
 - Home page with a live price estimator (no login), real stats from the database,
   testimonials from approved reviews, FAQ, trust badges and a city selector
 - Rates page by category with search, price-trend chart per item and price alerts
 - SEO city pages: `/sell-scrap/<city>` with structured data, sitemap and Open Graph image
 - Booking wizard: sell or **donate** to an NGO, item picker with condition grading for
   e-waste/appliances, photos, saved or new address with **search autocomplete, map pin and
-  "use my location"**, live **PIN-code serviceability**, slots with remaining capacity,
+  "use my location"**, live **postal-code serviceability**, slots with remaining capacity,
   coupons, auto-saved draft, and a confirmation with the door code and a calendar file
 - **Guest booking with phone OTP** (account created automatically) and phone-OTP login
 - Pickup tracking: status timeline, **4-digit door code**, **live collector map with ETA**,
@@ -48,7 +53,7 @@ log, mock, local file, or OpenStreetMap).
   donation and **certified e-waste disposal certificates**
 - Account: overview with loyalty tier, **wallet** with withdrawals, **eco-impact dashboard**
   (kg, CO₂, trees, badges, shareable card), **referrals** + leaderboard, **recurring
-  pickups**, price alerts, addresses, notification centre, profile (business/GST details,
+  pickups**, price alerts, addresses, notification centre, profile (business PAN/VAT details,
   notification channels, password, theme, language)
 - Business page with bulk-quote requests and volume pricing tiers
 - Floating **AI chat assistant** (Claude, or a rule-based bot without a key) and
@@ -59,10 +64,10 @@ log, mock, local file, or OpenStreetMap).
 - Daily **route** ordered nearest-first on a map, with navigation links and live location sharing
 - Job screen: start trip, running late, arrive, **enter the customer's door code**, weigh each
   item with a **scale photo**, see the customer's accept/dispute live, choose the payout
-  (cash, UPI, bank, wallet) and add evidence photos
+  (cash, eSewa, Khalti, bank, wallet) and add evidence photos
 - **Offline-tolerant weighing**: saved on the phone and synced when the connection returns
 - Earnings: per-pickup commission, weekly bonus progress and weekly statements
-- Settings: working hours and service PIN codes
+- Settings: working hours and service postal codes
 
 **Admin & staff console**
 - Dashboard, **analytics** (revenue, margin vs recycler price, funnel, areas, slots, top
@@ -72,10 +77,10 @@ log, mock, local file, or OpenStreetMap).
 - Customers, collectors and **staff roles** (support / operations / finance) with permissions
 - Categories & items (images, units, CO₂ factors, active toggles), **city prices** with
   bulk % change, copy-city and full price history
-- Service areas & PIN codes, **time slots** (capacity, cutoffs, holidays, closed days)
+- Service areas & postal codes, **time slots** (capacity, cutoffs, holidays, closed days)
 - Coupons, review moderation (featured testimonials), NGO partners, business quotes,
   payouts & withdrawals
-- **Fraud & abuse**: blocklist (phone/email/IP/PIN), duplicate-booking flags,
+- **Fraud & abuse**: blocklist (phone/email/IP/postal code), duplicate-booking flags,
   cancellation and active-booking limits
 - **Audit log** of sensitive actions and **site settings** (support hours, WhatsApp number,
   banners, home stats, AI assistant, rewards, collector pay, fraud limits, pricing)
@@ -96,7 +101,7 @@ log, mock, local file, or OpenStreetMap).
 | Layer | Tech |
 |---|---|
 | Frontend | React 18, Vite, React Router 6, Tailwind CSS (CSS-variable theme, dark mode), Axios, Socket.IO client, Leaflet + OpenStreetMap, lucide icons, react-markdown, react-hot-toast |
-| Backend | Node.js (CommonJS), Express 4, Mongoose 8, JWT, bcryptjs, zod, helmet, express-rate-limit, express-mongo-sanitize, Socket.IO, pino, PDFKit, Nodemailer, Razorpay SDK, web-push, multer/Cloudinary, Anthropic SDK |
+| Backend | Node.js (CommonJS), Express 4, Mongoose 8, JWT, bcryptjs, zod, helmet, express-rate-limit, express-mongo-sanitize, Socket.IO, pino, PDFKit, Nodemailer, Khalti ePayment API, web-push, multer/Cloudinary, Anthropic SDK |
 | Database | MongoDB (local, Atlas, or replica set for transactions) |
 | Tests | Jest + Supertest + mongodb-memory-server, Vitest + Testing Library, Playwright |
 | Ops | Docker, docker compose (MongoDB replica set + API + nginx), GitHub Actions |
@@ -116,7 +121,7 @@ scrapmate/
       services/        bookingService (create/complete/payout), slot, serviceability, rate,
                        coupon, wallet, impact, referral, assignment, fraud, otp, channels
                        (email/SMS/WhatsApp/push), notification, storage, geo, pdf,
-                       paymentGateway (Razorpay/RazorpayX), settings, audit, jobs, chat/*
+                       paymentGateway (Khalti + payout provider), settings, audit, jobs, chat/*
       controllers/     auth, users, addresses, scrap, public, pickups, collector, payments,
                        growth (wallet, referrals, impact, recurring, alerts, quotes, uploads),
                        chat, admin, adminCatalog, adminGrowth, adminSystem, supportAdmin
@@ -186,13 +191,14 @@ fallback:
 
 | Feature | Variables | Without keys |
 |---|---|---|
-| AI chat | `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (default `claude-sonnet-5-5`), `ANTHROPIC_EFFORT`, `ANTHROPIC_FALLBACKS` | Rule-based EN/HI bot on the same data |
-| Phone OTP / SMS | `SMS_PROVIDER` (`twilio`/`msg91`) + provider keys | Code printed to the API console and shown on screen in non-production ("test mode") |
+| AI chat | `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (default `claude-sonnet-5-5`), `ANTHROPIC_EFFORT`, `ANTHROPIC_FALLBACKS` | Rule-based English/Nepali bot on the same data |
+| Phone OTP / SMS | `SMS_PROVIDER` (`sparrow`/`twilio`), `SPARROW_SMS_TOKEN`, `SPARROW_SMS_FROM` (or `TWILIO_*`) | Code printed to the API console and shown on screen in non-production ("test mode") |
 | Email | `SMTP_*` | Logged to the console |
 | WhatsApp notifications | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` | Logged to the console |
-| Payments & payouts | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `RAZORPAYX_ACCOUNT_NUMBER` | Mock orders/payouts, marked "Test mode" in admin |
+| Payments & payouts | `KHALTI_SECRET_KEY`, `KHALTI_BASE_URL` (business invoices); `PAYOUT_PROVIDER_URL`, `PAYOUT_PROVIDER_TOKEN` (eSewa/Khalti/bank payouts) | Mock payments in development; in production unpaid payouts are queued and finance marks them paid in Admin → Finance |
 | Images | `CLOUDINARY_*` | Saved to `backend/uploads` and served by the API |
 | Address search | `MAPS_API_KEY` (Google Geocoding) | OpenStreetMap Nominatim |
+| Country timezone | `APP_TIMEZONE` (default `Asia/Kathmandu`), `APP_UTC_OFFSET` (default `+05:45`) | Nepal time |
 | Web push | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | In-app, email and WhatsApp notifications still work |
 | WhatsApp button | `VITE_WHATSAPP_NUMBER` or Site settings → Support | Opens WhatsApp's contact picker |
 
@@ -207,14 +213,14 @@ Created by `npm run seed` — **development only, never use in production.**
 |---|---|---|
 | Admin | admin@scrapmate.dev | Admin@123 |
 | Staff — support / operations / finance | support@ · ops@ · finance@scrapmate.dev | Staff@123 |
-| Collectors (one per city; `collector1` = Bengaluru) | collector1…11@scrapmate.dev | Collector@123 |
-| Customer | customer@scrapmate.dev (or phone 9999900003 + OTP) | Customer@123 |
+| Collectors (one per city; `collector1` = Kathmandu) | collector1…11@scrapmate.dev | Collector@123 |
+| Customer | customer@scrapmate.dev (or mobile 9800000003 + OTP) | Customer@123 |
 | Business customer | business@scrapmate.dev | Business@123 |
 
-The seed covers 10 cities (Bengaluru, Delhi, Ghaziabad, Noida, Gurugram, Mumbai, Hyderabad,
-Chennai, Pune, Kolkata) with service areas and PIN codes, city prices with recycler prices and
-history, completed pickups with payments and reviews, coupons (`FIRST5`, `BULK50`,
-`DIWALI10`, `EWASTE100`), NGOs, FAQs, a business quote, a recurring plan, a price alert, chat
+The seed covers 10 Nepali cities (Kathmandu, Lalitpur, Bhaktapur, Pokhara, Bharatpur,
+Biratnagar, Dharan, Birgunj, Butwal, Nepalgunj) with service areas and postal codes, NPR prices, city prices with recycler prices and
+history, completed pickups with payments and reviews, coupons (`FIRST5`, `BULK100`,
+`DASHAIN10`, `EWASTE150`), NGOs, FAQs, a business quote, a recurring plan, a price alert, chat
 tickets and funnel events.
 
 **Try:** book as a guest with any phone number (the OTP shows on screen in test mode), then
@@ -266,15 +272,14 @@ PICKUPS     POST /pickups · POST /pickups/guest (phone OTP) · GET /pickups?sta
 COLLECTOR   GET /collector/pickups?view · /collector/route?date · /collector/earnings
             GET /collector/pickups/:id · PUT /collector/pickups/:id/status
             POST /collector/pickups/:id/verify-otp · PUT /collector/pickups/:id/weighing
-            PUT /collector/pickups/:id/complete {payoutMethod, upiId?, bankAccount?}
+            PUT /collector/pickups/:id/complete {payoutMethod: cash|esewa|khalti|bank_transfer|wallet, walletId?, bankAccount?{accountNumber, bankName, branch?, holderName}}
             POST /collector/pickups/:id/late · POST /collector/sync (offline queue)
             PUT /collector/location · PUT /collector/availability
 GROWTH      GET /wallet · POST /wallet/withdraw · GET /referrals · GET /impact
             POST /coupons/validate · CRUD /recurring · CRUD /price-alerts
             POST /quotes · GET /quotes/mine · GET /notifications · PUT /notifications/:id/read
             POST /uploads?folder (images, 5 MB, JPEG/PNG/WebP)
-PAYMENTS    GET /payments · POST /payments/create · POST /payments/verify · GET /payments/:id
-            POST /payments/webhook   (Razorpay, raw body + signature)
+PAYMENTS    GET /payments · POST /payments/create (Khalti) · POST /payments/verify {paymentId, pidx} · GET /payments/:id
 CHAT        GET /chat/config · GET/DELETE /chat/history · POST /chat (SSE) · POST /chat/actions/:id
 ADMIN       (admin, or staff with the matching permission)
             GET /admin/dashboard · /admin/analytics?days&city&format=csv|pdf
@@ -298,7 +303,7 @@ ADMIN       (admin, or staff with the matching permission)
   min/avg/max). The customer can accept or dispute; disputes block completion and open a
   ticket. On completion: bonus = better of coupon or first-pickup bonus, plus loyalty and
   business tier %. The payout goes to the wallet (transactional on replica sets), cash,
-  UPI or bank (RazorpayX). A PDF receipt is emailed.
+  eSewa, Khalti or bank transfer (via `PAYOUT_PROVIDER_URL`, or queued for finance to mark paid). A PDF receipt is emailed.
 - **Roles & permissions.** Customers see only their data; collectors only their assigned
   pickups; staff get role permissions (`support`, `operations`, `finance`); admins get all.
   The AI assistant's tools enforce the same ownership checks.
@@ -317,7 +322,9 @@ ADMIN       (admin, or staff with the matching permission)
 - **Frontend**: `npm run build` → static `dist/` on Vercel/Netlify/Cloudflare/nginx with SPA
   fallback. Set `VITE_API_URL` at build time. The nginx config in `frontend/` shows the
   same-origin proxy setup.
-- Configure the Razorpay webhook URL as `https://<api>/api/payments/webhook`.
+- Set `KHALTI_SECRET_KEY` (live key) and `KHALTI_BASE_URL=https://khalti.com/api/v2` for business
+  invoice payments; Khalti redirects back to `CLIENT_URL/business?paymentId=…` for verification.
+- Register a Sparrow SMS sender ID and set `SMS_PROVIDER=sparrow` for OTPs.
 
 ## 12. Troubleshooting
 
@@ -335,7 +342,7 @@ ADMIN       (admin, or staff with the matching permission)
 
 Be upfront about these before treating ScrapMate as production-ready:
 
-- Third-party integrations (Razorpay/RazorpayX, Twilio/MSG91, WhatsApp Cloud API, Cloudinary,
+- Third-party integrations (Khalti, payout provider, Sparrow SMS/Twilio, WhatsApp Cloud API, Cloudinary,
   Google Geocoding, web push, Anthropic) are implemented against their documented APIs but
   were only exercised in mock/fallback mode here. Test each with sandbox keys before go-live.
 - The AI assistant was tested with the Anthropic SDK mocked, not against the live API.
@@ -345,7 +352,7 @@ Be upfront about these before treating ScrapMate as production-ready:
 - Collector location is shared from the browser only while the route/job screen is open
   (no native background tracking).
 - Offline weighing can't attach scale photos (uploads need a connection).
-- Hindi covers the customer-facing site; admin and collector screens are English (i18n-ready).
+- Nepali covers the customer-facing site; admin and collector screens are English (i18n-ready).
 - CO₂ figures use approximate per-item factors and are labelled as estimates.
 - Analytics "repeat customer rate" is all-time; other metrics follow the selected range.
 - Docker images are defined and the compose file validates, but were not built in the

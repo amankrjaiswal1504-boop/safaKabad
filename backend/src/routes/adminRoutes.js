@@ -106,7 +106,7 @@ router.get('/live-map', can('dispatch', 'pickups'), admin.liveMap);
 // Catalog & prices
 const categoryBody = z.object({
   name: z.string().trim().min(2).max(60),
-  nameHi: z.string().trim().max(60).optional(),
+  nameNe: z.string().trim().max(60).optional(),
   slug: z.string().trim().max(60).optional(),
   description: z.string().trim().max(300).optional(),
   icon: z.string().trim().max(30).optional(),
@@ -119,7 +119,7 @@ const priceFields = { city: z.string().trim().min(2).max(60).optional(), minPric
 const itemBody = z.object({
   categoryId: objectId,
   name: z.string().trim().min(2).max(80),
-  nameHi: z.string().trim().max(80).optional(),
+  nameNe: z.string().trim().max(80).optional(),
   description: z.string().trim().max(300).optional(),
   image: z.string().url().or(z.literal('')).optional(),
   unit: z.enum(['kg', 'piece', 'unit']).default('kg'),
@@ -214,6 +214,7 @@ router.put(
 router.get('/withdrawals', can('withdrawals'), growth.listWithdrawals);
 router.post('/withdrawals/:id', can('withdrawals'), idParam, validate(z.object({ action: z.enum(['approve', 'reject']), note: z.string().max(300).optional() })), growth.processWithdrawal);
 router.get('/payments', can('payments'), growth.listPayments);
+router.put('/payments/:paymentId/mark-paid', can('payments', 'withdrawals'), validate(z.object({ reference: z.string().trim().max(120).optional() })), growth.markPaymentPaid);
 
 // Analytics, settings, audit, fraud
 router.get('/analytics', can('analytics'), system.analytics);
@@ -238,7 +239,7 @@ router.get('/support/tickets', can('support'), support.listTickets);
 router.put('/support/tickets/:ticketId', can('support'), support.updateTicket);
 router.get('/support/analytics', can('support', 'analytics'), support.chatAnalytics);
 router.get('/faqs', can('support'), support.listFaqs);
-router.post('/faqs', can('support'), validate(z.object({ question: z.string().trim().min(5).max(300), answer: z.string().trim().min(5).max(2000), topic: z.string().trim().min(2).max(40), keywords: z.any().optional(), language: z.enum(['en', 'hi']).optional(), order: z.coerce.number().optional(), isActive: z.boolean().optional() })), support.createFaq);
+router.post('/faqs', can('support'), validate(z.object({ question: z.string().trim().min(5).max(300), answer: z.string().trim().min(5).max(2000), topic: z.string().trim().min(2).max(40), keywords: z.any().optional(), language: z.enum(['en', 'ne']).optional(), order: z.coerce.number().optional(), isActive: z.boolean().optional() })), support.createFaq);
 router.put('/faqs/:id', can('support'), support.updateFaq);
 router.delete('/faqs/:id', can('support'), support.deleteFaq);
 

@@ -12,6 +12,7 @@ const { escalateSession } = require('../services/chat/tickets');
 const { cleanString } = require('../services/chat/sanitize');
 const { cancelCustomerPickup, rescheduleCustomerPickup, PickupActionError } = require('../services/pickupService');
 const settings = require('../services/settingsService');
+const { todayLocal } = require('../config/locale');
 
 const CHAT_COOKIE = 'scrapmate_chat';
 const MAX_MESSAGE_LENGTH = 1000;
@@ -79,7 +80,7 @@ function describeCards(cards) {
   return (cards || [])
     .map((c) => {
       if (c.type === 'tracking') return `[Showed tracking card for ${c.pickup?.pickupId}: ${c.pickup?.status}]`;
-      if (c.type === 'estimate') return `[Showed estimate ₹${c.min}-₹${c.max} in ${c.city}]`;
+      if (c.type === 'estimate') return `[Showed estimate Rs. ${c.min}-Rs. ${c.max} in ${c.city}]`;
       if (c.type === 'rates') return `[Showed ${c.rates?.length || 0} rates for ${c.city}]`;
       if (c.type === 'confirm') return `[Showed confirm button: ${c.summary} (${c.state})]`;
       if (c.type === 'handoff') return `[Created support ticket ${c.ticketId}]`;
@@ -109,17 +110,17 @@ function safePage(page) {
 }
 
 function contextNote({ user, defaultCity, page, pagePickupId, lang }) {
-  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+  const today = todayLocal();
   const who = user
     ? `logged in as a ${user.role}, first name "${cleanString(user.name.split(' ')[0]).slice(0, 40)}"`
     : 'not logged in (anonymous visitor)';
   return [
     'Request context from the ScrapMate server (not written by the user):',
-    `- Today: ${today} (India time)`,
+    `- Today: ${today} (Nepal time)`,
     `- User: ${who}`,
     `- Default city for rates: ${defaultCity}`,
     page ? `- Current page: ${page}${pagePickupId ? ` (pickup ${pagePickupId})` : ''}` : null,
-    `- Detected language of latest message: ${lang === 'hi' ? 'Hindi/Hinglish' : 'English'}`,
+    `- Detected language of latest message: ${lang === 'ne' ? 'Nepali' : 'English'}`,
   ]
     .filter(Boolean)
     .join('\n');
@@ -128,8 +129,8 @@ function contextNote({ user, defaultCity, page, pagePickupId, lang }) {
 const HANDOFF_TEXT = {
   en: (id) =>
     `I'm sorry for the trouble. I've passed this to our support team (ticket **${id}**) and they'll get back to you. For a faster reply, continue on WhatsApp:`,
-  hi: (id) =>
-    `असुविधा के लिए माफ़ी चाहते हैं। मैंने आपकी बात हमारी सपोर्ट टीम तक पहुँचा दी है (टिकट **${id}**), वे जल्द संपर्क करेंगे। जल्दी जवाब के लिए WhatsApp पर बात करें:`,
+  ne: (id) =>
+    `असुविधाको लागि माफ गर्नुहोस्। मैले तपाईंको कुरा हाम्रो सहायता टोलीलाई पठाएको छु (टिकट **${id}**), उहाँहरूले चाँडै सम्पर्क गर्नुहुनेछ। छिटो जवाफका लागि WhatsApp मा कुरा गर्नुहोस्:`,
 };
 
 async function buildTicketSummary(session, latestText) {
@@ -390,12 +391,12 @@ const ACTION_TEXT = {
     failed: (msg) => `I couldn't complete that: ${msg}`,
     expired: 'That confirmation has expired. Please ask again.',
   },
-  hi: {
-    cancelled: (id) => `हो गया। पिकअप **${id}** रद्द कर दिया गया है।`,
-    rescheduled: (id, d, s) => `हो गया। पिकअप **${id}** अब **${d}, ${s}** के लिए तय है।`,
-    dismissed: 'ठीक है, मैंने कुछ नहीं बदला।',
-    failed: (msg) => `यह पूरा नहीं हो सका: ${msg}`,
-    expired: 'यह पुष्टि समाप्त हो गई है। कृपया दोबारा पूछें।',
+  ne: {
+    cancelled: (id) => `भयो। पिकअप **${id}** रद्द गरिएको छ।`,
+    rescheduled: (id, d, s) => `भयो। पिकअप **${id}** अब **${d}, ${s}** मा तय भएको छ।`,
+    dismissed: 'ठीक छ, मैले केही परिवर्तन गरिनँ।',
+    failed: (msg) => `यो पूरा गर्न सकिएन: ${msg}`,
+    expired: 'यो पुष्टिको समय सकियो। कृपया फेरि सोध्नुहोस्।',
   },
 };
 

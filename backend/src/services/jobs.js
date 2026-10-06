@@ -79,7 +79,7 @@ async function checkPriceAlerts(itemId, city) {
       await notify(a.user, {
         type: 'price.alert',
         title: `${price.item.name} price alert`,
-        body: `${price.item.name} in ${city} is now ₹${price.minPrice}–₹${price.maxPrice}/${price.item.unit} (your alert: ${a.direction} ₹${a.threshold}).`,
+        body: `${price.item.name} in ${city} is now Rs. ${price.minPrice}–Rs. ${price.maxPrice}/${price.item.unit} (your alert: ${a.direction} Rs. ${a.threshold}).`,
         link: '/rates',
         channels: ['inapp', 'push', 'email', 'whatsapp'],
       });

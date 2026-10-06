@@ -1,21 +1,24 @@
+import { CURRENCY_SYMBOL, DATE_LOCALE, NUMBER_LOCALE, TIMEZONE } from './locale';
+
+// Nepali rupees, e.g. "Rs. 1,23,456". (Name kept short and generic for callers.)
 export const rupees = (n, { decimals = 0 } = {}) =>
-  `₹${Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+  `${CURRENCY_SYMBOL} ${Number(n || 0).toLocaleString(NUMBER_LOCALE, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
 
 export const compact = (n) => {
   const v = Number(n || 0);
   if (v >= 1e7) return `${(v / 1e7).toFixed(1).replace(/\.0$/, '')} Cr`;
   if (v >= 1e5) return `${(v / 1e5).toFixed(1).replace(/\.0$/, '')} L`;
   if (v >= 1e3) return `${(v / 1e3).toFixed(1).replace(/\.0$/, '')}K`;
-  return v.toLocaleString('en-IN');
+  return v.toLocaleString(NUMBER_LOCALE);
 };
 
 export const fmtDate = (d, opts = { day: 'numeric', month: 'short', year: 'numeric' }) =>
-  d ? new Date(d).toLocaleDateString('en-IN', opts) : '—';
+  d ? new Date(d).toLocaleDateString(DATE_LOCALE, { timeZone: TIMEZONE, ...opts }) : '—';
 
 export const fmtDateTime = (d) =>
-  d ? new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '—';
+  d ? new Date(d).toLocaleString(DATE_LOCALE, { timeZone: TIMEZONE, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '—';
 
-export const fmtDay = (iso) => new Date(`${String(iso).slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+export const fmtDay = (iso) => new Date(`${String(iso).slice(0, 10)}T00:00:00`).toLocaleDateString(DATE_LOCALE, { weekday: 'short', day: 'numeric', month: 'short' });
 
 export const timeAgo = (d) => {
   const s = Math.round((Date.now() - new Date(d).getTime()) / 1000);
@@ -49,7 +52,8 @@ export const STATUS_TONE = {
 
 export const unitLabel = (u) => ({ kg: 'kg', piece: 'pc', unit: 'unit' })[u] || u;
 
-export const todayISO = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+// Today's date (YYYY-MM-DD) in Nepal time.
+export const todayISO = () => new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE }).format(new Date());
 
 export const addressLine = (a) =>
   a ? [a.houseNumber, a.street, a.locality, a.city].filter(Boolean).join(', ') + (a.pinCode ? ` – ${a.pinCode}` : '') : '';

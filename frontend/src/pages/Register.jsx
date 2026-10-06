@@ -6,6 +6,7 @@ import { useI18n } from '../i18n/I18nContext';
 import usePageMeta from '../hooks/usePageMeta';
 import AuthShell from '../components/AuthShell';
 import { Button, Field, Input } from '../components/ui';
+import { MOBILE_PLACEHOLDER, isMobile } from '../utils/locale';
 
 export default function Register() {
   const { register, user } = useAuth();
@@ -25,7 +26,7 @@ export default function Register() {
     const e = {};
     if (form.name.trim().length < 2) e.name = 'Enter your name';
     if (!/^\S+@\S+\.\S+$/.test(form.email)) e.email = 'Enter a valid email';
-    if (!/^[6-9]\d{9}$/.test(form.phone.replace(/[\s-]/g, '').replace(/^\+?91(?=\d{10}$)/, ''))) e.phone = 'Enter a valid 10-digit mobile number';
+    if (!isMobile(form.phone)) e.phone = `Enter a valid 10-digit mobile number (${MOBILE_PLACEHOLDER})`;
     if (form.password.length < 8) e.password = 'At least 8 characters';
     setErrors(e);
     return !Object.keys(e).length;

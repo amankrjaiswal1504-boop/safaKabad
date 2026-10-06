@@ -4,7 +4,7 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const g = require('../controllers/growthController');
 const { protect, optionalAuth, authorize } = require('../middleware/auth');
-const { validate, z, objectId, phone } = require('../middleware/validate');
+const { validate, z, objectId, phone, bankAccount, panVat } = require('../middleware/validate');
 const { upload } = require('../services/storageService');
 
 const router = express.Router();
@@ -19,18 +19,13 @@ router.post(
   validate(
     z
       .object({
-        amount: z.coerce.number().min(50, 'Minimum withdrawal is ₹50').max(100000),
-        method: z.enum(['upi', 'bank_transfer']),
-        upiId: z.string().trim().regex(/^[\w.-]{2,}@[a-z]{2,}$/i, 'Enter a valid UPI ID').optional(),
-        bankAccount: z
-          .object({
-            accountNumber: z.string().regex(/^\d{9,18}$/, 'Invalid account number'),
-            ifsc: z.string().trim().toUpperCase().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Invalid IFSC'),
-            holderName: z.string().trim().min(2).max(80),
-          })
-          .optional(),
+        amount: z.coerce.number().min(50, 'Minimum withdrawal is Rs. 50').max(100000),
+        method: z.enum(['esewa', 'khalti', 'bank_transfer']),
+        // eSewa / Khalti ID = registered mobile number
+        walletId: phone.optional(),
+        bankAccount: bankAccount.optional(),
       })
-      .refine((v) => (v.method === 'upi' ? v.upiId : v.bankAccount), 'Add your UPI ID or bank details')
+      .refine((v) => (v.method === 'bank_transfer' ? v.bankAccount : v.walletId), 'Add your eSewa/Khalti ID or bank details')
   ),
   g.requestWithdrawal
 );
@@ -105,7 +100,7 @@ router.post(
       phone,
       email: z.union([z.string().trim().email(), z.literal('')]).optional(),
       city: z.string().trim().min(2).max(60),
-      gstin: z.string().trim().max(15).optional(),
+      panVat: panVat.optional(),
       businessType: z.enum(['kirana', 'office', 'society', 'factory', 'other']).default('other'),
       description: z.string().trim().min(10, 'Tell us a little about the scrap').max(2000),
       estimatedQuantityKg: z.coerce.number().min(0).max(10000000).default(0),

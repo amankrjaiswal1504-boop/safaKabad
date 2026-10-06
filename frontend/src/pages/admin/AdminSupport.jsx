@@ -111,7 +111,7 @@ function Conversations() {
                         {c.resolved && <Badge tone="patina">Resolved</Badge>}
                         {c.ticket && <Badge tone="blue">{c.ticket.ticketId}</Badge>}
                         <Badge>{c.messageCount} msgs</Badge>
-                        {c.language === 'hi' && <Badge>Hindi</Badge>}
+                        {c.language === 'ne' && <Badge>Nepali</Badge>}
                       </div>
                     </div>
                   </button>

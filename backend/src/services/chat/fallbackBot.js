@@ -6,25 +6,28 @@ const ScrapItem = require('../../models/ScrapItem');
 const { runTool } = require('./tools');
 const { classifyTopic, extractPickupId } = require('./classifier');
 const { findItemsInText, pickCity } = require('./catalog');
+const { money } = require('../../config/locale');
 
 const T = {
   en: {
     greeting:
-      "Hi! I'm the ScrapMate Assistant. I can check scrap rates, estimate your payout, help you book or track a pickup, and answer payment questions. What would you like to do?",
+      "Namaste! I'm the ScrapMate Assistant. I can check scrap rates, estimate your payout, help you book or track a pickup, and answer payment questions. What would you like to do?",
     ratesFor: (city) => `Here are the current indicative rates in **${city}**. The final amount depends on actual weight at pickup.`,
     ratesNone: (city) => `I couldn't find rates for that in **${city}**. You can see the full list on the [rates page](/rates).`,
     ratesGeneric: (city) =>
       `Here are some current indicative rates in **${city}**. Tell me an item (e.g. "copper rate") or see the full list on the [rates page](/rates).`,
     estimate: (min, max) =>
-      `Your estimated payout is **₹${inr(min)} – ₹${inr(max)}**. This is an estimate; the final amount is based on the actual weight at pickup.`,
+      `Your estimated payout is **${money(min)} – ${money(max)}**. This is an estimate; the final amount is based on the actual weight at pickup.`,
     book:
       'Booking takes about a minute: pick your items, add quantities, choose an address and a time slot. Pickup is free.',
     loginNeeded: 'Please log in so I can look up your pickups.',
     noPickups: "You don't have any pickups yet. Would you like to book one?",
     latestPickup: 'Here is your most recent pickup:',
+    latestFor: (id) => `Here's the latest on **${id}**:`,
     trackNotFound: (id) => `I couldn't find pickup ${id} on your account. Please check the ID.`,
     askPickupId: 'Which pickup? Here are your recent ones. Reply with the pickup ID (like SM-2026-000123).',
     confirmCancel: (id) => `Do you want to cancel pickup **${id}**? Press **Confirm** below to go ahead.`,
+    confirmMove: 'Press **Confirm** below to move your pickup.',
     cannotChange: (msg) => `I can't do that: ${msg}`,
     reschedHelp: (id) =>
       `To reschedule **${id}**, tell me the new date and slot, for example: "reschedule ${id} to 2026-10-12 11:00 AM - 1:00 PM". Available slots:`,
@@ -33,43 +36,47 @@ const T = {
     slots: (date, slots) => `Pickup slots for ${date}:\n${slots}`,
     faq: (q, a) => `**${q}**\n\n${a}`,
     payment:
-      'You can be paid by **cash, UPI or bank transfer** right after the collector weighs your scrap. A digital receipt is created for every completed pickup.',
+      'You can be paid by **cash, eSewa, Khalti or bank transfer** right after the collector weighs your scrap. A digital receipt is created for every completed pickup.',
+    bookLabel: 'Book a pickup',
+    ratesLabel: 'See all rates',
     unknown:
       "Sorry, I didn't quite get that. I can help with scrap rates, estimates, booking, tracking a pickup, and payments. You can also talk to our team on WhatsApp.",
   },
-  hi: {
+  ne: {
     greeting:
-      'नमस्ते! मैं ScrapMate असिस्टेंट हूँ। मैं कबाड़ के रेट, अनुमानित कीमत, पिकअप बुक या ट्रैक करने और भुगतान से जुड़े सवालों में मदद कर सकता हूँ। आप क्या करना चाहेंगे?',
-    ratesFor: (city) => `**${city}** में अभी के अनुमानित रेट ये हैं। अंतिम राशि पिकअप पर असली वज़न से तय होगी।`,
-    ratesNone: (city) => `**${city}** में इसका रेट नहीं मिला। पूरी सूची [रेट पेज](/rates) पर देखें।`,
+      'नमस्ते! म ScrapMate सहायक हुँ। म कबाडीको भाउ, अनुमानित रकम, पिकअप बुक वा ट्र्याक गर्न र भुक्तानी सम्बन्धी प्रश्नमा मद्दत गर्न सक्छु। तपाईं के गर्न चाहनुहुन्छ?',
+    ratesFor: (city) => `**${city}** मा अहिलेको अनुमानित भाउ यस्तो छ। अन्तिम रकम पिकअपमा वास्तविक तौल अनुसार हुन्छ।`,
+    ratesNone: (city) => `**${city}** मा यसको भाउ भेटिएन। पूरा सूची [भाउ पेज](/rates) मा हेर्नुहोस्।`,
     ratesGeneric: (city) =>
-      `**${city}** के कुछ मौजूदा अनुमानित रेट ये हैं। किसी आइटम का नाम बताइए (जैसे "तांबा रेट") या पूरी सूची [रेट पेज](/rates) पर देखें।`,
+      `**${city}** का केही हालको अनुमानित भाउ यस्ता छन्। सामानको नाम लेख्नुहोस् (जस्तै "तामाको भाउ") वा पूरा सूची [भाउ पेज](/rates) मा हेर्नुहोस्।`,
     estimate: (min, max) =>
-      `आपकी अनुमानित कमाई **₹${inr(min)} – ₹${inr(max)}** है। यह सिर्फ़ अनुमान है; अंतिम राशि पिकअप पर असली वज़न से तय होगी।`,
-    book: 'बुकिंग में लगभग एक मिनट लगता है: आइटम चुनें, मात्रा डालें, पता और समय चुनें। पिकअप मुफ़्त है।',
-    loginNeeded: 'अपने पिकअप देखने के लिए कृपया लॉग इन करें।',
-    noPickups: 'आपका अभी कोई पिकअप नहीं है। क्या आप एक बुक करना चाहेंगे?',
-    latestPickup: 'आपका सबसे हाल का पिकअप:',
-    trackNotFound: (id) => `आपके खाते में पिकअप ${id} नहीं मिला। कृपया ID जाँच लें।`,
-    askPickupId: 'कौन सा पिकअप? आपके हाल के पिकअप ये हैं। पिकअप ID भेजें (जैसे SM-2026-000123)।',
-    confirmCancel: (id) => `क्या आप पिकअप **${id}** रद्द करना चाहते हैं? आगे बढ़ने के लिए नीचे **Confirm** दबाएँ।`,
-    cannotChange: (msg) => `यह नहीं हो सकता: ${msg}`,
+      `तपाईंको अनुमानित रकम **${money(min)} – ${money(max)}** हो। यो अनुमान मात्र हो; अन्तिम रकम पिकअपमा वास्तविक तौल अनुसार हुन्छ।`,
+    book: 'बुकिङ गर्न करिब एक मिनेट लाग्छ: सामान छान्नुहोस्, परिमाण राख्नुहोस्, ठेगाना र समय छान्नुहोस्। पिकअप निःशुल्क छ।',
+    loginNeeded: 'तपाईंको पिकअप हेर्न कृपया लगइन गर्नुहोस्।',
+    noPickups: 'तपाईंको अहिलेसम्म कुनै पिकअप छैन। एउटा बुक गर्नुहुन्छ?',
+    latestPickup: 'तपाईंको पछिल्लो पिकअप:',
+    latestFor: (id) => `**${id}** को ताजा अवस्था:`,
+    trackNotFound: (id) => `तपाईंको खातामा पिकअप ${id} भेटिएन। कृपया ID जाँच गर्नुहोस्।`,
+    askPickupId: 'कुन पिकअप? तपाईंका पछिल्ला पिकअपहरू यी हुन्। पिकअप ID पठाउनुहोस् (जस्तै SM-2026-000123)।',
+    confirmCancel: (id) => `के तपाईं पिकअप **${id}** रद्द गर्न चाहनुहुन्छ? अगाडि बढ्न तल **Confirm** थिच्नुहोस्।`,
+    confirmMove: 'नयाँ समय पक्का गर्न तल **Confirm** थिच्नुहोस्।',
+    cannotChange: (msg) => `यो गर्न मिलेन: ${msg}`,
     reschedHelp: (id) =>
-      `**${id}** का समय बदलने के लिए नई तारीख और स्लॉट बताइए, जैसे: "reschedule ${id} to 2026-10-12 11:00 AM - 1:00 PM"। उपलब्ध स्लॉट:`,
-    catalog: (cats) => `हम ये चीज़ें लेते हैं:\n${cats}\n\nकिसी भी आइटम का रेट पूछें या पिकअप बुक करें।`,
-    areas: (cities) => `हम अभी इन शहरों में पिकअप करते हैं: **${cities}**।`,
-    slots: (date, slots) => `${date} के पिकअप स्लॉट:\n${slots}`,
+      `**${id}** को समय सार्न नयाँ मिति र स्लट लेख्नुहोस्, जस्तै: "reschedule ${id} to 2026-10-12 11:00 AM - 1:00 PM"। उपलब्ध स्लटहरू:`,
+    catalog: (cats) => `हामी यी सामान लिन्छौं:\n${cats}\n\nकुनै पनि सामानको भाउ सोध्नुहोस् वा पिकअप बुक गर्नुहोस्।`,
+    areas: (cities) => `हामी अहिले यी सहरहरूमा पिकअप गर्छौं: **${cities}**।`,
+    slots: (date, slots) => `${date} का पिकअप स्लटहरू:\n${slots}`,
     faq: (q, a) => `**${q}**\n\n${a}`,
     payment:
-      'कलेक्टर के वज़न करने के तुरंत बाद आपको **कैश, UPI या बैंक ट्रांसफ़र** से भुगतान मिलता है। हर पूरे पिकअप की डिजिटल रसीद बनती है।',
+      'कलेक्टरले तौलिएपछि तुरुन्तै **नगद, eSewa, Khalti वा बैंक ट्रान्सफर** बाट भुक्तानी पाउनुहुन्छ। हरेक पूरा भएको पिकअपको डिजिटल रसिद बन्छ।',
+    bookLabel: 'पिकअप बुक गर्नुहोस्',
+    ratesLabel: 'सबै भाउ हेर्नुहोस्',
     unknown:
-      'माफ़ कीजिए, मैं समझ नहीं पाया। मैं रेट, अनुमान, बुकिंग, पिकअप ट्रैकिंग और भुगतान में मदद कर सकता हूँ। आप WhatsApp पर हमारी टीम से भी बात कर सकते हैं।',
+      'माफ गर्नुहोस्, मैले बुझिनँ। म भाउ, अनुमान, बुकिङ, पिकअप ट्र्याकिङ र भुक्तानीमा मद्दत गर्न सक्छु। तपाईं WhatsApp मा हाम्रो टोलीसँग पनि कुरा गर्न सक्नुहुन्छ।',
   },
 };
 
-const inr = (n) => Math.round(n).toLocaleString('en-IN');
-
-const QTY_RE = /(\d+(?:\.\d+)?)\s*(kg|kgs|kilo|kilos|किलो|pcs|pieces?|piece|nos|units?)?/i;
+const QTY_RE = /(\d+(?:\.\d+)?)\s*(kg|kgs|kilo|kilos|केजी|किलो|pcs|pieces?|piece|nos|wata|वटा|units?)?/i;
 
 function bulletList(lines) {
   return lines.map((l) => `- ${l}`).join('\n');
@@ -79,13 +86,14 @@ function isoDateFromText(text) {
   const m = text.match(/\b(\d{4}-\d{2}-\d{2})\b/);
   if (m) return m[1];
   const d = new Date();
-  if (/\b(tomorrow|kal)\b|कल/i.test(text)) d.setDate(d.getDate() + 1);
+  if (/\b(tomorrow|bholi)\b|भोलि/i.test(text)) d.setDate(d.getDate() + 1);
   return d.toISOString().split('T')[0];
 }
 
 // "10 kg newspaper and 2 fridge" -> [{ item: 'Newspaper', quantity: 10 }, ...]
 async function parseQuantities(text) {
-  const parts = text.split(/,|\band\b|\baur\b|और|\+|;/i);
+  // "and" / Nepali "र", "अनि" only as whole words (र appears inside many words).
+  const parts = text.split(/,|\band\b|\bra\b|\sर\s|\bani\b|\sअनि\s|\+|;/i);
   const out = [];
   for (const part of parts) {
     const q = part.match(QTY_RE);
@@ -112,7 +120,7 @@ async function reply({ text, lang, ctx }) {
       await runTool('get_my_pickups', {}, ctx);
       return say(t.askPickupId);
     }
-    if (/reschedul|change|postpone|बदल/i.test(text)) {
+    if (/reschedul|change|postpone|sarnu|सार्नु|बदल/i.test(text)) {
       const slotMatch = text.match(/\d{1,2}:\d{2}\s*[AP]M\s*-\s*\d{1,2}:\d{2}\s*[AP]M/i);
       const dateMatch = text.match(/\b\d{4}-\d{2}-\d{2}\b/);
       if (slotMatch && dateMatch) {
@@ -122,7 +130,7 @@ async function reply({ text, lang, ctx }) {
           ctx
         );
         if (result.error) return say(t.cannotChange(result.message));
-        return say(lang === 'hi' ? 'नीचे **Confirm** दबाकर नया समय पक्का करें।' : 'Press **Confirm** below to move your pickup.');
+        return say(t.confirmMove);
       }
       const { result } = await runTool('get_time_slots', { date: isoDateFromText(text) }, ctx);
       return say(`${t.reschedHelp(pickupId)}\n${bulletList(result.slots || [])}`);
@@ -140,11 +148,11 @@ async function reply({ text, lang, ctx }) {
     if (pickupId) {
       const { result } = await runTool('track_pickup', { pickup_id: pickupId }, ctx);
       if (result.error) return say(t.trackNotFound(pickupId));
-      return say(lang === 'hi' ? `**${pickupId}** की ताज़ा स्थिति:` : `Here's the latest on **${pickupId}**:`);
+      return say(t.latestFor(pickupId));
     }
     const { result } = await runTool('get_my_pickups', {}, ctx);
     if (!result.pickups?.length) {
-      ctx.cards.push({ type: 'link', label: lang === 'hi' ? 'पिकअप बुक करें' : 'Book a pickup', to: '/schedule-pickup' });
+      ctx.cards.push({ type: 'link', label: t.bookLabel, to: '/schedule-pickup' });
       return say(t.noPickups);
     }
     // Show the most relevant one as a tracking card instead of the whole list.
@@ -183,7 +191,7 @@ async function reply({ text, lang, ctx }) {
   }
 
   if (topic === 'booking') {
-    ctx.cards.push({ type: 'link', label: lang === 'hi' ? 'पिकअप बुक करें' : 'Book a pickup', to: '/schedule-pickup' });
+    ctx.cards.push({ type: 'link', label: t.bookLabel, to: '/schedule-pickup' });
     return say(t.book);
   }
 
@@ -194,7 +202,7 @@ async function reply({ text, lang, ctx }) {
       const items = await ScrapItem.find({ category: c._id, isActive: true }).limit(6).lean();
       lines.push(`**${c.name}**: ${items.map((i) => i.name).join(', ')}`);
     }
-    ctx.cards.push({ type: 'link', label: lang === 'hi' ? 'सभी रेट देखें' : 'See all rates', to: '/rates' });
+    ctx.cards.push({ type: 'link', label: t.ratesLabel, to: '/rates' });
     return say(t.catalog(bulletList(lines)));
   }
 

@@ -10,7 +10,7 @@ export default function AuthShell({ title, subtitle, children, footer }) {
           <div className="relative">
             <h2 className="font-head text-3xl font-bold leading-tight">Turn clutter into cash, without leaving home.</h2>
             <ul className="mt-8 space-y-3 text-[#dfe3e6]">
-              {['Free doorstep pickup in 10 cities', 'Rates you can see before you book', 'Weighed in front of you, with photos', 'Paid instantly: UPI, bank, cash or wallet'].map((x) => (
+              {['Free doorstep pickup in 10 cities', 'Rates you can see before you book', 'Weighed in front of you, with photos', 'Paid instantly: eSewa, Khalti, bank, cash or wallet'].map((x) => (
                 <li key={x} className="flex items-center gap-2.5 text-sm">
                   <CheckCircle2 className="w-4 h-4 text-[#7fd39a] shrink-0" aria-hidden /> {x}
                 </li>

@@ -204,7 +204,7 @@ function PriceList({ city, categories, canEdit, onHistory }) {
     },
     ...['minPrice', 'maxPrice', 'recyclerPrice'].map((k) => ({
       key: k,
-      header: { minPrice: 'Min ₹', maxPrice: 'Max ₹', recyclerPrice: 'Recycler ₹' }[k],
+      header: { minPrice: 'Min (Rs.)', maxPrice: 'Max (Rs.)', recyclerPrice: 'Recycler (Rs.)' }[k],
       render: (i) => {
         const err = errorsById[i._id];
         const invalid = !!err && (k !== 'recyclerPrice' || (!isBlank(val(i, k)) && val(i, k) < 0));
@@ -389,7 +389,7 @@ function BulkModal({ city, categories, onClose, onDone }) {
         {!isBlank(percent) && percent !== 0 && (
           <Callout icon={up ? TrendingUp : TrendingDown} tone={up ? 'patina' : 'amber'}>
             {up ? 'Raise' : 'Lower'} min and max prices of {catName ? <strong>{catName}</strong> : 'every priced item'} in <strong>{city}</strong> by{' '}
-            <strong>{Math.abs(percent)}%</strong>. ₹100 becomes {rupees(100 * (1 + percent / 100), { decimals: 2 })}.
+            <strong>{Math.abs(percent)}%</strong>. {rupees(100)} becomes {rupees(100 * (1 + percent / 100), { decimals: 2 })}.
           </Callout>
         )}
         <p className="text-xs text-steel-500">

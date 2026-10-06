@@ -18,6 +18,7 @@ const { receiptPdf, certificatePdf } = require('../services/pdfService');
 const { notifyAdmins, notify } = require('../services/notificationService');
 const { generateTicketId } = require('../services/chat/tickets');
 const { emitTo } = require('../socket');
+const { TIMEZONE } = require('../config/locale');
 
 function sendError(res, err, next) {
   if (err instanceof BookingError || err instanceof PickupActionError || err instanceof OtpError || err.status) {
@@ -143,7 +144,7 @@ async function decideAmount(req, res, next) {
         ticketId: generateTicketId(),
         user: req.user._id,
         pickupId: pickup.pickupId,
-        summary: `Weighing dispute on ${pickup.pickupId} (₹${pickup.finalAmount}): ${note || 'no details'}`.slice(0, 2000),
+        summary: `Weighing dispute on ${pickup.pickupId} (Rs. ${pickup.finalAmount}): ${note || 'no details'}`.slice(0, 2000),
         reason: 'other',
       });
       await notifyAdmins({ type: 'dispute', title: 'Weighing disputed', body: `${pickup.pickupId}: ${note || ''}`, link: '/admin/support' });
@@ -207,8 +208,8 @@ async function calendarFile(req, res, next) {
       'BEGIN:VEVENT',
       `UID:${pickup.pickupId}@scrapmate`,
       `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
-      `DTSTART;TZID=Asia/Kolkata:${day}T${pad(startH)}0000`,
-      `DTEND;TZID=Asia/Kolkata:${day}T${pad(startH + 2)}0000`,
+      `DTSTART;TZID=${TIMEZONE}:${day}T${pad(startH)}0000`,
+      `DTEND;TZID=${TIMEZONE}:${day}T${pad(startH + 2)}0000`,
       `SUMMARY:ScrapMate pickup ${pickup.pickupId}`,
       `DESCRIPTION:Scrap pickup (${pickup.items.map((i) => i.itemName).join('\\, ')}). Track: ${process.env.CLIENT_URL || 'http://localhost:5173'}/pickups/${pickup.pickupId}`,
       `LOCATION:${location}`,
@@ -274,7 +275,7 @@ async function certificate(req, res, next) {
         certificateNo: `EW-${pickup.pickupId}`,
         recipient,
         statement:
-          'handed over the electronic waste listed below to ScrapMate for environmentally sound recycling through authorised recycling partners, in line with the E-Waste (Management) Rules, 2022.',
+          'handed over the electronic waste listed below to ScrapMate for environmentally sound recycling through authorised recycling partners, in line with the Solid Waste Management Act, 2068 (2011) and the Environment Protection Act, 2076 (2019) of Nepal.',
         lines: [['Pickup', pickup.pickupId], ...lines.filter(([name]) => ewasteNames.has(name))],
         issuedOn: pickup.completedAt,
       });

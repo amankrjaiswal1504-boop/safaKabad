@@ -72,7 +72,7 @@ export default function Overview() {
 
       <div className="grid sm:grid-cols-3 gap-4 mb-6">
         <Link to="/wallet" className="block">
-          <Stat label={t('dash.wallet')} value={wallet ? rupees(wallet.balance, { decimals: 0 }) : '—'} icon={Wallet} tone="patina" hint="Withdraw to UPI or bank" />
+          <Stat label={t('dash.wallet')} value={wallet ? rupees(wallet.balance, { decimals: 0 }) : '—'} icon={Wallet} tone="patina" hint="Withdraw to eSewa, Khalti or bank" />
         </Link>
         <Link to="/impact" className="block">
           <Stat label="Recycled" value={impact ? `${impact.kg} kg` : '—'} icon={Leaf} tone="patina" hint={impact ? `${impact.co2Kg} kg CO₂ avoided` : ''} />

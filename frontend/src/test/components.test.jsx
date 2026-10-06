@@ -12,14 +12,14 @@ import { I18nProvider } from '../i18n/I18nContext';
 // ---- API mock for components that fetch ----
 const apiMock = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn() }));
 vi.mock('../services/api', () => ({ default: apiMock, download: vi.fn(), uploadPhotos: vi.fn(), API_URL: 'http://x/api', API_ORIGIN: 'http://x' }));
-vi.mock('../context/ConfigContext', () => ({ useConfig: () => ({ city: 'Bengaluru', cities: ['Bengaluru'], config: {} }) }));
+vi.mock('../context/ConfigContext', () => ({ useConfig: () => ({ city: 'Kathmandu', cities: ['Kathmandu'], config: {} }) }));
 
 describe('format utils', () => {
-  it('formats rupees with Indian grouping', () => {
-    expect(rupees(123456)).toBe('₹1,23,456');
-    expect(rupees(12.5, { decimals: 2 })).toBe('₹12.50');
+  it('formats Nepali rupees with lakh grouping', () => {
+    expect(rupees(123456)).toBe('Rs. 1,23,456');
+    expect(rupees(12.5, { decimals: 2 })).toBe('Rs. 12.50');
   });
-  it('compacts large numbers the Indian way', () => {
+  it('compacts large numbers in lakh/crore', () => {
     expect(compact(1500)).toBe('1.5K');
     expect(compact(250000)).toBe('2.5 L');
   });
@@ -111,8 +111,8 @@ describe('Estimator', () => {
         </Routes>
       </MemoryRouter>
     );
-    expect(await screen.findByText('₹120 – ₹140')).toBeInTheDocument();
-    expect(apiMock.post).toHaveBeenCalledWith('/scrap/estimate', expect.objectContaining({ city: 'Bengaluru' }));
+    expect(await screen.findByText('Rs. 120 – Rs. 140')).toBeInTheDocument();
+    expect(apiMock.post).toHaveBeenCalledWith('/scrap/estimate', expect.objectContaining({ city: 'Kathmandu' }));
     fireEvent.click(screen.getByRole('button', { name: /book this pickup/i }));
     await waitFor(() => expect(screen.getByTestId('where').textContent).toContain(`/schedule-pickup?items=${encodeURIComponent(`${'a'.repeat(24)}:10`)}`));
   });

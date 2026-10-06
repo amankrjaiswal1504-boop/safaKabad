@@ -1,13 +1,14 @@
 // PDF documents (receipts, certificates, reports) with PDFKit. The built-in
 // Helvetica font has no rupee glyph, so amounts are written as "Rs.".
 const PDFDocument = require('pdfkit');
+const { TIMEZONE } = require('../config/locale');
 
 const BRAND = '#A44A2A';
 const INK = '#23262B';
 const MUTED = '#5C6670';
 
 const rs = (n) => `Rs. ${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
-const date = (d) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+const date = (d) => new Date(d).toLocaleDateString('en-GB', { timeZone: TIMEZONE, day: 'numeric', month: 'long', year: 'numeric' });
 
 function toBuffer(build) {
   return new Promise((resolve, reject) => {
@@ -127,7 +128,7 @@ function reportPdf({ title, subtitle, sections }) {
         });
       }
     });
-    footer(doc, `Generated ${new Date().toLocaleString('en-IN')}`);
+    footer(doc, `Generated ${new Date().toLocaleString('en-GB', { timeZone: TIMEZONE })} (Nepal time)`);
   });
 }
 

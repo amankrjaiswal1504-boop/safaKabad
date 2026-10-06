@@ -28,7 +28,7 @@ function TrendModal({ rate, city, onClose }) {
     setSaving(true);
     try {
       await api.post('/price-alerts', { itemId: rate.itemId, city, direction, threshold: Number(threshold) });
-      toast.success(`We'll notify you when ${rate.name} goes ${direction} ₹${threshold}`);
+      toast.success(`We'll notify you when ${rate.name} goes ${direction} Rs. ${threshold}`);
       onClose();
     } catch (err) {
       toast.error(err.message);
@@ -74,7 +74,7 @@ function TrendModal({ rate, city, onClose }) {
                   </Select>
                 )}
               </Field>
-              <Field label={`Amount (₹ per ${unitLabel(rate.unit)})`}>
+              <Field label={`Amount (Rs. per ${unitLabel(rate.unit)})`}>
                 {(id) => <Input id={id} type="number" min="1" required value={threshold} onChange={(e) => setThreshold(e.target.value)} placeholder={String(rate.maxPrice + 10)} />}
               </Field>
               <Button type="submit" loading={saving} icon={Bell}>
@@ -97,7 +97,7 @@ export function RatesTable({ city, category, search, compactView }) {
     if (!rates) return [];
     const q = search.trim().toLowerCase();
     return rates.filter(
-      (r) => (category === 'all' || r.category?.slug === category) && (!q || r.name.toLowerCase().includes(q) || (r.nameHi || '').includes(q))
+      (r) => (category === 'all' || r.category?.slug === category) && (!q || r.name.toLowerCase().includes(q) || (r.nameNe || '').includes(q))
     );
   }, [rates, category, search]);
   const grouped = useMemo(() => {

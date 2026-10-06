@@ -6,6 +6,7 @@ import { useDebounce } from '../hooks/useApi';
 import { Button, Field, Input, Select, cx } from './ui';
 import MapView from './MapView';
 import { useI18n } from '../i18n/I18nContext';
+import { POSTAL_CODE_LABEL, POSTAL_CODE_RE, PROVINCES } from '../utils/locale';
 
 const EMPTY = { houseNumber: '', street: '', locality: '', city: '', state: '', pinCode: '', landmark: '', addressType: 'home', location: null };
 
@@ -38,7 +39,7 @@ export default function AddressForm({ initial, onSubmit, onCancel, submitLabel =
   }, [q]);
 
   useEffect(() => {
-    if (!/^\d{6}$/.test(form.pinCode)) {
+    if (!POSTAL_CODE_RE.test(form.pinCode)) {
       setService(null);
       return;
     }
@@ -93,8 +94,8 @@ export default function AddressForm({ initial, onSubmit, onCancel, submitLabel =
     if (!form.street.trim()) e.street = 'Required';
     if (!form.locality.trim()) e.locality = 'Required';
     if (!form.city.trim()) e.city = 'Required';
-    if (!form.state.trim()) e.state = 'Required';
-    if (!/^\d{6}$/.test(form.pinCode)) e.pinCode = 'Enter a 6-digit PIN code';
+    if (!form.state.trim()) e.state = 'Choose your province';
+    if (!POSTAL_CODE_RE.test(form.pinCode)) e.pinCode = 'Enter a 5-digit postal code';
     setErrors(e);
     return !Object.keys(e).length;
   }
@@ -162,12 +163,21 @@ export default function AddressForm({ initial, onSubmit, onCancel, submitLabel =
         <Field label="City" required error={errors.city}>
           {(id) => <Input id={id} value={form.city} onChange={(e) => set('city', e.target.value)} invalid={!!errors.city} autoComplete="address-level2" />}
         </Field>
-        <Field label="State" required error={errors.state}>
-          {(id) => <Input id={id} value={form.state} onChange={(e) => set('state', e.target.value)} invalid={!!errors.state} autoComplete="address-level1" />}
-        </Field>
-        <Field label="PIN code" required error={errors.pinCode}>
+        <Field label="Province" required error={errors.state}>
           {(id) => (
-            <Input id={id} value={form.pinCode} inputMode="numeric" maxLength={6} onChange={(e) => set('pinCode', e.target.value.replace(/\D/g, ''))} invalid={!!errors.pinCode} autoComplete="postal-code" />
+            <Select id={id} value={form.state} onChange={(e) => set('state', e.target.value)} invalid={!!errors.state} autoComplete="address-level1">
+              <option value="">Select province</option>
+              {PROVINCES.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+        <Field label={POSTAL_CODE_LABEL} required error={errors.pinCode}>
+          {(id) => (
+            <Input id={id} value={form.pinCode} inputMode="numeric" maxLength={5} onChange={(e) => set('pinCode', e.target.value.replace(/\D/g, ''))} invalid={!!errors.pinCode} autoComplete="postal-code" />
           )}
         </Field>
         <Field label="Address type">

@@ -6,7 +6,7 @@ const faqSchema = new mongoose.Schema(
     answer: { type: String, required: true },
     topic: { type: String, required: true, trim: true, lowercase: true, index: true },
     keywords: { type: [String], default: [] },
-    language: { type: String, enum: ['en', 'hi'], default: 'en' },
+    language: { type: String, enum: ['en', 'ne'], default: 'en' },
     order: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
   },

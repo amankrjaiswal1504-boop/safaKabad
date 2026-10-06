@@ -63,10 +63,10 @@ const pickupSchema = new mongoose.Schema(
       at: Date,
     },
     payout: {
-      method: { type: String, enum: ['cash', 'upi', 'bank_transfer', 'wallet', null], default: null },
+      method: { type: String, enum: ['cash', 'esewa', 'khalti', 'bank_transfer', 'wallet', null], default: null },
       status: { type: String, enum: ['pending', 'processing', 'paid', 'failed', null], default: null },
       reference: String,
-      upiId: String,
+      walletId: String, // customer's eSewa / Khalti ID (their mobile number)
       paidAt: Date,
     },
     coupon: { code: String, bonusAmount: Number },

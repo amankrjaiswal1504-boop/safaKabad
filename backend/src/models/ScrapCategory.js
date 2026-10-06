@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const scrapCategorySchema = new mongoose.Schema(
   {
     name: { type: String, required: true, unique: true, trim: true },
-    nameHi: { type: String, default: '' },
+    nameNe: { type: String, default: '' },
     slug: { type: String, required: true, unique: true, lowercase: true },
     description: { type: String, default: '' },
     icon: { type: String, default: '' }, // icon key used by the frontend (e.g. "paper", "ewaste")
