@@ -368,5 +368,3 @@ Be upfront about these before treating ScrapMate as production-ready:
   development environment used here (Docker daemon not running); CI builds them.
 - Lighthouse scores were not measured; performance work done: route-level code splitting,
   vendor chunking, API caching for rates, DB indexes, lazy images.
-#   s a f a K a b a d  
- 
