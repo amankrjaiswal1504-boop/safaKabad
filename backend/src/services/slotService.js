@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Pickup = require('../models/Pickup');
 const settings = require('./settingsService');
 
@@ -31,7 +32,7 @@ function dayRange(iso) {
 }
 
 // Availability for a date: each slot with remaining capacity and why it's closed.
-async function getAvailability(date, { pinCode, excludePickupId } = {}) {
+async function getAvailability(date, { areaId, pinCode, excludePickupId } = {}) {
   const cfg = await settings.get('slots');
   const today = todayLocal();
   const result = { date, open: true, reason: null, slots: [] };
@@ -45,8 +46,10 @@ async function getAvailability(date, { pinCode, excludePickupId } = {}) {
 
   const filter = { scheduledDate: dayRange(date), status: { $ne: 'CANCELLED' } };
   if (excludePickupId) filter.pickupId = { $ne: excludePickupId };
-  // Capacity is per PIN code when one is given; otherwise global.
-  if (pinCode) filter.pinCode = pinCode;
+  // Capacity is per service area (municipality); per postal code for older
+  // addresses without an area; otherwise global.
+  if (areaId && mongoose.isValidObjectId(areaId)) filter.area = new mongoose.Types.ObjectId(String(areaId));
+  else if (pinCode) filter.pinCode = pinCode;
   const booked = await Pickup.aggregate([{ $match: filter }, { $group: { _id: '$timeSlot', count: { $sum: 1 } } }]);
   const bookedBySlot = Object.fromEntries(booked.map((b) => [b._id, b.count]));
 

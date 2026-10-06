@@ -2,6 +2,7 @@ const Pickup = require('../models/Pickup');
 const User = require('../models/User');
 const ScrapPrice = require('../models/ScrapPrice');
 const ScrapItem = require('../models/ScrapItem');
+const { ServiceArea } = require('../models/platform');
 const settings = require('../services/settingsService');
 const { completePickup, BookingError } = require('../services/bookingService');
 const { pickupStatusChanged, notify } = require('../services/notificationService');
@@ -156,12 +157,15 @@ async function applyWeighing(pickup, weighedItems, rateChoice) {
   if (!pickup.otpVerifiedAt) throw new BookingError('Verify the customer\'s door code before weighing');
   if (pickup.status !== 'WEIGHING') throw new BookingError('Pickup is not ready for weighing');
   const multipliers = await settings.get('conditionMultipliers');
-  const city = pickup.addressSnapshot.city;
+  const city = pickup.city || pickup.addressSnapshot.city;
   let finalAmount = 0;
   for (const line of pickup.items) {
     const submitted = weighedItems.find((w) => w.itemName === line.itemName);
     if (!submitted) continue;
     const price = await ScrapPrice.findOne({ item: line.item, city, isActive: true });
+    if (!price && pickup.type !== 'donation') {
+      throw new BookingError(`${line.itemName} has no price in ${city} right now. Ask the office to publish one, or leave it out.`);
+    }
     let rate = 0;
     if (price) {
       if (rateChoice === 'min') rate = price.minPrice;
@@ -272,8 +276,15 @@ async function updateLocation(req, res, next) {
 
 async function updateAvailability(req, res, next) {
   try {
-    const { isAvailable, workingHours, servicePinCodes } = req.body;
+    const { isAvailable, workingHours, servicePinCodes, serviceAreas } = req.body;
     const set = {};
+    if (serviceAreas) {
+      // Only municipalities in the collector's own city.
+      const ids = [...new Set(serviceAreas.map(String))];
+      const areas = await ServiceArea.find({ _id: { $in: ids }, city: req.user.collectorProfile?.city }).select('_id').lean();
+      if (areas.length !== ids.length) return res.status(400).json({ success: false, message: 'Choose areas in your own city' });
+      set['collectorProfile.serviceAreas'] = areas.map((a) => a._id);
+    }
     if (typeof isAvailable === 'boolean') set['collectorProfile.isAvailable'] = isAvailable;
     if (workingHours) set['collectorProfile.workingHours'] = workingHours;
     if (servicePinCodes) set['collectorProfile.servicePinCodes'] = [...new Set(servicePinCodes)];

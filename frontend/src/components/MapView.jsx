@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { DEFAULT_CENTER } from '../utils/locale';
+import { useConfig } from '../context/ConfigContext';
 
 const COLORS = { rust: '#0F6247', patina: '#4D8A45', blue: '#2F6DB5', steel: '#4F5955', amber: '#A0701A' };
 
@@ -48,11 +48,12 @@ function ClickToPick({ onPick }) {
 }
 
 // markers: [{ id, lat, lng, color, label, popup, icon: 'pin' | 'dot', draggable, onDragEnd }]
-export default function MapView({ markers = [], line, center = DEFAULT_CENTER, zoom = 12, height = 320, onPick, fit = true, className = '' }) {
+export default function MapView({ markers = [], line, center, zoom = 12, height = 320, onPick, fit = true, className = '' }) {
+  const { mapCenter } = useConfig();
   const pts = markers.map((m) => [m.lat, m.lng]);
   return (
     <div className={`overflow-hidden rounded-xl border border-steel-100 ${className}`} style={{ height }}>
-      <MapContainer center={pts[0] || center} zoom={zoom} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+      <MapContainer center={pts[0] || center || mapCenter()} zoom={zoom} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
         <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         {fit && <FitBounds points={pts} />}
         {onPick && <ClickToPick onPick={onPick} />}

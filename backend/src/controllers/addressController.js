@@ -1,14 +1,13 @@
 const Address = require('../models/Address');
-const { checkPin } = require('../services/serviceabilityService');
-
-const FIELDS = ['houseNumber', 'street', 'locality', 'city', 'state', 'pinCode', 'landmark', 'addressType', 'isDefault', 'location'];
-const pick = (body) => Object.fromEntries(FIELDS.filter((f) => body[f] !== undefined).map((f) => [f, body[f]]));
+const { checkAddress, resolveAddress, AddressError } = require('../services/cityService');
 
 async function withServiceability(address) {
   const obj = address.toObject ? address.toObject() : address;
-  const service = await checkPin(obj.pinCode, obj.city);
+  const service = await checkAddress(obj);
   return { ...obj, serviceable: service.serviceable, serviceReason: service.reason };
 }
+
+const fail = (res, err) => res.status(err.status || 400).json({ success: false, message: err.message });
 
 async function listAddresses(req, res, next) {
   try {
@@ -21,14 +20,15 @@ async function listAddresses(req, res, next) {
 
 async function createAddress(req, res, next) {
   try {
-    const payload = { ...pick(req.body), user: req.user._id };
     const count = await Address.countDocuments({ user: req.user._id });
     if (count >= 10) return res.status(400).json({ success: false, message: 'You can save up to 10 addresses' });
+    const payload = { ...(await resolveAddress(req.body)), user: req.user._id };
     if (!count) payload.isDefault = true;
     if (payload.isDefault) await Address.updateMany({ user: req.user._id }, { $set: { isDefault: false } });
     const address = await Address.create(payload);
     res.status(201).json({ success: true, data: { address: await withServiceability(address) } });
   } catch (err) {
+    if (err instanceof AddressError) return fail(res, err);
     next(err);
   }
 }
@@ -37,12 +37,13 @@ async function updateAddress(req, res, next) {
   try {
     const address = await Address.findOne({ _id: req.params.id, user: req.user._id });
     if (!address) return res.status(404).json({ success: false, message: 'Address not found' });
-    const updates = pick(req.body);
+    const updates = await resolveAddress(req.body, { partialOf: address.toObject() });
     if (updates.isDefault) await Address.updateMany({ user: req.user._id }, { $set: { isDefault: false } });
     Object.assign(address, updates);
     await address.save();
     res.json({ success: true, data: { address: await withServiceability(address) } });
   } catch (err) {
+    if (err instanceof AddressError) return fail(res, err);
     next(err);
   }
 }

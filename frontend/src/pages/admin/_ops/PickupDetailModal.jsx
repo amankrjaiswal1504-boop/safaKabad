@@ -268,7 +268,7 @@ export default function PickupDetailModal({ pickupId, onClose, onChanged }) {
                               <span className="block truncate text-steel-900">{c.name}</span>
                               <span className="block text-xs text-steel-500">
                                 {c.load} today{c.km != null ? ` · ${c.km} km` : ''}
-                                {c.servesPin ? ' · serves postal code' : ''}
+                                {c.servesArea ? ' · serves this area' : c.servesPin ? ' · serves postal code' : ''}
                               </span>
                             </span>
                             <Button

@@ -43,8 +43,10 @@ function Dropdown({ button, children, align = 'right', label }) {
 }
 
 export function CitySelect({ compact }) {
-  const { cities, city, setCity } = useConfig();
-  const { t } = useI18n();
+  const { cityList, city, setCity } = useConfig();
+  const { t, lang } = useI18n();
+  // Cities come from Admin > Service areas; nothing to choose until one exists.
+  if (!cityList.length) return null;
   return (
     <label className={cx('relative inline-flex items-center gap-1.5 text-sm text-steel-700 rounded-lg hover:bg-steel-100 cursor-pointer', compact ? 'px-2 py-1.5' : 'px-2.5 py-2')}>
       <MapPin className="w-4 h-4 text-rust-600" aria-hidden />
@@ -54,9 +56,9 @@ export function CitySelect({ compact }) {
         onChange={(e) => setCity(e.target.value)}
         className="appearance-none bg-transparent pr-4 font-medium text-steel-900 cursor-pointer focus:outline-none"
       >
-        {(cities.length ? cities : [city]).map((c) => (
-          <option key={c} value={c}>
-            {c}
+        {cityList.map((c) => (
+          <option key={c.name} value={c.name}>
+            {(lang === 'ne' && c.nameNe) || c.name}
           </option>
         ))}
       </select>

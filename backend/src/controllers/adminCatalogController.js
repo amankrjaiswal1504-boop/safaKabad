@@ -3,7 +3,7 @@ const ScrapCategory = require('../models/ScrapCategory');
 const ScrapItem = require('../models/ScrapItem');
 const ScrapPrice = require('../models/ScrapPrice');
 const PriceHistory = require('../models/PriceHistory');
-const { ServiceArea } = require('../models/platform');
+const { findCity } = require('../services/cityService');
 const { audit } = require('../services/auditService');
 const { clearRateCache, escapeRegex } = require('../services/rateService');
 const { checkPriceAlerts } = require('../services/jobs');
@@ -75,8 +75,18 @@ async function listItems(req, res, next) {
   }
 }
 
-async function setPrice(req, item, { city, minPrice, maxPrice, recyclerPrice }) {
-  if (minPrice > maxPrice) throw Object.assign(new Error('Minimum price cannot be more than maximum'), { status: 400 });
+const bad = (message, status = 400) => Object.assign(new Error(message), { status });
+
+// Prices only exist for cities set up in Service areas (canonical spelling).
+async function cityOrThrow(name) {
+  const city = await findCity(name, { includeInactive: true });
+  if (!city) throw bad(`${name || 'This city'} is not set up yet. Add it under Service areas first.`);
+  return city.name;
+}
+
+async function setPrice(req, item, { city: cityName, minPrice, maxPrice, recyclerPrice }) {
+  if (minPrice > maxPrice) throw bad(`${item.name}: minimum price cannot be more than maximum`);
+  const city = await cityOrThrow(cityName);
   let price = await ScrapPrice.findOne({ item: item._id, city });
   const before = price ? { minPrice: price.minPrice, maxPrice: price.maxPrice, recyclerPrice: price.recyclerPrice } : null;
   if (price) {
@@ -158,12 +168,13 @@ async function deleteScrapItem(req, res, next) {
 // Update many prices at once (e.g. a whole city, or +5% across metals).
 async function bulkPrices(req, res, next) {
   try {
-    const { city, updates, percentChange, categoryId } = req.body;
+    const { updates, percentChange, categoryId } = req.body;
+    const city = await cityOrThrow(req.body.city);
     const results = [];
     if (percentChange !== undefined) {
       const itemFilter = { isActive: true, ...(categoryId ? { category: categoryId } : {}) };
       const items = await ScrapItem.find(itemFilter).select('_id name');
-      const prices = await ScrapPrice.find({ city, item: { $in: items.map((i) => i._id) } });
+      const prices = await ScrapPrice.find({ city, isActive: true, item: { $in: items.map((i) => i._id) } });
       for (const p of prices) {
         const item = items.find((i) => String(i._id) === String(p.item));
         const f = 1 + percentChange / 100;
@@ -211,71 +222,82 @@ async function priceHistory(req, res, next) {
 // Copy one city's price list into another (launching a new city).
 async function copyCityPrices(req, res, next) {
   try {
-    const { fromCity, toCity, percentChange = 0 } = req.body;
-    const prices = await ScrapPrice.find({ city: fromCity });
+    const { percentChange = 0, overwrite = false } = req.body;
+    const fromCity = await cityOrThrow(req.body.fromCity);
+    const toCity = await cityOrThrow(req.body.toCity);
+    if (fromCity === toCity) return fail(res, 400, 'Choose two different cities');
+    const prices = await ScrapPrice.find({ city: fromCity, isActive: true }).populate('item', 'name');
     const f = 1 + percentChange / 100;
     let created = 0;
+    let updated = 0;
     for (const p of prices) {
-      const exists = await ScrapPrice.exists({ item: p.item, city: toCity });
-      if (exists) continue;
-      await ScrapPrice.create({
-        item: p.item,
+      if (!p.item) continue;
+      const existing = await ScrapPrice.findOne({ item: p.item._id, city: toCity, isActive: true });
+      if (existing && !overwrite) continue;
+      await setPrice(req, p.item, {
         city: toCity,
         minPrice: Math.round(p.minPrice * f),
         maxPrice: Math.round(p.maxPrice * f),
-        recyclerPrice: p.recyclerPrice != null ? Math.round(p.recyclerPrice * f) : null,
-        updatedBy: req.user._id,
+        recyclerPrice: p.recyclerPrice != null ? Math.round(p.recyclerPrice * f) : undefined,
       });
-      created += 1;
+      if (existing) updated += 1;
+      else created += 1;
     }
     catalogChanged();
-    await audit(req, 'price.copy_city', { after: { fromCity, toCity, percentChange, created } });
-    res.json({ success: true, data: { created } });
+    await audit(req, 'price.copy_city', { after: { fromCity, toCity, percentChange, overwrite, created, updated } });
+    res.json({ success: true, data: { created, updated } });
   } catch (err) {
+    if (err.status) return fail(res, err.status, err.message);
     next(err);
   }
 }
 
-// ---------- Service areas ----------
-async function listAreas(req, res, next) {
+// ---------- City price grid ----------
+// Every active item with this city's price (or null when not priced yet), so
+// admins can see gaps and fill them in one place.
+async function cityPriceGrid(req, res, next) {
   try {
-    res.json({ success: true, data: { areas: await ServiceArea.find({}).sort({ city: 1 }) } });
+    const city = await cityOrThrow(req.query.city);
+    const [items, prices] = await Promise.all([
+      ScrapItem.find({ isActive: true }).populate('category', 'name nameNe sortOrder isActive').lean(),
+      ScrapPrice.find({ city }).populate('updatedBy', 'name').lean(),
+    ]);
+    const by = Object.fromEntries(prices.map((p) => [String(p.item), p]));
+    const rows = items
+      .filter((i) => i.category)
+      .map((i) => {
+        const p = by[String(i._id)];
+        return {
+          itemId: i._id,
+          name: i.name,
+          nameNe: i.nameNe,
+          unit: i.unit,
+          category: i.category,
+          price: p && p.isActive ? { minPrice: p.minPrice, maxPrice: p.maxPrice, recyclerPrice: p.recyclerPrice, updatedAt: p.updatedAt, updatedBy: p.updatedBy?.name || null } : null,
+        };
+      })
+      .sort((a, b) => (a.category.sortOrder ?? 0) - (b.category.sortOrder ?? 0) || a.name.localeCompare(b.name));
+    res.json({ success: true, data: { city, items: rows, priced: rows.filter((r) => r.price).length, total: rows.length } });
   } catch (err) {
+    if (err.status) return fail(res, err.status, err.message);
     next(err);
   }
 }
 
-async function createArea(req, res, next) {
+// Stop buying an item in one city (keeps history; customers no longer see it).
+async function unpublishPrice(req, res, next) {
   try {
-    const area = await ServiceArea.create(req.body);
-    await audit(req, 'area.create', { entity: 'ServiceArea', entityId: area._id, after: req.body });
-    res.status(201).json({ success: true, data: { area } });
-  } catch (err) {
-    next(err);
-  }
-}
-
-async function updateArea(req, res, next) {
-  try {
-    const area = await ServiceArea.findById(req.params.id);
-    if (!area) return fail(res, 404, 'Area not found');
-    const before = area.toObject();
-    Object.assign(area, req.body);
-    await area.save();
-    await audit(req, 'area.update', { entity: 'ServiceArea', entityId: area._id, before, after: req.body });
-    res.json({ success: true, data: { area } });
-  } catch (err) {
-    next(err);
-  }
-}
-
-async function deleteArea(req, res, next) {
-  try {
-    const area = await ServiceArea.findByIdAndDelete(req.params.id);
-    if (!area) return fail(res, 404, 'Area not found');
-    await audit(req, 'area.delete', { entity: 'ServiceArea', entityId: area._id, before: area.toObject() });
+    const city = await cityOrThrow(req.query.city);
+    const price = await ScrapPrice.findOne({ item: req.params.itemId, city, isActive: true }).populate('item', 'name');
+    if (!price) return fail(res, 404, 'This item is not priced in that city');
+    price.isActive = false;
+    price.updatedBy = req.user._id;
+    await price.save();
+    catalogChanged();
+    await audit(req, 'price.unpublish', { entity: 'ScrapPrice', entityId: price._id, before: { item: price.item?.name, city } });
     res.json({ success: true });
   } catch (err) {
+    if (err.status) return fail(res, err.status, err.message);
     next(err);
   }
 }
@@ -291,8 +313,6 @@ module.exports = {
   bulkPrices,
   priceHistory,
   copyCityPrices,
-  listAreas,
-  createArea,
-  updateArea,
-  deleteArea,
+  cityPriceGrid,
+  unpublishPrice,
 };

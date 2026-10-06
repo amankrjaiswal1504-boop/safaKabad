@@ -1,12 +1,14 @@
 const express = require('express');
 const admin = require('../controllers/adminController');
 const catalog = require('../controllers/adminCatalogController');
+const geo = require('../controllers/adminGeoController');
 const growth = require('../controllers/adminGrowthController');
 const system = require('../controllers/adminSystemController');
 const support = require('../controllers/supportAdminController');
 const { protect, authorize, requirePermission: can } = require('../middleware/auth');
 const { validate, z, objectId, pinCode, phone, password, isoDate } = require('../middleware/validate');
 const { STAFF_ROLES } = require('../models/User');
+const { AREA_TYPES } = require('../models/platform');
 
 const router = express.Router();
 
@@ -30,6 +32,7 @@ const collectorFields = {
   city: z.string().trim().min(2).max(60),
   vehicleNumber: z.string().trim().max(20).optional(),
   servicePinCodes: z.array(pinCode).max(100).optional(),
+  serviceAreas: z.array(objectId).max(100).optional(),
   commissionRate: z.coerce.number().min(0).max(50).nullable().optional(),
 };
 router.get('/collectors', can('collectors', 'dispatch', 'pickups'), admin.listCollectors);
@@ -148,23 +151,61 @@ router.post(
   ),
   catalog.bulkPrices
 );
-router.post('/prices/copy-city', can('prices'), validate(z.object({ fromCity: z.string().min(2), toCity: z.string().trim().min(2).max(60), percentChange: z.coerce.number().min(-90).max(200).default(0) })), catalog.copyCityPrices);
+router.post(
+  '/prices/copy-city',
+  can('prices'),
+  validate(
+    z.object({
+      fromCity: z.string().trim().min(2).max(60),
+      toCity: z.string().trim().min(2).max(60),
+      percentChange: z.coerce.number().min(-90).max(200).default(0),
+      overwrite: z.boolean().default(false),
+    })
+  ),
+  catalog.copyCityPrices
+);
+router.get('/prices', can('prices', 'catalog'), catalog.cityPriceGrid);
+router.delete('/prices/:itemId', can('prices'), validate(z.object({ itemId: objectId }), 'params'), catalog.unpublishPrice);
 router.get('/prices/history', can('prices', 'catalog'), catalog.priceHistory);
 
-// Service areas
-const areaBody = z.object({
+// Cities (price zones) and service areas (municipalities)
+const latLng = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) });
+const cityFields = {
+  name: z.string().trim().min(2).max(60),
+  nameNe: z.string().trim().max(60),
+  district: z.string().trim().max(60),
+  province: z.string().trim().max(60),
+  center: latLng.nullable(),
+  isActive: z.boolean(),
+  isDefault: z.boolean(),
+  sortOrder: z.coerce.number().int().min(0).max(1000),
+};
+router.get('/cities', can('service-areas', 'prices', 'catalog', 'collectors', 'dispatch', 'pickups', 'analytics'), geo.listCities);
+router.post('/cities', can('service-areas'), validate(z.object(cityFields).partial().required({ name: true })), geo.createCity);
+router.put('/cities/:id', can('service-areas'), idParam, validate(z.object(cityFields).partial()), geo.updateCity);
+router.delete('/cities/:id', can('service-areas'), idParam, geo.deleteCity);
+
+const ward = z.coerce.number().int().min(1).max(40);
+const areaFields = {
+  name: z.string().trim().min(2).max(80),
+  nameNe: z.string().trim().max(80),
   city: z.string().trim().min(2).max(60),
-  state: z.string().trim().max(60).optional(),
-  pinCodes: z.array(pinCode).max(2000).default([]),
-  minPickupWeightKg: z.coerce.number().min(0).max(10000).default(0),
-  minPickupValue: z.coerce.number().min(0).max(1000000).default(0),
-  center: z.object({ lat: z.number(), lng: z.number() }).optional(),
-  isActive: z.boolean().optional(),
-});
-router.get('/service-areas', can('service-areas'), catalog.listAreas);
-router.post('/service-areas', can('service-areas'), validate(areaBody), catalog.createArea);
-router.put('/service-areas/:id', can('service-areas'), idParam, validate(areaBody.partial()), catalog.updateArea);
-router.delete('/service-areas/:id', can('service-areas'), idParam, catalog.deleteArea);
+  type: z.enum(AREA_TYPES),
+  district: z.string().trim().max(60),
+  state: z.string().trim().max(60),
+  wards: ward,
+  servedWards: z.array(ward).max(40),
+  pinCodes: z.array(pinCode).max(50),
+  minPickupWeightKg: z.coerce.number().min(0).max(10000),
+  minPickupValue: z.coerce.number().min(0).max(1000000),
+  center: latLng.nullable(),
+  isActive: z.boolean(),
+  sortOrder: z.coerce.number().int().min(0).max(1000),
+};
+router.get('/service-areas', can('service-areas', 'collectors', 'dispatch', 'pickups'), geo.listAreas);
+router.post('/service-areas', can('service-areas'), validate(z.object(areaFields).partial().required({ name: true, city: true, wards: true })), geo.createArea);
+router.put('/service-areas/:id', can('service-areas'), idParam, validate(z.object(areaFields).partial()), geo.updateArea);
+router.delete('/service-areas/:id', can('service-areas'), idParam, geo.deleteArea);
 
 // Coupons, reviews, NGOs, quotes, finance
 const couponBody = z.object({

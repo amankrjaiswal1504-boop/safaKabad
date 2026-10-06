@@ -19,7 +19,7 @@ router.post(
   validate(
     z
       .object({
-        amount: z.coerce.number().min(50, 'Minimum withdrawal is Rs. 50').max(100000),
+        amount: z.coerce.number().positive('Enter an amount'),
         method: z.enum(['esewa', 'khalti', 'bank_transfer']),
         // eSewa / Khalti ID = registered mobile number
         walletId: phone.optional(),

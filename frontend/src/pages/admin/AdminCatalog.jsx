@@ -3,12 +3,12 @@ import { useSearchParams } from 'react-router-dom';
 import { Boxes, Car, Cpu, Package, Pencil, Plus, Power, Recycle, Refrigerator, Search, Tags } from 'lucide-react';
 import api from '../../services/api';
 import useApi, { useDebounce } from '../../hooks/useApi';
-import { useConfig } from '../../context/ConfigContext';
 import { useAuth } from '../../context/AuthContext';
 import { rupees, unitLabel } from '../../utils/format';
 import { CURRENCY_SYMBOL } from '../../utils/locale';
 import { Badge, Button, Card, DataTable, EmptyState, Field, IconButton, Input, PageHeader, Pagination, Select, Tabs, Textarea, Toggle } from '../../components/ui';
 import { Async, Callout, ConfirmModal, FormSection, ImageField, NumberInput, Thumb, Toolbar, isBlank, useAction, Modal } from './_catalog/shared';
+import { cityLabel, useAdminCities } from './_geo/shared';
 
 const ICONS = [
   { value: 'recycle', label: 'Recyclables', icon: Recycle },
@@ -229,7 +229,7 @@ function CategoryForm({ category, onClose, onSaved }) {
 function Items({ categories, reloadCategories }) {
   const { can } = useAuth();
   const canEdit = can('catalog');
-  const { cities } = useConfig();
+  const { cities, defaultCity } = useAdminCities();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState('');
@@ -238,8 +238,8 @@ function Items({ categories, reloadCategories }) {
   const q = useDebounce(search.trim(), 300);
   useEffect(() => setPage(1), [q, category, status, city]);
   useEffect(() => {
-    if (!city && cities.length) setCity(cities[0]);
-  }, [cities, city]);
+    if (!city && defaultCity) setCity(defaultCity);
+  }, [defaultCity, city]);
 
   const params = useMemo(() => {
     const p = { page, limit: 20 };
@@ -360,7 +360,9 @@ function Items({ categories, reloadCategories }) {
             <Select id={id} value={city} onChange={(e) => setCity(e.target.value)}>
               <option value="">No city</option>
               {cities.map((c) => (
-                <option key={c}>{c}</option>
+                <option key={c._id} value={c.name}>
+                  {cityLabel(c)}
+                </option>
               ))}
             </Select>
           )}
@@ -394,7 +396,8 @@ function Items({ categories, reloadCategories }) {
         <ItemForm
           item={editing === 'new' ? null : editing}
           categories={categories}
-          defaultCity={city}
+          defaultCity={city || defaultCity}
+          cities={cities}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
@@ -437,10 +440,9 @@ const EMPTY_ITEM = {
   recyclerPrice: '',
 };
 
-function ItemForm({ item, categories, defaultCity, onClose, onSaved }) {
-  const { cities } = useConfig();
+function ItemForm({ item, categories, cities, defaultCity, onClose, onSaved }) {
   const [f, setF] = useState(() => {
-    if (!item) return { ...EMPTY_ITEM, categoryId: categories[0]?._id || '', city: defaultCity || cities[0] || '' };
+    if (!item) return { ...EMPTY_ITEM, categoryId: categories[0]?._id || '', city: defaultCity || cities[0]?.name || '' };
     const p = item.price;
     return {
       ...EMPTY_ITEM,
@@ -453,7 +455,7 @@ function ItemForm({ item, categories, defaultCity, onClose, onSaved }) {
       co2PerUnit: item.co2PerUnit ?? '',
       kgPerUnit: item.kgPerUnit ?? '',
       isActive: item.isActive !== false,
-      city: p?.city || defaultCity || cities[0] || '',
+      city: p?.city || defaultCity || cities[0]?.name || '',
       minPrice: p?.minPrice ?? '',
       maxPrice: p?.maxPrice ?? '',
       recyclerPrice: p?.recyclerPrice ?? '',
@@ -586,8 +588,11 @@ function ItemForm({ item, categories, defaultCity, onClose, onSaved }) {
                 {(id) => (
                   <Select id={id} value={f.city} onChange={(e) => set('city')(e.target.value)}>
                     <option value="">Choose…</option>
-                    {[...new Set([...cities, f.city].filter(Boolean))].map((c) => (
-                      <option key={c}>{c}</option>
+                    {f.city && !cities.some((c) => c.name === f.city) && <option value={f.city}>{f.city}</option>}
+                    {cities.map((c) => (
+                      <option key={c._id} value={c.name}>
+                        {cityLabel(c)}
+                      </option>
                     ))}
                   </Select>
                 )}

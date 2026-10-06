@@ -19,6 +19,7 @@ const { notifyAdmins, notify } = require('../services/notificationService');
 const { generateTicketId } = require('../services/chat/tickets');
 const { emitTo } = require('../socket');
 const { TIMEZONE } = require('../config/locale');
+const { resolveAddress } = require('../services/cityService');
 
 function sendError(res, err, next) {
   if (err instanceof BookingError || err instanceof PickupActionError || err instanceof OtpError || err.status) {
@@ -43,6 +44,8 @@ async function createPickup(req, res, next) {
 async function createGuestPickup(req, res, next) {
   try {
     const { phone, code, name, address, ...booking } = req.body;
+    // Validate the address before the one-time code is used up.
+    const resolved = await resolveAddress(address);
     await verifyOtp(phone, code, 'booking');
     let user = await User.findOne({ phone, role: 'customer' });
     if (!user) {
@@ -50,7 +53,7 @@ async function createGuestPickup(req, res, next) {
     } else if (!user.isActive) {
       return res.status(403).json({ success: false, message: 'This account is deactivated' });
     }
-    const saved = await Address.create({ ...address, user: user._id, isDefault: !(await Address.exists({ user: user._id })) });
+    const saved = await Address.create({ ...resolved, user: user._id, isDefault: !(await Address.exists({ user: user._id })) });
     const pickup = await createPickupForUser(user, { ...booking, addressId: String(saved._id), contactPhone: phone, source: 'guest' }, { ip: req.ip });
     await issueSession(req, res, await User.findById(user._id).select('+tokenVersion'));
     const obj = pickup.toObject();

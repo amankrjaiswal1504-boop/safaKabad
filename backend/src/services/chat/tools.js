@@ -4,8 +4,9 @@ const Faq = require('../../models/Faq');
 const { fetchRates, estimateItems, listServiceCities, escapeRegex } = require('../rateService');
 const { ownershipFilter } = require('../pickupService');
 const { getAvailability, assertSlotAvailable } = require('../slotService');
-const { DEFAULT_CITY, RESCHEDULABLE_STATUSES } = require('../../config/constants');
-const { resolveItemByName } = require('./catalog');
+const { RESCHEDULABLE_STATUSES } = require('../../config/constants');
+const { defaultCity, listAreas } = require('../cityService');
+const { resolveItemByName, matchCity } = require('./catalog');
 const { escalateSession } = require('./tickets');
 
 // Tool definitions sent to Claude. Keep this list deterministic (stable order and
@@ -18,7 +19,7 @@ const TOOL_DEFINITIONS = [
     input_schema: {
       type: 'object',
       properties: {
-        city: { type: 'string', description: 'City name, e.g. "Kathmandu". Omit to use the user\'s city or the default city.' },
+        city: { type: 'string', description: 'City or municipality name the customer mentioned. Omit to use the user\'s city or the default city.' },
         search: { type: 'string', description: 'Optional item name filter, e.g. "copper".' },
         category: { type: 'string', description: 'Optional category name, e.g. "E-Waste".' },
       },
@@ -181,7 +182,8 @@ async function proposeAction(ctx, type, pickupId, params, summary) {
 
 const EXECUTORS = {
   async get_scrap_rates(input, ctx) {
-    const city = str(input.city, 60) || ctx.defaultCity;
+    const city = await cityFor(input, ctx);
+    if (!city) return notServed(input.city);
     const rates = await fetchRates({ city, search: str(input.search, 60), category: str(input.category, 60) });
     if (!rates.length) {
       const cities = await listServiceCities();
@@ -206,7 +208,8 @@ const EXECUTORS = {
   },
 
   async estimate_value(input, ctx) {
-    const city = str(input.city, 60) || ctx.defaultCity;
+    const city = await cityFor(input, ctx);
+    if (!city) return notServed(input.city);
     const requested = Array.isArray(input.items) ? input.items.slice(0, 15) : [];
     if (!requested.length) return { error: 'no_items', message: 'Provide at least one item with a quantity.' };
     const unknown = [];
@@ -268,8 +271,11 @@ const EXECUTORS = {
   },
 
   async get_service_areas() {
-    const cities = await listServiceCities();
-    return { cities, note: 'Pickups are available in these cities. PIN-code level checks happen at booking.' };
+    const [cities, areas] = await Promise.all([listServiceCities(), listAreas()]);
+    return {
+      cities: cities.map((city) => ({ city, municipalities: areas.filter((a) => a.city === city).map((a) => a.name) })),
+      note: 'Pickups are available in these municipalities. The customer chooses their municipality and ward when booking.',
+    };
   },
 
   async get_time_slots(input) {
@@ -310,9 +316,9 @@ const EXECUTORS = {
     if (!RESCHEDULABLE_STATUSES.includes(pickup.status)) {
       return { error: 'not_allowed', message: `Pickups that are ${pickup.status} can no longer be rescheduled.` };
     }
-    const invalid = await assertSlotAvailable(date, slot, { pinCode: pickup.pinCode, excludePickupId: pickupId });
+    const invalid = await assertSlotAvailable(date, slot, { areaId: pickup.area, pinCode: pickup.pinCode, excludePickupId: pickupId });
     if (invalid) {
-      const avail = await getAvailability(date, { pinCode: pickup.pinCode });
+      const avail = await getAvailability(date, { areaId: pickup.area, pinCode: pickup.pinCode });
       return { error: 'invalid_slot', message: invalid, validSlots: avail.slots.filter((s) => s.available).map((s) => s.label) };
     }
     return proposeAction(ctx, 'reschedule_pickup', pickupId, { date, slot }, `Move pickup ${pickupId} to ${date}, ${slot}`);
@@ -360,8 +366,20 @@ async function runTool(name, input, ctx) {
   }
 }
 
-function defaultCityFor(user, defaultAddress) {
-  return defaultAddress?.city || user?.collectorProfile?.city || DEFAULT_CITY;
+async function defaultCityFor(user, defaultAddress) {
+  return defaultAddress?.city || user?.collectorProfile?.city || defaultCity();
+}
+
+// City named by the model (a city or municipality name), else the user's city.
+// Null when the model named a place we don't serve.
+async function cityFor(input, ctx) {
+  const asked = str(input.city, 60);
+  if (!asked) return ctx.defaultCity;
+  return matchCity(asked);
+}
+
+async function notServed(asked) {
+  return { error: 'not_served', message: `We don't pick up in ${asked} yet.`, serviceCities: await listServiceCities() };
 }
 
 module.exports = { TOOL_DEFINITIONS, runTool, pickupSummary, trackingCard, defaultCityFor, EXECUTORS };

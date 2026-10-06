@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { HandHeart, Pencil, Plus } from 'lucide-react';
 import api from '../../services/api';
 import useApi from '../../hooks/useApi';
-import { useConfig } from '../../context/ConfigContext';
 import { Badge, Button, Card, EmptyState, Field, IconButton, Input, PageHeader, Textarea, Toggle, cx } from '../../components/ui';
 import { Async, ChipToggles, ImageField, Thumb, useAction, Modal } from './_catalog/shared';
+import { useAdminCities } from './_geo/shared';
 
 const ACCEPTS = [
   { value: 'normal-recyclables', label: 'Recyclables' },
@@ -102,7 +102,7 @@ export default function AdminNgos() {
 }
 
 function NgoForm({ ngo, onClose, onSaved }) {
-  const { cities } = useConfig();
+  const { cities } = useAdminCities();
   const [f, setF] = useState(() => ({
     name: ngo?.name || '',
     description: ngo?.description || '',
@@ -169,7 +169,7 @@ function NgoForm({ ngo, onClose, onSaved }) {
         </Field>
         <ImageField label="Logo" value={f.logo} onChange={set('logo')} folder="ngos" />
         <div>
-          <ChipToggles label="Cities" options={cities} value={f.cities} onChange={set('cities')} allowCustom customPlaceholder="Add a city" />
+          <ChipToggles label="Cities" options={cities.map((c) => c.name)} value={f.cities} onChange={set('cities')} />
           <p className="text-xs text-steel-500 mt-1.5">Select none to show this NGO in every city.</p>
         </div>
         <fieldset>

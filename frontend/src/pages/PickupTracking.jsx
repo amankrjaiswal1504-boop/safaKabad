@@ -389,7 +389,7 @@ export default function PickupTracking() {
           </Button>
         }
       >
-        {modal === 'reschedule' && <SlotPicker pinCode={pickup.pinCode} date={resched.date} slot={resched.slot} excludePickupId={pickup.pickupId} onChange={setResched} />}
+        {modal === 'reschedule' && <SlotPicker areaId={pickup.area} pinCode={pickup.pinCode} date={resched.date} slot={resched.slot} excludePickupId={pickup.pickupId} onChange={setResched} />}
       </Modal>
 
       <Modal

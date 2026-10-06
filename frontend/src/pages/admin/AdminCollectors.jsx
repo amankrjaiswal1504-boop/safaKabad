@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ClipboardList, Pencil, Plus } from 'lucide-react';
 import useApi, { useDebounce } from '../../hooks/useApi';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { useConfig } from '../../context/ConfigContext';
-import { Avatar, Badge, Button, DataTable, EmptyState, ErrorState, Field, IconButton, Input, Modal, PageHeader, Pagination, Select, Stars, Textarea, Toggle } from '../../components/ui';
-import { MOBILE_PLACEHOLDER, NUMBER_LOCALE, POSTAL_CODE_RE, isMobile } from '../../utils/locale';
+import { Avatar, Badge, Button, DataTable, EmptyState, ErrorState, Field, IconButton, Input, Modal, PageHeader, Pagination, Stars, Toggle } from '../../components/ui';
+import { MOBILE_PLACEHOLDER, NUMBER_LOCALE, isMobile } from '../../utils/locale';
 import { CityField, FilterBar, SearchField, useMutation } from './_ops/shared';
+import { AreaMultiSelect, CitySelect, useAdminCities, useCityAreas } from './_geo/shared';
 
 const EMPTY = {
   name: '',
@@ -15,15 +15,13 @@ const EMPTY = {
   password: '',
   city: '',
   vehicleNumber: '',
-  pins: '',
+  serviceAreas: [],
   commissionRate: '',
   isActive: true,
   isAvailable: true,
   start: '09:00',
   end: '19:00',
 };
-
-const parsePins = (s) => [...new Set(String(s).split(/[\s,;]+/).map((x) => x.trim()).filter(Boolean))];
 
 function validate(f, isNew) {
   const e = {};
@@ -32,16 +30,12 @@ function validate(f, isNew) {
   if (!isMobile(f.phone)) e.phone = 'Enter a valid 10-digit mobile number';
   if (isNew && f.password.length < 8) e.password = 'At least 8 characters';
   if (f.city.trim().length < 2) e.city = 'Choose a city';
-  const bad = parsePins(f.pins).filter((p) => !POSTAL_CODE_RE.test(p));
-  if (bad.length) e.pins = `Not valid 5-digit postal codes: ${bad.slice(0, 3).join(', ')}`;
-  if (parsePins(f.pins).length > 100) e.pins = 'At most 100 postal codes';
   if (f.commissionRate !== '' && (Number.isNaN(Number(f.commissionRate)) || Number(f.commissionRate) < 0 || Number(f.commissionRate) > 50)) e.commissionRate = 'Between 0 and 50';
   if (!isNew && f.start >= f.end) e.hours = 'End time must be after start time';
   return e;
 }
 
-function CollectorModal({ open, collector, onClose, onSaved }) {
-  const { cities } = useConfig();
+function CollectorModal({ open, collector, cities, onClose, onSaved }) {
   const isNew = !collector;
   const [f, setF] = useState(EMPTY);
   const [errors, setErrors] = useState({});
@@ -59,7 +53,7 @@ function CollectorModal({ open, collector, onClose, onSaved }) {
         phone: collector.phone || '',
         city: cp.city || '',
         vehicleNumber: cp.vehicleNumber || '',
-        pins: (cp.servicePinCodes || []).join(', '),
+        serviceAreas: (cp.serviceAreas || []).map(String),
         commissionRate: cp.commissionRate ?? '',
         isActive: collector.isActive !== false,
         isAvailable: cp.isAvailable !== false,
@@ -70,7 +64,9 @@ function CollectorModal({ open, collector, onClose, onSaved }) {
   }, [open, collector]);
 
   const set = (k) => (e) => setF((prev) => ({ ...prev, [k]: e?.target ? e.target.value : e }));
-  const cityOptions = f.city && !cities.includes(f.city) ? [f.city, ...cities] : cities;
+  const areasRes = useCityAreas(open ? f.city : '');
+  // A collector's areas belong to one city, so switching city starts over.
+  const setCity = (city) => setF((prev) => ({ ...prev, city, serviceAreas: city === prev.city ? prev.serviceAreas : [] }));
 
   const save = async () => {
     const e = validate(f, isNew);
@@ -81,7 +77,7 @@ function CollectorModal({ open, collector, onClose, onSaved }) {
       phone: f.phone.trim(),
       city: f.city.trim(),
       vehicleNumber: f.vehicleNumber.trim(),
-      servicePinCodes: parsePins(f.pins),
+      serviceAreas: areasRes.data ? f.serviceAreas.filter((id) => areasRes.areas.some((a) => String(a._id) === id)) : f.serviceAreas,
       commissionRate: f.commissionRate === '' ? null : Number(f.commissionRate),
     };
     const res = isNew
@@ -142,25 +138,28 @@ function CollectorModal({ open, collector, onClose, onSaved }) {
             {(id) => <Input id={id} value={f.email} disabled readOnly />}
           </Field>
         )}
-        <Field label="City" required error={errors.city}>
-          {(id) => (
-            <Select id={id} value={f.city} onChange={set('city')}>
-              <option value="">Choose a city</option>
-              {cityOptions.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-        <Field label="Vehicle number">{(id) => <Input id={id} value={f.vehicleNumber} onChange={set('vehicleNumber')} maxLength={20} placeholder="BA 2 PA 1234" />}</Field>
+        <CitySelect cities={cities} value={f.city} onChange={setCity} required error={errors.city} />
+        <Field label="Vehicle number">{(id) => <Input id={id} value={f.vehicleNumber} onChange={set('vehicleNumber')} maxLength={20} />}</Field>
         <Field label="Commission rate (%)" error={errors.commissionRate} hint="Leave blank to use the global rate">
           {(id) => <Input id={id} type="number" min={0} max={50} step="0.5" value={f.commissionRate} onChange={set('commissionRate')} invalid={Boolean(errors.commissionRate)} />}
         </Field>
-        <Field label="Service postal codes" className="sm:col-span-2" error={errors.pins} hint={`${parsePins(f.pins).length} postal codes · separate with commas or spaces. Without postal codes, the collector gets pickups across the city.`}>
-          {(id) => <Textarea id={id} value={f.pins} onChange={set('pins')} rows={2} placeholder="44600, 44700" aria-invalid={Boolean(errors.pins) || undefined} />}
-        </Field>
+        <div className="sm:col-span-2">
+          {f.city ? (
+            <>
+              <AreaMultiSelect
+                legend={`Municipalities served in ${f.city}`}
+                areas={areasRes.areas}
+                loading={areasRes.loading}
+                value={f.serviceAreas}
+                onChange={set('serviceAreas')}
+                emptyText={`${f.city} has no municipalities yet. Add them under Cities & areas.`}
+              />
+              <p className="text-xs text-steel-500 mt-1">Leave all unticked and the collector gets pickups anywhere in {f.city}.</p>
+            </>
+          ) : (
+            <p className="text-sm text-steel-500">Choose a city to pick the municipalities this collector serves.</p>
+          )}
+        </div>
         {!isNew && (
           <>
             <Field label="Shift starts" error={errors.hours}>
@@ -179,7 +178,9 @@ function CollectorModal({ open, collector, onClose, onSaved }) {
 
 export default function AdminCollectors() {
   const { can } = useAuth();
-  const { cities } = useConfig();
+  const { cities } = useAdminCities();
+  const allAreas = useApi('/admin/service-areas');
+  const areaName = useMemo(() => Object.fromEntries((allAreas.data?.areas || []).map((a) => [String(a._id), a.name])), [allAreas.data]);
   const canEdit = can('collectors');
   const [search, setSearch] = useState('');
   const debounced = useDebounce(search, 350);
@@ -217,14 +218,14 @@ export default function AdminCollectors() {
       ),
     },
     {
-      key: 'pins',
-      header: 'Service postal codes',
+      key: 'areas',
+      header: 'Service areas',
       render: (c) => {
-        const pins = c.collectorProfile?.servicePinCodes || [];
-        return pins.length ? (
-          <span className="text-xs text-steel-700" title={pins.join(', ')}>
-            {pins.slice(0, 3).join(', ')}
-            {pins.length > 3 && <span className="text-steel-500"> +{pins.length - 3}</span>}
+        const names = (c.collectorProfile?.serviceAreas || []).map((id) => areaName[String(id)]).filter(Boolean);
+        return names.length ? (
+          <span className="text-xs text-steel-700 block max-w-[220px]" title={names.join(', ')}>
+            {names.slice(0, 3).join(', ')}
+            {names.length > 3 && <span className="text-steel-500"> +{names.length - 3} more</span>}
           </span>
         ) : (
           <span className="text-xs text-steel-500">Whole city</span>
@@ -307,7 +308,7 @@ export default function AdminCollectors() {
 
       <FilterBar>
         <SearchField value={search} onChange={setSearch} placeholder="Name, email or phone" />
-        <CityField value={city} onChange={setCity} cities={cities} />
+        <CityField value={city} onChange={setCity} cities={cities.map((c) => c.name)} />
         <div className="h-10 flex items-center">
           <Toggle checked={available} onChange={setAvailable} label="Available only" />
         </div>
@@ -334,7 +335,16 @@ export default function AdminCollectors() {
         </>
       )}
 
-      <CollectorModal open={Boolean(editing)} collector={editing === 'new' ? null : editing} onClose={() => setEditing(null)} onSaved={reload} />
+      <CollectorModal
+        open={Boolean(editing)}
+        collector={editing === 'new' ? null : editing}
+        cities={cities}
+        onClose={() => setEditing(null)}
+        onSaved={() => {
+          reload();
+          allAreas.reload();
+        }}
+      />
     </div>
   );
 }

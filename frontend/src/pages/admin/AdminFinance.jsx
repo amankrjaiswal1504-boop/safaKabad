@@ -193,7 +193,7 @@ function Withdrawals() {
             </dl>
             {acting.action === 'approve' ? (
               <Callout icon={Banknote}>
-                If a payout provider is configured, the money is sent right away. Otherwise the finance team sends it by eSewa, Khalti or bank transfer and
+                If a payout provider is configured, the money is sent right away. Otherwise the finance team sends it by the method the customer chose and
                 then marks the payout paid in the Payments tab. This can't be undone.
               </Callout>
             ) : (
@@ -338,8 +338,8 @@ function Payments() {
         </Field>
       </Toolbar>
       <Callout icon={Banknote} className="mb-4">
-        Online collections come in through Khalti. Payouts by eSewa, Khalti or bank transfer are settled by the finance team and then marked paid here,
-        unless a payout provider is configured to send them automatically.
+        Digital payouts (anything other than cash or the ScrapMate wallet) are settled by the finance team and then marked paid here, unless a payout
+        provider is configured to send them automatically. Which methods are offered is set in Site settings → Wallet &amp; payments.
       </Callout>
       {anyMock && (
         <Callout icon={FlaskConical} tone="amber" className="mb-4">
@@ -382,7 +382,7 @@ function Payments() {
               </KeyValue>
             </dl>
             <Callout icon={Banknote}>Only confirm once the money has reached the customer. This can't be undone.</Callout>
-            <Field label="Reference / transaction ID" hint="Optional, e.g. the eSewa, Khalti or bank transaction ID">
+            <Field label="Reference / transaction ID" hint="Optional, e.g. the wallet or bank transaction ID">
               {(id) => <Input id={id} value={reference} maxLength={100} onChange={(e) => setReference(e.target.value)} autoComplete="off" />}
             </Field>
           </>

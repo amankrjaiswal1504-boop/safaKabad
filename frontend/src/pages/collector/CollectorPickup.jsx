@@ -48,10 +48,11 @@ import {
   Toggle,
   cx,
 } from '../../components/ui';
-import { addressLine, fmtDateTime, fmtDay, rupees, timeAgo, unitLabel } from '../../utils/format';
-import { DEFAULT_CENTER, MOBILE_PLACEHOLDER, PAYOUT_METHODS, cleanPhone, isMobile, payoutLabel } from '../../utils/locale';
+import { fmtDateTime, fmtDay, rupees, timeAgo, unitLabel } from '../../utils/format';
+import { useConfig } from '../../context/ConfigContext';
+import { MOBILE_PLACEHOLDER, cleanPhone, isMobile, payoutLabel } from '../../utils/locale';
 import { enqueue, queuedFor } from './offlineQueue';
-import { customerPhone, navigateUrl, telUrl, useLocationShare, useOfflineSync, whatsappUrl, writeSharePref } from './collectorShared';
+import { customerPhone, navigateUrl, pickupAddress, telUrl, useLocationShare, useOfflineSync, whatsappUrl, writeSharePref } from './collectorShared';
 
 const STEPS = [
   { key: 'ASSIGNED', label: 'Start' },
@@ -64,10 +65,16 @@ const STEPS = [
 const CANCEL_REASONS = ['Customer not available', 'Customer cancelled at the door', 'Address not found', 'Items not as described', 'Vehicle issue'];
 
 const PAYOUT_ICON = { cash: Banknote, esewa: Smartphone, khalti: Smartphone, bank_transfer: Landmark, wallet: Wallet };
+// Short labels so the options fit on a phone; which methods exist comes from settings.
 const PAYOUT_SHORT = { bank_transfer: 'Bank', wallet: 'Wallet' };
-const PAYOUT_OPTIONS = PAYOUT_METHODS.map((m) => ({ value: m.value, label: PAYOUT_SHORT[m.value] || m.label, icon: PAYOUT_ICON[m.value] }));
+const PAYOUT_HINT = {
+  cash: 'Hand over the cash now. It is recorded as paid.',
+  esewa: 'Sent to the customer’s eSewa wallet (their mobile number).',
+  khalti: 'Sent to the customer’s Khalti wallet (their mobile number).',
+  bank_transfer: 'Sent to the customer’s bank account by our finance team.',
+  wallet: 'Credited to the customer’s ScrapMate wallet.',
+};
 const isWalletMethod = (m) => m === 'esewa' || m === 'khalti';
-
 const RATE_OPTIONS = [
   { value: 'min', label: 'Low' },
   { value: 'avg', label: 'Average' },
@@ -270,7 +277,7 @@ function WeighingForm({ pickup, online, onSubmitted, onQueued, onCancelEdit }) {
       <div>
         <p className="label">Rate</p>
         <Segmented options={RATE_OPTIONS} value={rateChoice} onChange={setRateChoice} className="w-full grid grid-cols-3 [&>button]:justify-center [&>button]:min-h-[40px]" />
-        <p className="text-xs text-steel-500 mt-1.5">The rate always comes from ScrapMate's price list for {pickup.addressSnapshot?.city || 'this city'} — you only pick where in the range this material falls.</p>
+        <p className="text-xs text-steel-500 mt-1.5">The rate always comes from ScrapMate's price list for {pickup.city || pickup.addressSnapshot?.city || 'this city'} — you only pick where in the range this material falls.</p>
       </div>
 
       <div className="flex flex-col-reverse sm:flex-row gap-2 pt-1">
@@ -345,6 +352,11 @@ export default function CollectorPickup() {
   const { data, error, loading, reload, setData } = useApi(`/collector/pickups/${pickupId}`);
   const realtime = useRealtime();
   const pickup = data?.pickup;
+  const { payoutMethods, mapCenter } = useConfig();
+  const payoutOptions = useMemo(
+    () => payoutMethods.map((m) => ({ value: m.value, label: PAYOUT_SHORT[m.value] || m.label, icon: PAYOUT_ICON[m.value] })),
+    [payoutMethods]
+  );
 
   const [busy, setBusy] = useState(null);
   const [otp, setOtp] = useState('');
@@ -356,7 +368,7 @@ export default function CollectorPickup() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelNote, setCancelNote] = useState('');
-  const [payoutMethod, setPayoutMethod] = useState('cash');
+  const [payoutMethod, setPayoutMethod] = useState('');
   const [walletId, setWalletId] = useState('');
   const [bank, setBank] = useState({ accountNumber: '', bankName: '', branch: '', holderName: '' });
   const [payErrors, setPayErrors] = useState({});
@@ -405,11 +417,16 @@ export default function CollectorPickup() {
     };
   }, [connected, watchPickup, subscribe, pickupId, reload]);
 
-  // Pre-fill payout from what the customer chose at booking, if any.
+  // Pre-fill payout from what the customer chose at booking when that method is
+  // still switched on; otherwise default to the first enabled method.
+  const enabledKey = payoutOptions.map((o) => o.value).join(',');
   useEffect(() => {
-    if (pickup?.payout?.method) setPayoutMethod(pickup.payout.method);
+    const enabled = enabledKey ? enabledKey.split(',') : [];
+    const booked = pickup?.payout?.method;
+    if (booked && enabled.includes(booked)) setPayoutMethod(booked);
+    else setPayoutMethod((cur) => (enabled.includes(cur) ? cur : enabled[0] || ''));
     if (pickup?.payout?.walletId) setWalletId((v) => v || pickup.payout.walletId);
-  }, [pickup?.payout?.method, pickup?.payout?.walletId]);
+  }, [pickup?.payout?.method, pickup?.payout?.walletId, enabledKey]);
 
   const update = useCallback((next) => setData((d) => ({ ...d, pickup: mergePickup(d?.pickup, next) })), [setData]);
 
@@ -489,6 +506,7 @@ export default function CollectorPickup() {
   const complete = () => {
     const isDonation = pickup.type === 'donation';
     const e = {};
+    if (!isDonation && !payoutMethod) e.method = 'Choose how the customer is paid';
     if (!isDonation && isWalletMethod(payoutMethod) && !isMobile(walletId)) e.walletId = `Enter the customer's ${payoutLabel(payoutMethod)} mobile number (10 digits)`;
     if (!isDonation && payoutMethod === 'bank_transfer') {
       if (!/^\d{8,20}$/.test(bank.accountNumber.trim())) e.accountNumber = '8–20 digits';
@@ -501,7 +519,7 @@ export default function CollectorPickup() {
       toast.error('Check the payout details');
       return;
     }
-    const body = { payoutMethod: isDonation ? 'cash' : payoutMethod };
+    const body = isDonation ? {} : { payoutMethod };
     if (!isDonation && isWalletMethod(payoutMethod)) body.walletId = cleanPhone(walletId);
     if (!isDonation && payoutMethod === 'bank_transfer') {
       body.bankAccount = {
@@ -524,7 +542,7 @@ export default function CollectorPickup() {
     if (!pickup) return [];
     const m = [];
     if (pickup.location && Number.isFinite(pickup.location.lat)) {
-      m.push({ id: 'dest', lat: pickup.location.lat, lng: pickup.location.lng, color: 'rust', icon: 'pin', popup: addressLine(pickup.addressSnapshot) });
+      m.push({ id: 'dest', lat: pickup.location.lat, lng: pickup.location.lng, color: 'rust', icon: 'pin', popup: pickupAddress(pickup.addressSnapshot) });
     }
     if (position) m.push({ id: 'me', lat: Math.round(position.lat * 1e4) / 1e4, lng: Math.round(position.lng * 1e4) / 1e4, color: 'blue', icon: 'dot', popup: 'You' });
     return m;
@@ -597,7 +615,7 @@ export default function CollectorPickup() {
       )}
 
       {status === 'COLLECTOR_ON_THE_WAY' && (
-        <StepCard icon={Navigation} title="On the way" subtitle={addressLine(a)}>
+        <StepCard icon={Navigation} title="On the way" subtitle={pickupAddress(a)}>
           <div className="space-y-4">
             <Toggle
               checked={sharing}
@@ -713,26 +731,32 @@ export default function CollectorPickup() {
                   <>
                     <div>
                       <p className="label">Payout method</p>
-                      <Segmented
-                        options={PAYOUT_OPTIONS}
-                        value={payoutMethod}
-                        onChange={(v) => {
-                          setPayoutMethod(v);
-                          setPayErrors({});
-                        }}
-                        className="w-full grid grid-cols-3 sm:grid-cols-5 [&>button]:justify-center [&>button]:min-h-[44px] [&>button]:!px-1"
-                      />
-                      <p className="text-xs text-steel-500 mt-1.5">
-                        {
-                          {
-                            cash: 'Hand over the cash now. It is recorded as paid.',
-                            esewa: 'Sent to the customer’s eSewa wallet (their mobile number).',
-                            khalti: 'Sent to the customer’s Khalti wallet (their mobile number).',
-                            bank_transfer: 'Sent to the customer’s bank account by our finance team.',
-                            wallet: 'Credited to the customer’s ScrapMate wallet.',
-                          }[payoutMethod]
-                        }
-                      </p>
+                      {payoutOptions.length ? (
+                        <>
+                          <Segmented
+                            options={payoutOptions}
+                            value={payoutMethod}
+                            onChange={(v) => {
+                              setPayoutMethod(v);
+                              setPayErrors({});
+                            }}
+                            className={cx(
+                              'w-full grid [&>button]:justify-center [&>button]:min-h-[44px] [&>button]:!px-1',
+                              { 1: 'grid-cols-1', 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-2 sm:grid-cols-4' }[payoutOptions.length] || 'grid-cols-3 sm:grid-cols-5'
+                            )}
+                          />
+                          {PAYOUT_HINT[payoutMethod] && <p className="text-xs text-steel-500 mt-1.5">{PAYOUT_HINT[payoutMethod]}</p>}
+                        </>
+                      ) : (
+                        <p className="rounded-lg bg-amber-50 border border-amber-100 text-amber-700 text-sm px-3 py-2" role="alert">
+                          No payout methods are switched on right now. Call the office before completing this pickup.
+                        </p>
+                      )}
+                      {payErrors.method && (
+                        <p className="text-danger-600 text-xs mt-1.5" role="alert">
+                          {payErrors.method}
+                        </p>
+                      )}
                     </div>
                     {isWalletMethod(payoutMethod) && (
                       <Field label={`Customer's ${payoutLabel(payoutMethod)} ID`} hint="Their 10-digit mobile number" error={payErrors.walletId} required>
@@ -775,7 +799,7 @@ export default function CollectorPickup() {
                           </Field>
                           <Field label="Branch" error={payErrors.branch} required>
                             {(fid) => (
-                              <Input id={fid} value={bank.branch} onChange={(e) => setBank((b) => ({ ...b, branch: e.target.value }))} maxLength={80} placeholder="e.g. New Baneshwor" invalid={Boolean(payErrors.branch)} />
+                              <Input id={fid} value={bank.branch} onChange={(e) => setBank((b) => ({ ...b, branch: e.target.value }))} maxLength={80} placeholder="Branch" invalid={Boolean(payErrors.branch)} />
                             )}
                           </Field>
                         </div>
@@ -863,7 +887,7 @@ export default function CollectorPickup() {
         <p className="mt-3 text-sm text-steel-700 flex items-start gap-1.5">
           <MapPin className="w-4 h-4 text-steel-500 shrink-0 mt-0.5" aria-hidden />
           <span>
-            {addressLine(a)}
+            {pickupAddress(a)}
             {a.landmark ? <span className="block text-steel-500">{/^near\s/i.test(a.landmark) ? a.landmark : `Near ${a.landmark}`}</span> : null}
           </span>
         </p>
@@ -886,7 +910,7 @@ export default function CollectorPickup() {
         )}
         {markers.length > 0 && (
           <div className="mt-4">
-            <MapView markers={markers} center={DEFAULT_CENTER} height={180} />
+            <MapView markers={markers} center={mapCenter(pickup.city || a.city)} height={180} />
           </div>
         )}
       </Card>

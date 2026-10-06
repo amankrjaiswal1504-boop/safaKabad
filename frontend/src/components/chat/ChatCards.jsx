@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { buildWhatsAppLink, buildWhatsAppText } from '../../utils/whatsapp';
+import { rupees } from '../../utils/format';
 
 const STATUS_STEPS = ['BOOKED', 'ASSIGNED', 'COLLECTOR_ON_THE_WAY', 'ARRIVED', 'WEIGHING', 'COMPLETED'];
 const STATUS_LABEL = {
@@ -12,7 +13,6 @@ const STATUS_LABEL = {
   CANCELLED: 'Cancelled',
 };
 
-const rupees = (n) => `Rs. ${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 
 function CardShell({ title, children, footer }) {
   return (

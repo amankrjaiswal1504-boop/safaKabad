@@ -9,7 +9,14 @@ const { fetchRates, estimateItems, listServiceCities } = require('../services/ra
 const { computeImpact } = require('../services/impactService');
 const settings = require('../services/settingsService');
 const { track } = require('../services/jobs');
-const { DEFAULT_CITY } = require('../config/constants');
+const { findCity, defaultCity, listAreas } = require('../services/cityService');
+
+// The requested city if we operate there, else the default city when none was
+// asked for. Unknown cities resolve to null (empty results, never a guess).
+async function resolveCity(name) {
+  if (name) return (await findCity(name))?.name || null;
+  return defaultCity();
+}
 
 async function getCategories(req, res, next) {
   try {
@@ -36,8 +43,9 @@ async function getItems(req, res, next) {
 // Items + their price range for a given city. Powers the public rates page.
 async function getRates(req, res, next) {
   try {
+    const city = await resolveCity(req.query.city);
     const rates = await fetchRates({
-      city: req.query.city || DEFAULT_CITY,
+      city,
       search: req.query.search,
       category: req.query.category,
     });
@@ -45,6 +53,7 @@ async function getRates(req, res, next) {
     res.json({
       success: true,
       data: {
+        city,
         rates,
         disclaimer: 'Indicative price. Final value depends on actual weight/condition and verification.',
       },
@@ -65,18 +74,21 @@ async function getCities(req, res, next) {
 // Public instant estimate (home page + wizard). Never trusts client prices.
 async function estimate(req, res, next) {
   try {
-    const { items, city } = req.body;
-    const result = await estimateItems(items, city || DEFAULT_CITY, {
+    const { items } = req.body;
+    const city = await resolveCity(req.body.city);
+    if (!city) return res.status(400).json({ success: false, message: "We don't operate in this city yet" });
+    const result = await estimateItems(items, city, {
       conditionMultipliers: await settings.get('conditionMultipliers'),
     });
     await track('estimate', { user: req.user?._id, sessionId: req.get('x-session-id'), city });
     res.json({
       success: true,
       data: {
-        city: city || DEFAULT_CITY,
+        city,
         min: result.min,
         max: result.max,
         weightKg: result.weightKg,
+        unpriced: result.unpriced,
         lines: result.lines.map((l) => ({
           itemId: l.item._id,
           name: l.item.name,
@@ -97,7 +109,8 @@ async function estimate(req, res, next) {
 // Price history for one item in one city (rate trends chart).
 async function getTrend(req, res, next) {
   try {
-    const city = req.query.city || DEFAULT_CITY;
+    const city = await resolveCity(req.query.city);
+    if (!city) return res.status(404).json({ success: false, message: "We don't operate in this city yet" });
     const days = Math.min(365, Math.max(7, Number(req.query.days) || 180));
     const item = await ScrapItem.findById(req.params.itemId).select('name unit');
     if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
@@ -128,11 +141,12 @@ async function publicStats(req, res, next) {
     const home = await settings.get('home');
     if (home.statsOverride?.enabled) {
       const o = home.statsOverride;
-      return res.json({ success: true, data: { kgRecycled: o.kgRecycled, pickups: o.pickups, cities: o.cities, rating: o.rating, customers: null } });
+      return res.json({ success: true, data: { kgRecycled: o.kgRecycled, pickups: o.pickups, cities: o.cities, areas: (await listAreas()).length, rating: o.rating, customers: null } });
     }
-    const [impact, cities, ratingAgg, customers] = await Promise.all([
+    const [impact, cities, areas, ratingAgg, customers] = await Promise.all([
       computeImpact({}),
       listServiceCities(),
+      listAreas(),
       Review.aggregate([{ $match: { status: 'approved' } }, { $group: { _id: null, avg: { $avg: '$rating' }, n: { $sum: 1 } } }]),
       User.countDocuments({ role: 'customer' }),
     ]);
@@ -144,6 +158,7 @@ async function publicStats(req, res, next) {
         co2Kg: impact.co2Kg,
         pickups: await Pickup.countDocuments({ status: 'COMPLETED' }),
         cities: cities.length,
+        areas: areas.length,
         rating: ratingAgg[0] ? Math.round(ratingAgg[0].avg * 10) / 10 : null,
         ratingCount: ratingAgg[0]?.n || 0,
         customers,

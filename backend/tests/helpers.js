@@ -17,6 +17,8 @@ const { signToken } = require('../src/utils/jwt');
 const { resetCatalogCache } = require('../src/services/chat/catalog');
 const { clearRateCache } = require('../src/services/rateService');
 const settings = require('../src/services/settingsService');
+const { City, ServiceArea } = require('../src/models/platform');
+const { clearGeoCache } = require('../src/services/cityService');
 
 let mongo;
 
@@ -35,6 +37,7 @@ async function resetDb() {
   await Promise.all(collections.map((c) => c.deleteMany({})));
   resetCatalogCache();
   clearRateCache();
+  clearGeoCache();
   settings.clearCache();
 }
 
@@ -46,8 +49,18 @@ function dayFromNow(n) {
   return d.toISOString().slice(0, 10);
 }
 
-// Minimal world: two customers, an admin, a collector, a few priced items, one pickup owned by Alice.
+// Minimal world: two cities in the Kathmandu valley with municipalities, two
+// customers, an admin, a collector, a few priced items, one pickup owned by Alice.
 async function seedBasics() {
+  await City.create([
+    { name: 'Kathmandu', slug: 'kathmandu', district: 'Kathmandu', province: 'Bagmati', isDefault: true, center: { lat: 27.7172, lng: 85.324 } },
+    { name: 'Lalitpur', slug: 'lalitpur', district: 'Lalitpur', province: 'Bagmati', sortOrder: 1 },
+  ]);
+  const [kmc, kirtipur, lmc] = await ServiceArea.create([
+    { name: 'Kathmandu Metropolitan City', city: 'Kathmandu', type: 'metropolitan', district: 'Kathmandu', state: 'Bagmati', wards: 32, pinCodes: ['44600', '44616'], center: { lat: 27.7172, lng: 85.324 } },
+    { name: 'Kirtipur', city: 'Kathmandu', district: 'Kathmandu', state: 'Bagmati', wards: 10, servedWards: [1, 2, 3, 4, 5], pinCodes: ['44618'] },
+    { name: 'Lalitpur Metropolitan City', city: 'Lalitpur', type: 'metropolitan', district: 'Lalitpur', state: 'Bagmati', wards: 29, pinCodes: ['44700'] },
+  ]);
   const admin = await User.create({ name: 'Admin', email: 'admin@test.dev', phone: '9800000001', password: 'secret12', role: 'admin' });
   const alice = await User.create({ name: 'Alice Rai', email: 'alice@test.dev', phone: '9800000002', password: 'secret12' });
   const bob = await User.create({ name: 'Bob Das', email: 'bob@test.dev', phone: '9800000003', password: 'secret12' });
@@ -57,7 +70,7 @@ async function seedBasics() {
     phone: '9800000004',
     password: 'secret12',
     role: 'collector',
-    collectorProfile: { city: 'Kathmandu', servicePinCodes: ['44600'], location: { lat: 27.69, lng: 85.34 } },
+    collectorProfile: { city: 'Kathmandu', serviceAreas: [kmc._id], location: { lat: 27.69, lng: 85.34 } },
   });
 
   const metals = await ScrapCategory.create({ name: 'Normal Recyclables', slug: 'normal-recyclables' });
@@ -71,19 +84,23 @@ async function seedBasics() {
     { item: newspaper._id, city: 'Kathmandu', minPrice: 12, maxPrice: 14, recyclerPrice: 17 },
     { item: fridge._id, city: 'Kathmandu', minPrice: 500, maxPrice: 1200 },
     { item: laptop._id, city: 'Kathmandu', minPrice: 200, maxPrice: 600 },
-    { item: copper._id, city: 'Pokhara', minPrice: 470, maxPrice: 540 },
+    { item: copper._id, city: 'Lalitpur', minPrice: 470, maxPrice: 540 },
   ]);
 
   const address = await Address.create({
     user: alice._id,
+    area: kmc._id,
+    ward: 10,
     houseNumber: '1',
-    street: 'MG Road',
-    locality: 'Indiranagar',
+    street: 'New Baneshwor',
+    locality: 'Kathmandu Metropolitan City-10',
+    municipality: 'Kathmandu Metropolitan City',
+    district: 'Kathmandu',
     city: 'Kathmandu',
     state: 'Bagmati',
     pinCode: '44600',
     isDefault: true,
-    location: { lat: 12.978, lng: 77.64 },
+    location: { lat: 27.6915, lng: 85.342 },
   });
   const pickup = await Pickup.create({
     pickupId: 'SM-2026-000001',
@@ -92,6 +109,8 @@ async function seedBasics() {
     address: address._id,
     addressSnapshot: address.toObject(),
     pinCode: '44600',
+    area: kmc._id,
+    city: 'Kathmandu',
     scheduledDate: new Date(`${dayFromNow(2)}T00:00:00.000Z`),
     timeSlot: '9:00 AM - 11:00 AM',
     contactPhone: '9800000002',
@@ -108,7 +127,7 @@ async function seedBasics() {
   });
   await Faq.syncIndexes();
 
-  return { admin, alice, bob, collector, copper, newspaper, fridge, laptop, pickup, address };
+  return { admin, alice, bob, collector, copper, newspaper, fridge, laptop, pickup, address, kmc, kirtipur, lmc };
 }
 
 const bearer = (user) => `Bearer ${signToken(user)}`;

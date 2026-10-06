@@ -1,6 +1,6 @@
 const ScrapItem = require('../../models/ScrapItem');
-const { DEFAULT_CITY } = require('../../config/constants');
-const { listServiceCities, escapeRegex } = require('../rateService');
+const { escapeRegex } = require('../rateService');
+const { listCities, listAreas, defaultCity } = require('../cityService');
 
 // Whole-word match that also works for Devanagari (\b does not).
 function wordRe(word, suffix = '') {
@@ -99,13 +99,22 @@ async function findItemsInText(text) {
   return [...found.values()];
 }
 
-// City for rate lookups: one named in the text, else the user's default address
-// city, else the configured default.
-async function pickCity(text, fallbackCity) {
-  const cities = await listServiceCities();
+// The city (price list) named in the text: a city name (English or Nepali) or
+// one of its municipalities, e.g. "Kirtipur" -> Kathmandu. Null if none.
+async function matchCity(text) {
   const t = normalise(text || '');
-  const named = cities.find((c) => t.includes(normalise(c)));
-  return named || fallbackCity || DEFAULT_CITY;
+  if (!t) return null;
+  const has = (name) => name && t.includes(normalise(name));
+  const city = (await listCities()).find((c) => has(c.name) || has(c.nameNe));
+  if (city) return city.name;
+  const area = (await listAreas()).find((a) => has(a.name) || has(a.nameNe));
+  return area ? area.city : null;
 }
 
-module.exports = { resolveItemByName, findItemsInText, pickCity, resetCatalogCache };
+// City for rate lookups: one named in the text, else the user's default address
+// city, else the admin-chosen default city.
+async function pickCity(text, fallbackCity) {
+  return (await matchCity(text)) || fallbackCity || defaultCity();
+}
+
+module.exports = { resolveItemByName, findItemsInText, pickCity, matchCity, resetCatalogCache };

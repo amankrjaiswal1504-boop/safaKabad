@@ -142,7 +142,7 @@ const ADMIN_SECTIONS = [
       { to: '/admin/dispatch', label: 'Dispatch board', icon: KanbanSquare, perm: ['dispatch', 'pickups'] },
       { to: '/admin/pickups', label: 'Pickups', icon: Truck, perm: 'pickups:read' },
       { to: '/admin/collectors', label: 'Collectors', icon: ClipboardList, perm: 'collectors' },
-      { to: '/admin/service-areas', label: 'Service areas', icon: MapPinned, perm: 'service-areas' },
+      { to: '/admin/service-areas', label: 'Cities & areas', icon: MapPinned, perm: 'service-areas' },
       { to: '/admin/slots', label: 'Time slots', icon: CalendarClock, perm: '*' },
     ],
   },

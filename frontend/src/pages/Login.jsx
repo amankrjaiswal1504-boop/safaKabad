@@ -51,16 +51,18 @@ export default function Login() {
           <Link to="/register" state={location.state} className="link">
             {t('auth.createAccount')}
           </Link>
+          {import.meta.env.DEV && (
           <details className="mt-6 text-xs">
             <summary className="cursor-pointer text-steel-400">Demo accounts (development)</summary>
             <div className="mt-2 grid gap-1 text-steel-500">
-              <span>Customer: customer@scrapmate.dev / Customer@123 (or phone 9999900003)</span>
+              <span>Customer: customer@scrapmate.dev / Customer@123 (or phone 9800000003)</span>
               <span>Business: business@scrapmate.dev / Business@123</span>
               <span>Collector: collector1@scrapmate.dev / Collector@123</span>
               <span>Admin: admin@scrapmate.dev / Admin@123</span>
               <span>Staff: support@ / ops@ / finance@scrapmate.dev / Staff@123</span>
             </div>
           </details>
+          )}
         </>
       }
     >

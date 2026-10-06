@@ -11,7 +11,7 @@ import { fmtDate, rupees } from '../utils/format';
 
 const PERKS = [
   { icon: Repeat, t: 'Recurring pickups', d: 'Weekly or monthly pickups that book themselves.' },
-  { icon: TrendingUp, t: 'Better rates', d: 'Volume pricing tiers: up to +6% over standard rates.' },
+  { icon: TrendingUp, t: 'Better rates', d: 'Volume pricing tiers that add a bonus on every pickup.' },
   { icon: Receipt, t: 'VAT bills', d: 'Bills and receipts with your PAN/VAT number for every pickup.' },
   { icon: FileCheck2, t: 'E-waste certificates', d: 'Certified disposal certificates for audits and compliance.' },
 ];
@@ -56,7 +56,9 @@ function MyQuotes() {
 
 export default function Business() {
   const { user } = useAuth();
-  const { city } = useConfig();
+  const { city, cities, config } = useConfig();
+  const tiers = [...(config?.business?.tiers || [])].sort((a, b) => a.minMonthlyKg - b.minMonthlyKg);
+  const topBonus = Math.max(0, ...tiers.map((x) => x.bonusPercent || 0));
   usePageMeta({ title: 'Scrap pickup for businesses', description: 'Bulk scrap pickup for shops, offices, housing societies and factories. PAN/VAT bills, recurring pickups, volume pricing and certified e-waste disposal.' });
   const [form, setForm] = useState({
     contactName: user?.name || '',
@@ -111,23 +113,23 @@ export default function Business() {
               </Card>
             ))}
           </div>
-          <Card className="mt-6">
-            <h2 className="font-semibold text-steel-900">Pricing tiers</h2>
-            <p className="text-sm text-steel-500 mt-1">Based on your average monthly volume. Applied automatically to every pickup.</p>
-            <div className="grid grid-cols-3 gap-3 mt-4 text-center">
-              {[
-                ['Standard', 'Any volume', '+0%'],
-                ['Silver', '200 kg+/month', '+3%'],
-                ['Gold', '1,000 kg+/month', '+6%'],
-              ].map(([n, v, b]) => (
-                <div key={n} className="rounded-xl bg-surface-2 border border-steel-100 p-3">
-                  <div className="font-semibold text-steel-900">{n}</div>
-                  <div className="text-xs text-steel-500 mt-0.5">{v}</div>
-                  <div className="font-head text-lg font-bold text-patina-700 mt-1">{b}</div>
-                </div>
-              ))}
-            </div>
-          </Card>
+          {tiers.length > 0 && (
+            <Card className="mt-6">
+              <h2 className="font-semibold text-steel-900">Pricing tiers</h2>
+              <p className="text-sm text-steel-500 mt-1">
+                Based on your average monthly volume. Applied automatically to every pickup{topBonus ? `, up to +${topBonus}%` : ''}.
+              </p>
+              <div className={`grid gap-3 mt-4 text-center ${tiers.length > 3 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
+                {tiers.map((x) => (
+                  <div key={x.name} className="rounded-xl bg-surface-2 border border-steel-100 p-3">
+                    <div className="font-semibold text-steel-900 capitalize">{x.name}</div>
+                    <div className="text-xs text-steel-500 mt-0.5">{x.minMonthlyKg ? `${x.minMonthlyKg.toLocaleString('en-IN')} kg+/month` : 'Any volume'}</div>
+                    <div className="font-head text-lg font-bold text-patina-700 mt-1">+{x.bonusPercent || 0}%</div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
           {user?.role === 'customer' && <MyQuotes />}
         </div>
 
@@ -162,7 +164,16 @@ export default function Business() {
                   {(id) => <Input id={id} type="email" value={form.email} onChange={(e) => set('email', e.target.value)} />}
                 </Field>
                 <Field label="City" required error={errors.city}>
-                  {(id) => <Input id={id} value={form.city} onChange={(e) => set('city', e.target.value)} />}
+                  {(id) => (
+                    <Select id={id} value={form.city} onChange={(e) => set('city', e.target.value)}>
+                      {!cities.includes(form.city) && <option value="">Select city</option>}
+                      {cities.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
                 </Field>
                 <Field label="PAN/VAT no." error={errors.panVat}>
                   {(id) => <Input id={id} inputMode="numeric" value={form.panVat} onChange={(e) => set('panVat', e.target.value.replace(/\D/g, ''))} maxLength={9} />}

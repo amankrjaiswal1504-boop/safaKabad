@@ -1,3 +1,4 @@
+import { useConfig } from '../../context/ConfigContext';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Gift, KeyRound, Leaf, Package, Plus, Trees, Wallet } from 'lucide-react';
 import useApi from '../../hooks/useApi';
@@ -9,6 +10,7 @@ import { fmtDay, rupees } from '../../utils/format';
 
 export default function Overview() {
   const { user } = useAuth();
+  const { withdrawalMethods } = useConfig();
   const { t } = useI18n();
   usePageMeta({ title: t('dash.overview'), noindex: true });
   const { data: active, loading } = useApi('/pickups', { params: { status: 'active', limit: 3 } });
@@ -72,7 +74,7 @@ export default function Overview() {
 
       <div className="grid sm:grid-cols-3 gap-4 mb-6">
         <Link to="/wallet" className="block">
-          <Stat label={t('dash.wallet')} value={wallet ? rupees(wallet.balance, { decimals: 0 }) : '—'} icon={Wallet} tone="patina" hint="Withdraw to eSewa, Khalti or bank" />
+          <Stat label={t('dash.wallet')} value={wallet ? rupees(wallet.balance, { decimals: 0 }) : '—'} icon={Wallet} tone="patina" hint={withdrawalMethods.length ? `Withdraw to ${withdrawalMethods.map((m) => (m.value === 'bank_transfer' ? 'bank' : m.label)).join(', ')}` : ''} />
         </Link>
         <Link to="/impact" className="block">
           <Stat label="Recycled" value={impact ? `${impact.kg} kg` : '—'} icon={Leaf} tone="patina" hint={impact ? `${impact.co2Kg} kg CO₂ avoided` : ''} />

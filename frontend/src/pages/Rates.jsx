@@ -13,6 +13,7 @@ import { CitySelect } from '../components/Navbar';
 import { RangeChart, ChartTable } from '../components/charts';
 import CategoryIcon from '../components/CategoryIcon';
 import { fmtDate, rupees, unitLabel } from '../utils/format';
+import { CURRENCY_SYMBOL } from '../utils/locale';
 
 function TrendModal({ rate, city, onClose }) {
   const { user } = useAuth();
@@ -28,7 +29,7 @@ function TrendModal({ rate, city, onClose }) {
     setSaving(true);
     try {
       await api.post('/price-alerts', { itemId: rate.itemId, city, direction, threshold: Number(threshold) });
-      toast.success(`We'll notify you when ${rate.name} goes ${direction} Rs. ${threshold}`);
+      toast.success(`We'll notify you when ${rate.name} goes ${direction} ${rupees(threshold)}`);
       onClose();
     } catch (err) {
       toast.error(err.message);
@@ -74,7 +75,7 @@ function TrendModal({ rate, city, onClose }) {
                   </Select>
                 )}
               </Field>
-              <Field label={`Amount (Rs. per ${unitLabel(rate.unit)})`}>
+              <Field label={`Amount (${CURRENCY_SYMBOL} per ${unitLabel(rate.unit)})`}>
                 {(id) => <Input id={id} type="number" min="1" required value={threshold} onChange={(e) => setThreshold(e.target.value)} placeholder={String(rate.maxPrice + 10)} />}
               </Field>
               <Button type="submit" loading={saving} icon={Bell}>

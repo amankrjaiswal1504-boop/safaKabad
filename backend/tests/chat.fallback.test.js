@@ -53,8 +53,13 @@ describe('rates and estimates come from the database', () => {
   });
 
   it('uses a city named in the message', async () => {
-    const res = await ask(request(app), 'copper price in Pokhara');
-    expect(cardsOf(res, 'rates')[0]).toMatchObject({ city: 'Pokhara', rates: [expect.objectContaining({ minPrice: 470 })] });
+    const res = await ask(request(app), 'copper price in Lalitpur');
+    expect(cardsOf(res, 'rates')[0]).toMatchObject({ city: 'Lalitpur', rates: [expect.objectContaining({ minPrice: 470 })] });
+  });
+
+  it('maps a municipality to its city price list', async () => {
+    const res = await ask(request(app), 'copper rate in Kirtipur?');
+    expect(cardsOf(res, 'rates')[0]).toMatchObject({ city: 'Kathmandu', rates: [expect.objectContaining({ minPrice: 480 })] });
   });
 
   it('estimates value using the booking maths', async () => {

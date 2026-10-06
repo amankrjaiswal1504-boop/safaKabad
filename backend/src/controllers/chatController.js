@@ -260,7 +260,7 @@ async function sendMessage(req, res, next) {
       user: req.user || null,
       session,
       cards: [],
-      defaultCity: defaultCityFor(req.user, defaultAddress),
+      defaultCity: await defaultCityFor(req.user, defaultAddress),
       pagePickupId,
       escalated: false,
     };

@@ -7,6 +7,7 @@ import usePageMeta from '../../hooks/usePageMeta';
 import { Badge, Button, Card, EmptyState, ErrorState, Field, Input, Modal, PageHeader, Segmented, SkeletonRows, cx } from '../../components/ui';
 import { fmtDateTime, rupees } from '../../utils/format';
 import { MOBILE_PLACEHOLDER, payoutLabel } from '../../utils/locale';
+import { useConfig } from '../../context/ConfigContext';
 
 const REASONS = { pickup_payout: 'Pickup payout', referral: 'Referral reward', withdrawal: 'Withdrawal', refund: 'Refund', bonus: 'Bonus' };
 const W_TONE = { requested: 'amber', processing: 'blue', paid: 'patina', rejected: 'danger' };
@@ -15,7 +16,13 @@ export default function Wallet() {
   usePageMeta({ title: 'Wallet', noindex: true });
   const { data, error, loading, reload } = useApi('/wallet');
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ amount: '', method: 'esewa', walletId: '', accountNumber: '', bankName: '', branch: '', holderName: '' });
+  const { withdrawalMethods, wallet: limits } = useConfig();
+  const minW = limits.minWithdrawal || 1;
+  const maxW = limits.maxWithdrawal || Infinity;
+  const [form, setForm] = useState({ amount: '', method: '', walletId: '', accountNumber: '', bankName: '', branch: '', holderName: '' });
+  const method = withdrawalMethods.some((m) => m.value === form.method) ? form.method : withdrawalMethods[0]?.value || '';
+  const amount = Number(form.amount);
+  const amountOk = amount >= minW && amount <= Math.min(maxW, data?.balance ?? 0);
   const [busy, setBusy] = useState(false);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -23,9 +30,9 @@ export default function Wallet() {
     setBusy(true);
     try {
       await api.post('/wallet/withdraw', {
-        amount: Number(form.amount),
-        method: form.method,
-        ...(form.method === 'bank_transfer'
+        amount,
+        method,
+        ...(method === 'bank_transfer'
           ? { bankAccount: { accountNumber: form.accountNumber, bankName: form.bankName, branch: form.branch || undefined, holderName: form.holderName } }
           : { walletId: form.walletId }),
       });
@@ -54,11 +61,11 @@ export default function Wallet() {
             <div className="font-head text-4xl sm:text-5xl font-bold mt-1 tabular">{data ? rupees(data.balance, { decimals: 2 }) : '—'}</div>
             {pending && <div className="text-sm text-[#D9B66A] mt-1">{rupees(pending.amount)} withdrawal {pending.status}</div>}
           </div>
-          <Button icon={Banknote} onClick={() => setOpen(true)} disabled={!data || data.balance < 50 || Boolean(pending)}>
+          <Button icon={Banknote} onClick={() => setOpen(true)} disabled={!data || data.balance < minW || Boolean(pending) || !withdrawalMethods.length}>
             Withdraw
           </Button>
         </div>
-        {data && data.balance < 50 && <p className="text-xs text-[#A3B3AC] mt-3">Minimum withdrawal is Rs. 50.</p>}
+        {data && data.balance < minW && <p className="text-xs text-[#A3B3AC] mt-3">Minimum withdrawal is {rupees(minW)}.</p>}
       </Card>
 
       <h2 className="font-medium text-steel-900 mb-3">Transactions</h2>
@@ -116,18 +123,21 @@ export default function Wallet() {
         onClose={() => setOpen(false)}
         title="Withdraw money"
         footer={
-          <Button loading={busy} onClick={withdraw} disabled={!(Number(form.amount) >= 50)}>
+          <Button loading={busy} onClick={withdraw} disabled={!amountOk || !method}>
             Request withdrawal
           </Button>
         }
       >
         <div className="space-y-4">
-          <Field label="Amount" hint={data ? `Available ${rupees(data.balance, { decimals: 2 })}` : ''}>
-            {(id) => <Input id={id} type="number" min="50" max={data?.balance} value={form.amount} onChange={(e) => set('amount', e.target.value)} />}
+          <Field
+            label="Amount"
+            hint={data ? `Available ${rupees(data.balance, { decimals: 2 })} · min ${rupees(minW)}${Number.isFinite(maxW) ? ` · max ${rupees(maxW)}` : ''}` : ''}
+          >
+            {(id) => <Input id={id} type="number" min={minW} max={Math.min(maxW, data?.balance ?? 0)} value={form.amount} onChange={(e) => set('amount', e.target.value)} />}
           </Field>
-          <Segmented value={form.method} onChange={(v) => set('method', v)} options={[{ value: 'esewa', label: 'eSewa' }, { value: 'khalti', label: 'Khalti' }, { value: 'bank_transfer', label: 'Bank account' }]} />
-          {form.method !== 'bank_transfer' ? (
-            <Field label={`${payoutLabel(form.method)} ID (mobile number)`}>
+          <Segmented value={method} onChange={(v) => set('method', v)} options={withdrawalMethods.map((m) => ({ value: m.value, label: m.value === 'bank_transfer' ? 'Bank account' : m.label }))} />
+          {method !== 'bank_transfer' ? (
+            <Field label={`${payoutLabel(method)} ID (mobile number)`}>
               {(id) => <Input id={id} inputMode="tel" placeholder={MOBILE_PLACEHOLDER} value={form.walletId} onChange={(e) => set('walletId', e.target.value.trim())} />}
             </Field>
           ) : (

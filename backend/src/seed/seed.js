@@ -16,22 +16,8 @@ const ChatMessage = require('../models/ChatMessage');
 const SupportTicket = require('../models/SupportTicket');
 const platform = require('../models/platform');
 
-const { ServiceArea, Coupon, Ngo, Review, WalletTransaction, RecurringPlan, PriceAlert, Quote, AnalyticsEvent, Setting } = platform;
-
-// Nepal cities: price factor vs Kathmandu, province, centre, postal codes served.
-// Postal codes are demo data; edit them in Admin > Service areas.
-const CITIES = [
-  { city: 'Kathmandu', state: 'Bagmati', plate: 'BA', f: 1.0, center: [27.7172, 85.324], pins: ['44600', '44601', '44602', '44603', '44604', '44605', '44606', '44611', '44616', '44617'] },
-  { city: 'Lalitpur', state: 'Bagmati', plate: 'BA', f: 1.0, center: [27.6644, 85.3188], pins: ['44700', '44705', '44707', '44709'] },
-  { city: 'Bhaktapur', state: 'Bagmati', plate: 'BA', f: 0.98, center: [27.671, 85.4298], pins: ['44800', '44804'] },
-  { city: 'Pokhara', state: 'Gandaki', plate: 'GA', f: 0.97, center: [28.2096, 83.9856], pins: ['33700', '33701', '33702'] },
-  { city: 'Bharatpur', state: 'Bagmati', plate: 'BA', f: 0.96, center: [27.6766, 84.4304], pins: ['44200', '44207'] },
-  { city: 'Biratnagar', state: 'Koshi', plate: 'KO', f: 0.95, center: [26.4525, 87.2718], pins: ['56613', '56614'] },
-  { city: 'Dharan', state: 'Koshi', plate: 'KO', f: 0.95, center: [26.8065, 87.2846], pins: ['56700'] },
-  { city: 'Birgunj', state: 'Madhesh', plate: 'MA', f: 0.96, center: [27.0104, 84.8777], pins: ['44300', '44301'] },
-  { city: 'Butwal', state: 'Lumbini', plate: 'LU', f: 0.95, center: [27.7006, 83.4483], pins: ['32907', '32900'] },
-  { city: 'Nepalgunj', state: 'Lumbini', plate: 'LU', f: 0.93, center: [28.05, 81.6167], pins: ['21900'] },
-];
+const { City, ServiceArea, Coupon, Ngo, Review, WalletTransaction, RecurringPlan, PriceAlert, Quote, AnalyticsEvent, Setting } = platform;
+const { CITIES, areaDocs } = require('./kathmanduValley');
 
 // Indicative buying prices in Nepali rupees (NPR) for Kathmandu.
 const CATEGORY_DATA = [
@@ -110,6 +96,7 @@ const FAQ_DATA = [
   { topic: 'pickup', question: 'Is pickup free?', answer: 'Yes. Doorstep pickup is free for every scrap category we support.', keywords: ['free', 'charge', 'fee', 'cost'] },
   { topic: 'payment', question: 'How do I get paid?', answer: 'Choose cash, eSewa, Khalti, bank transfer or your ScrapMate wallet once the collector has weighed your scrap. A digital receipt is generated straight away.', keywords: ['payment', 'paid', 'esewa', 'khalti', 'cash', 'bank', 'money', 'wallet'] },
   { topic: 'payment', question: 'I have not received my payment. What should I do?', answer: 'Open the pickup in your dashboard to check the payment status. eSewa, Khalti and bank payouts are usually settled the same day. If it shows paid but you have not received it, contact support on WhatsApp with your pickup ID.', keywords: ['not received', 'missing', 'pending', 'refund'] },
+  { topic: 'pickup', question: 'Where do you pick up?', answer: 'Across the Kathmandu valley: Kathmandu, Lalitpur and Bhaktapur districts. When you add your address, choose your municipality and ward and we will confirm straight away.', keywords: ['area', 'where', 'city', 'municipality', 'ward', 'kathmandu', 'lalitpur', 'bhaktapur'] },
   { topic: 'pickup', question: 'Is there a minimum quantity for pickup?', answer: 'Most areas have a small minimum (shown when you book). Large or commercial quantities are welcome too: use the Business page for a bulk quote.', keywords: ['minimum', 'small', 'quantity', 'weight'] },
   { topic: 'pickup', question: 'Can I cancel or reschedule a pickup?', answer: 'Yes. You can reschedule up to 4 hours before your slot, and cancel any time before the collector arrives, from your pickup page or by asking the chat assistant.', keywords: ['cancel', 'reschedule', 'change', 'date'] },
   { topic: 'weighing', question: 'How is my scrap weighed?', answer: 'The collector weighs each item on a digital scale in front of you and photographs the scale reading. You can review the amount and accept or dispute it before payment.', keywords: ['weigh', 'scale', 'weight', 'collector', 'dispute'] },
@@ -146,7 +133,8 @@ const jitter = ([lat, lng], spread = 0.04) => ({ lat: lat + (Math.random() - 0.5
 async function seed() {
   await connectDB();
   console.log('[seed] Clearing existing data...');
-  const models = [User, ScrapCategory, ScrapItem, ScrapPrice, PriceHistory, Address, Pickup, Payment, Faq, ChatSession, ChatMessage, SupportTicket, ...Object.values(platform)];
+  const platformModels = Object.values(platform).filter((m) => typeof m?.deleteMany === 'function');
+  const models = [User, ScrapCategory, ScrapItem, ScrapPrice, PriceHistory, Address, Pickup, Payment, Faq, ChatSession, ChatMessage, SupportTicket, ...platformModels];
   await Promise.all(models.map((m) => m.deleteMany({})));
 
   console.log('[seed] Creating staff and admin accounts (DEVELOPMENT / DEMO credentials)...');
@@ -157,27 +145,36 @@ async function seed() {
     { name: 'Firoj Finance', email: 'finance@scrapmate.dev', phone: '9800000012', password: 'Staff@123', role: 'staff', staffRole: 'finance' },
   ]);
 
-  console.log('[seed] Creating service areas and collectors...');
-  await ServiceArea.insertMany(
-    CITIES.map((c) => ({ city: c.city, state: c.state, pinCodes: c.pins, minPickupWeightKg: 5, minPickupValue: 100, center: { lat: c.center[0], lng: c.center[1] } }))
-  );
-  const collectorNames = ['Ram Bahadur Thapa', 'Hari Shrestha', 'Bikash Gurung', 'Suman Tamang', 'Dipak Rai', 'Prakash Magar', 'Kiran Karki', 'Sanjay Yadav', 'Rajesh Chaudhary', 'Nabin Adhikari', 'Sagar Bhandari'];
+  console.log('[seed] Creating Kathmandu valley cities, municipalities and collectors...');
+  await City.insertMany(CITIES.map(({ priceFactor, ...c }) => ({ ...c, slug: slugify(c.name), isActive: true })));
+  const areas = await ServiceArea.insertMany(areaDocs());
+  const area = (name) => areas.find((a) => a.name === name);
+
+  // One collector per patch of municipalities; plates in the Bagmati style.
+  const COLLECTORS = [
+    ['Ram Bahadur Thapa', 'Kathmandu', ['Kathmandu Metropolitan City', 'Kirtipur', 'Nagarjun', 'Chandragiri']],
+    ['Hari Shrestha', 'Kathmandu', ['Kathmandu Metropolitan City', 'Budhanilkantha', 'Tokha', 'Tarakeshwar']],
+    ['Bikash Gurung', 'Kathmandu', ['Kathmandu Metropolitan City', 'Gokarneshwar', 'Kageshwori-Manohara', 'Shankharapur', 'Dakshinkali']],
+    ['Suman Tamang', 'Lalitpur', ['Lalitpur Metropolitan City', 'Mahalaxmi']],
+    ['Dipak Maharjan', 'Lalitpur', ['Lalitpur Metropolitan City', 'Godawari', 'Mahankal']],
+    ['Prakash Prajapati', 'Bhaktapur', ['Bhaktapur', 'Suryabinayak']],
+    ['Kiran Duwal', 'Bhaktapur', ['Madhyapur Thimi', 'Changunarayan']],
+  ];
   const collectors = [];
-  for (let i = 0; i < CITIES.length + 1; i += 1) {
-    const c = CITIES[i % CITIES.length];
+  for (const [i, [name, city, areaNames]] of COLLECTORS.entries()) {
+    const home = area(areaNames[areaNames.length > 1 ? 1 : 0]);
     collectors.push(
       await User.create({
-        name: collectorNames[i],
+        name,
         email: `collector${i + 1}@scrapmate.dev`,
         phone: `98000001${String(i).padStart(2, '0')}`,
         password: 'Collector@123',
         role: 'collector',
         collectorProfile: {
-          city: c.city,
-          // Nepali number plate style, e.g. "BA 2 PA 1037"
-          vehicleNumber: `${c.plate} ${(i % 9) + 1} PA ${1000 + i * 37}`,
-          servicePinCodes: c.pins,
-          location: { ...jitter(c.center), updatedAt: new Date() },
+          city,
+          vehicleNumber: `BA ${(i % 9) + 1} PA ${1000 + i * 37}`,
+          serviceAreas: areaNames.map((n) => area(n)._id),
+          location: { ...jitter([home.center.lat, home.center.lng], 0.02), updatedAt: new Date() },
           isAvailable: true,
         },
       })
@@ -207,23 +204,23 @@ async function seed() {
       });
       itemsByName[it.name] = item;
       for (const c of CITIES) {
-        const min = Math.max(1, r2(it.min * c.f));
-        const max = Math.max(min, r2(it.max * c.f));
-        const price = await ScrapPrice.create({ item: item._id, city: c.city, minPrice: min, maxPrice: max, recyclerPrice: r2(max * 1.18), updatedBy: admin._id });
+        const min = Math.max(1, r2(it.min * c.priceFactor));
+        const max = Math.max(min, r2(it.max * c.priceFactor));
+        const price = await ScrapPrice.create({ item: item._id, city: c.name, minPrice: min, maxPrice: max, recyclerPrice: r2(max * 1.18), updatedBy: admin._id });
         // Earlier price points so the trends chart has a history.
-        if (['Kathmandu', 'Lalitpur', 'Pokhara', 'Biratnagar'].includes(c.city)) {
+        {
           const steps = [0.9, 0.95, 0.97];
           let prevMin;
           let prevMax;
           for (const [si, s] of steps.entries()) {
             const nm = Math.max(1, r2(min * s));
             const nx = Math.max(nm, r2(max * s));
-            const h = await PriceHistory.create({ price: price._id, item: item._id, city: c.city, oldMinPrice: prevMin, oldMaxPrice: prevMax, newMinPrice: nm, newMaxPrice: nx, changedBy: admin._id });
+            const h = await PriceHistory.create({ price: price._id, item: item._id, city: c.name, oldMinPrice: prevMin, oldMaxPrice: prevMax, newMinPrice: nm, newMaxPrice: nx, changedBy: admin._id });
             await PriceHistory.collection.updateOne({ _id: h._id }, { $set: { createdAt: daysAgo(150 - si * 45) } });
             prevMin = nm;
             prevMax = nx;
           }
-          const last = await PriceHistory.create({ price: price._id, item: item._id, city: c.city, oldMinPrice: prevMin, oldMaxPrice: prevMax, newMinPrice: min, newMaxPrice: max, changedBy: admin._id });
+          const last = await PriceHistory.create({ price: price._id, item: item._id, city: c.name, oldMinPrice: prevMin, oldMaxPrice: prevMax, newMinPrice: min, newMaxPrice: max, changedBy: admin._id });
           await PriceHistory.collection.updateOne({ _id: last._id }, { $set: { createdAt: daysAgo(10) } });
         }
       }
@@ -239,7 +236,7 @@ async function seed() {
     password: 'Business@123',
     role: 'customer',
     accountType: 'business',
-    business: { companyName: 'Sunrise Apartments Society', businessType: 'society', panVat: '301234567', billingAddress: 'Bishalnagar, Kathmandu 44606', pricingTier: 'silver' },
+    business: { companyName: 'Sunrise Apartments Society', businessType: 'society', panVat: '301234567', billingAddress: 'Bishalnagar, Kathmandu Metropolitan City-5, Kathmandu 44616', pricingTier: 'silver' },
   });
   const extraNames = ['Sita Shrestha', 'Anita Gurung', 'Pratik Maharjan', 'Rohan KC', 'Sunita Tamang', 'Bibek Pandey'];
   const others = [];
@@ -247,28 +244,36 @@ async function seed() {
     others.push(await User.create({ name, email: `user${i + 1}@scrapmate.dev`, phone: `98100000${String(i).padStart(2, '0')}`, password: 'Customer@123', role: 'customer', referredBy: i < 3 ? customer._id : null, referralRewarded: i < 2 }));
   }
 
-  const address = await Address.create({
-    user: customer._id,
+  // Same shape the API builds from (area, ward): see cityService.resolveAddress.
+  const addressIn = (user, areaName, ward, extra = {}) => {
+    const a = area(areaName);
+    return Address.create({
+      user: user._id,
+      area: a._id,
+      ward,
+      municipality: a.name,
+      district: a.district,
+      city: a.city,
+      state: a.state,
+      locality: `${a.name}-${ward}`,
+      pinCode: extra.pinCode || a.pinCodes[0],
+      location: extra.location || jitter([a.center.lat, a.center.lng], 0.015),
+      isDefault: true,
+      ...extra,
+    });
+  };
+  const address = await addressIn(customer, 'Kathmandu Metropolitan City', 10, {
     houseNumber: 'House 221',
-    street: 'Baneshwor Marg',
-    locality: 'New Baneshwor, Ward 10',
-    city: 'Kathmandu',
-    state: 'Bagmati',
-    pinCode: '44600',
+    street: 'New Baneshwor',
     landmark: 'Near Baneshwor Chowk',
+    pinCode: '44600',
     addressType: 'home',
-    isDefault: true,
     location: { lat: 27.6915, lng: 85.342 },
   });
-  const bizAddress = await Address.create({
-    user: business._id,
+  const bizAddress = await addressIn(business, 'Kathmandu Metropolitan City', 5, {
     houseNumber: 'Society Clubhouse',
-    street: 'Bishalnagar Marg',
-    locality: 'Bishalnagar, Ward 5',
-    city: 'Kathmandu',
-    state: 'Bagmati',
-    pinCode: '44606',
-    isDefault: true,
+    street: 'Bishalnagar',
+    pinCode: '44616',
     location: { lat: 27.7174, lng: 85.3354 },
   });
 
@@ -286,7 +291,9 @@ async function seed() {
     items: mkItems([['Iron', 10], ['Newspaper', 15]]),
     address: address._id,
     addressSnapshot: address.toObject(),
-    pinCode: '44600',
+    pinCode: address.pinCode,
+    area: address.area,
+    city: address.city,
     location: address.location,
     scheduledDate: new Date(`${new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10)}T00:00:00.000Z`),
     timeSlot: '11:00 AM - 1:00 PM',
@@ -305,30 +312,30 @@ async function seed() {
   let seq = 2;
   const completed = [];
   const histories = [
-    [customer, address, 0, [['Newspaper', 18], ['Cardboard', 9], ['Iron', 6]], 40, 'esewa'],
-    [customer, address, 0, [['Laptop', 1, 'not_working'], ['Monitor', 2, 'working']], 22, 'wallet'],
-    [business, bizAddress, 0, [['Cardboard', 85], ['Plastic', 30], ['Office Paper', 40]], 15, 'bank_transfer'],
-    [business, bizAddress, 0, [['Desktop CPU', 4, 'not_working'], ['Printer', 2, 'damaged'], ['Other Electronic Waste', 12]], 8, 'bank_transfer'],
+    [customer, address, [['Newspaper', 18], ['Cardboard', 9], ['Iron', 6]], 40, 'esewa'],
+    [customer, address, [['Laptop', 1, 'not_working'], ['Monitor', 2, 'working']], 22, 'wallet'],
+    [business, bizAddress, [['Cardboard', 85], ['Plastic', 30], ['Office Paper', 40]], 15, 'bank_transfer'],
+    [business, bizAddress, [['Desktop CPU', 4, 'not_working'], ['Printer', 2, 'damaged'], ['Other Electronic Waste', 12]], 8, 'bank_transfer'],
   ];
-  others.forEach((u, i) => {
-    histories.push([u, null, (i + 1) % CITIES.length, [['Newspaper', 10 + i * 3], ['Aluminium', 2 + i], ['Copper', 1]], 5 + i * 4, ['cash', 'khalti', 'wallet', 'esewa'][i % 4]]);
-  });
-  for (const [hi, [user, addr, cityIdx, lines, ago, method]] of histories.entries()) {
-    const c = CITIES[cityIdx];
-    const a =
-      addr ||
-      (await Address.create({
-        user: user._id,
-        houseNumber: `House ${12 + hi}`,
-        street: 'Main Road',
-        locality: `Ward ${hi + 2}`,
-        city: c.city,
-        state: c.state,
-        pinCode: c.pins[hi % c.pins.length],
-        isDefault: true,
-        location: jitter(c.center),
-      }));
-    const collector = collectors.find((col) => col.collectorProfile.city === c.city) || collectors[0];
+  // Other customers spread across the valley: [municipality, ward, tole].
+  const homes = [
+    ['Kirtipur', 5, 'Naya Bazar'],
+    ['Lalitpur Metropolitan City', 3, 'Jhamsikhel'],
+    ['Bhaktapur', 7, 'Suryamadhi'],
+    ['Madhyapur Thimi', 4, 'Bode'],
+    ['Budhanilkantha', 6, 'Chapali'],
+    ['Mahalaxmi', 2, 'Imadol'],
+  ];
+  for (const [i, u] of others.entries()) {
+    const [areaName, ward, tole] = homes[i % homes.length];
+    const a = await addressIn(u, areaName, ward, { houseNumber: `House ${12 + i}`, street: tole });
+    histories.push([u, a, [['Newspaper', 10 + i * 3], ['Aluminium', 2 + i], ['Copper', 1]], 5 + i * 4, ['cash', 'khalti', 'wallet', 'esewa'][i % 4]]);
+  }
+  for (const [hi, [user, a, lines, ago, method]] of histories.entries()) {
+    const c = { city: a.city };
+    const collector =
+      collectors.find((col) => col.collectorProfile.serviceAreas.some((x) => String(x) === String(a.area))) ||
+      collectors.find((col) => col.collectorProfile.city === a.city);
     let total = 0;
     const items = [];
     for (const [name, qty, cond] of lines) {
@@ -353,6 +360,8 @@ async function seed() {
       address: a._id,
       addressSnapshot: a.toObject(),
       pinCode: a.pinCode,
+      area: a.area,
+      city: a.city,
       location: a.location,
       scheduledDate: new Date(`${when.toISOString().slice(0, 10)}T00:00:00.000Z`),
       timeSlot: '9:00 AM - 11:00 AM',
@@ -443,7 +452,7 @@ async function seed() {
   ]);
   await SupportTicket.create([
     { ticketId: 'TKT-SEED-0001', user: customer._id, session: session._id, summary: 'Customer says the eSewa payout for SM-2026-000002 shows pending.', reason: 'user_request', pickupId: 'SM-2026-000002' },
-    { ticketId: 'TKT-SEED-0002', summary: 'Anonymous visitor asked about bulk e-waste pickup from a factory in Biratnagar.', reason: 'assistant_handoff', status: 'in_progress' },
+    { ticketId: 'TKT-SEED-0002', summary: 'Anonymous visitor asked about bulk e-waste pickup from a factory in Madhyapur Thimi.', reason: 'assistant_handoff', status: 'in_progress' },
   ]);
   const events = [];
   for (let d = 0; d < 30; d += 1) {
@@ -458,7 +467,7 @@ async function seed() {
   console.log('\n[seed] Done! Demo credentials (DEVELOPMENT ONLY):');
   console.log('  Admin:      admin@scrapmate.dev / Admin@123');
   console.log('  Staff:      support@ / ops@ / finance@scrapmate.dev / Staff@123');
-  console.log('  Collectors: collector1..11@scrapmate.dev / Collector@123  (collector1 = Kathmandu)');
+  console.log('  Collectors: collector1..7@scrapmate.dev / Collector@123  (1-3 Kathmandu, 4-5 Lalitpur, 6-7 Bhaktapur)');
   console.log('  Customer:   customer@scrapmate.dev / Customer@123  (or mobile 9800000003 + OTP)');
   console.log('  Business:   business@scrapmate.dev / Business@123\n');
 

@@ -5,9 +5,10 @@ import { Clock, LocateFixed, MapPin, Navigation, Phone, RefreshCw, Route as Rout
 import useApi from '../../hooks/useApi';
 import MapView from '../../components/MapView';
 import { Button, Card, EmptyState, ErrorState, IconButton, Segmented, Skeleton, SkeletonRows, StatusBadge, Toggle, cx } from '../../components/ui';
-import { addressLine, fmtDay, timeAgo, todayISO } from '../../utils/format';
-import { DEFAULT_CENTER } from '../../utils/locale';
-import { telUrl, useLocationShare, useSharePref } from './collectorShared';
+import { fmtDay, timeAgo, todayISO } from '../../utils/format';
+import { useAuth } from '../../context/AuthContext';
+import { useConfig } from '../../context/ConfigContext';
+import { pickupAddress, telUrl, useLocationShare, useSharePref } from './collectorShared';
 
 function addDays(iso, n) {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -22,6 +23,8 @@ export default function CollectorRoute() {
   const tomorrow = addDays(today, 1);
   const [date, setDate] = useState(today);
   const route = useApi('/collector/route', { params: { date } });
+  const { user } = useAuth();
+  const { mapCenter } = useConfig();
   const [sharing, setSharing] = useSharePref();
   const { position, lastSent } = useLocationShare(sharing, { onDenied: () => setSharing(false) });
 
@@ -114,7 +117,7 @@ export default function CollectorRoute() {
         />
       ) : (
         <>
-          <MapView markers={markers} line={line} center={DEFAULT_CENTER} height={280} />
+          <MapView markers={markers} line={line} center={mapCenter(user?.collectorProfile?.city)} height={280} />
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-steel-600">
             <span className="tabular">
               <strong className="text-steel-900">{stops.length}</strong> stop{stops.length > 1 ? 's' : ''}
@@ -153,7 +156,7 @@ export default function CollectorRoute() {
                       <p className="mt-1.5 font-semibold text-steel-900 group-hover:text-rust-700">{s.customer?.name || 'Customer'}</p>
                       <p className="text-sm text-steel-600 flex items-start gap-1.5 mt-0.5">
                         <MapPin className="w-4 h-4 text-steel-500 shrink-0 mt-0.5" aria-hidden />
-                        <span className="line-clamp-2">{addressLine(a)}</span>
+                        <span className="line-clamp-2">{pickupAddress(a)}</span>
                       </p>
                       <p className="text-sm text-steel-600 flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
                         <span className="inline-flex items-center gap-1">

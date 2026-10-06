@@ -24,8 +24,8 @@ describe('format utils', () => {
     expect(compact(250000)).toBe('2.5 L');
   });
   it('builds address lines and slugs', () => {
-    expect(addressLine({ houseNumber: '1', street: 'MG Rd', locality: 'X', city: 'Pune', pinCode: '411001' })).toBe('1, MG Rd, X, Pune – 411001');
-    expect(slugify('Delhi NCR')).toBe('delhi-ncr');
+    expect(addressLine({ houseNumber: '1', street: 'Naya Bazar', locality: 'Kirtipur-5', city: 'Kathmandu', pinCode: '44618' })).toBe('1, Naya Bazar, Kirtipur-5, Kathmandu – 44618');
+    expect(slugify('Madhyapur Thimi')).toBe('madhyapur-thimi');
   });
 });
 
@@ -34,7 +34,7 @@ describe('WhatsApp helpers', () => {
     expect(pickupIdFromPath('/pickups/sm-2026-000123')).toBe('SM-2026-000123');
     const text = buildWhatsAppText({ user: { name: 'Asha' }, pickupId: 'SM-2026-000123' });
     expect(text).toBe('Hi ScrapMate, this is Asha. I need help with pickup SM-2026-000123.');
-    expect(buildWhatsAppLink('919876543210', 'a b')).toBe('https://wa.me/919876543210?text=a%20b');
+    expect(buildWhatsAppLink('9779800000000', 'a b')).toBe('https://wa.me/9779800000000?text=a%20b');
   });
 });
 

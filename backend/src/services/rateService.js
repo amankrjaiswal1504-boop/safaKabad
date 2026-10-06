@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const ScrapCategory = require('../models/ScrapCategory');
 const ScrapItem = require('../models/ScrapItem');
 const ScrapPrice = require('../models/ScrapPrice');
+const settings = require('./settingsService');
+const { cityNames } = require('./cityService');
 
 function escapeRegex(str) {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -25,6 +27,7 @@ async function resolveCategoryId(category) {
 
 // Items + price range for a city. Powers the public rates page and the chat assistant.
 async function fetchRates({ city, search, category } = {}) {
+  if (!city) return [];
   const key = JSON.stringify([city, search, category]);
   const hit = rateCache.get(key);
   if (hit && Date.now() - hit.at < RATE_TTL_MS) return hit.value;
@@ -43,7 +46,7 @@ async function fetchRates({ city, search, category } = {}) {
   const activeItems = items.filter((i) => i.category && i.category.isActive !== false);
   const prices = await ScrapPrice.find({
     item: { $in: activeItems.map((i) => i._id) },
-    city: city || 'default',
+    city,
     isActive: true,
   }).lean();
   const priceByItem = new Map(prices.map((p) => [String(p.item), p]));
@@ -73,8 +76,10 @@ async function fetchRates({ city, search, category } = {}) {
 // Server-side estimate for [{ itemId, estimatedQuantity, condition? }] in a city.
 // Same maths the booking wizard and chat show. Condition (working / not
 // working / damaged) scales the rate for items whose category is graded.
+// Items without a price in the city are returned with priced:false and listed
+// in `unpriced`; they never add to the totals.
 async function estimateItems(entries, city, { conditionMultipliers } = {}) {
-  const multipliers = conditionMultipliers || { working: 1, not_working: 0.6, damaged: 0.35 };
+  const multipliers = conditionMultipliers || (await settings.get('conditionMultipliers'));
   let min = 0;
   let max = 0;
   let weightKg = 0;
@@ -83,7 +88,7 @@ async function estimateItems(entries, city, { conditionMultipliers } = {}) {
     if (!mongoose.isValidObjectId(entry.itemId)) continue;
     const item = await ScrapItem.findById(entry.itemId).populate('category', 'conditionGrading slug');
     if (!item || !item.isActive) continue;
-    const price = await ScrapPrice.findOne({ item: item._id, city, isActive: true });
+    const price = city ? await ScrapPrice.findOne({ item: item._id, city, isActive: true }) : null;
     const qty = Math.max(0, Math.min(100000, Number(entry.estimatedQuantity) || 0));
     const graded = Boolean(item.category?.conditionGrading);
     const condition = graded ? entry.condition || 'working' : null;
@@ -95,11 +100,11 @@ async function estimateItems(entries, city, { conditionMultipliers } = {}) {
     weightKg += item.unit === 'kg' ? qty : qty * (item.kgPerUnit || 1);
     lines.push({ item, quantity: qty, condition, priced: Boolean(price), min: lineMin, max: lineMax });
   }
-  return { min, max, weightKg: Math.round(weightKg * 10) / 10, lines };
+  const unpriced = lines.filter((l) => !l.priced).map((l) => l.item.name);
+  return { min, max, weightKg: Math.round(weightKg * 10) / 10, lines, unpriced };
 }
 
-async function listServiceCities() {
-  return (await ScrapPrice.distinct('city', { isActive: true })).sort();
-}
+// Active cities (admin-managed), default first.
+const listServiceCities = cityNames;
 
 module.exports = { fetchRates, estimateItems, listServiceCities, escapeRegex, clearRateCache };

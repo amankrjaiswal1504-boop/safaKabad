@@ -64,6 +64,7 @@ const userSchema = new mongoose.Schema(
         end: { type: String, default: '19:00' },
       },
       servicePinCodes: { type: [String], default: [] },
+      serviceAreas: [{ type: mongoose.Schema.Types.ObjectId, ref: 'ServiceArea' }],
       commissionRate: { type: Number, default: null }, // overrides the global rate when set
       location: {
         lat: Number,

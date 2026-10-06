@@ -16,14 +16,14 @@ test('guest books a pickup with phone OTP and sees the tracking page', async ({ 
   await expect(page.getByText(/Rs\. \d[\d,]* – Rs\. \d/).first()).toBeVisible();
   await page.getByRole('button', { name: 'Continue' }).click();
 
-  // Step 2: address (typed, not searched, so the test needs no network)
-  await page.getByRole('textbox', { name: 'House / flat no.', exact: true }).fill('42');
-  await page.getByRole('textbox', { name: 'Street / building', exact: true }).fill('Baneshwor Marg');
-  await page.getByRole('textbox', { name: 'Locality / area', exact: true }).fill('New Baneshwor');
-  await page.getByRole('textbox', { name: 'City', exact: true }).fill('Kathmandu');
-  await page.getByRole('combobox', { name: 'Province', exact: true }).selectOption('Bagmati');
-  await page.getByRole('textbox', { name: 'Postal code', exact: true }).fill('44600');
-  await expect(page.getByText(/we pick up here/i)).toBeVisible();
+  // Step 2: address. City, municipality and ward come from the admin-managed
+  // service areas; district, province and postal code are filled in for us.
+  await page.getByRole('combobox', { name: /^City/ }).selectOption('Kathmandu');
+  await page.getByRole('combobox', { name: /Municipality/ }).selectOption({ label: 'Kirtipur' });
+  await page.getByRole('combobox', { name: /^Ward/ }).selectOption('5');
+  await expect(page.getByText(/We pick up in Kirtipur/)).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Postal code' })).toHaveValue('44618');
+  await page.getByRole('textbox', { name: /^Tole/ }).fill('Naya Bazar');
   await page.getByRole('button', { name: 'Use this address' }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
 

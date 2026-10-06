@@ -1,7 +1,7 @@
 const express = require('express');
 const c = require('../controllers/collectorController');
 const { protect, authorize } = require('../middleware/auth');
-const { validate, z, pinCode, phone, bankAccount, payoutMethod } = require('../middleware/validate');
+const { validate, z, pinCode, phone, bankAccount, payoutMethod, objectId } = require('../middleware/validate');
 
 const router = express.Router();
 
@@ -57,6 +57,7 @@ router.put(
       isAvailable: z.boolean().optional(),
       workingHours: z.object({ start: time, end: time }).optional(),
       servicePinCodes: z.array(pinCode).max(50).optional(),
+      serviceAreas: z.array(objectId).max(50).optional(),
     })
   ),
   c.updateAvailability

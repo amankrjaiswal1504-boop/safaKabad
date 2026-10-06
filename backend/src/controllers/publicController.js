@@ -3,24 +3,53 @@
 const { Review, Ngo } = require('../models/platform');
 const Faq = require('../models/Faq');
 const settings = require('../services/settingsService');
-const { checkPin, listAreas } = require('../services/serviceabilityService');
+const { checkPin, checkArea, listAreas, listCities, defaultCity, findCity } = require('../services/cityService');
+const { PROVINCES } = require('../config/locale');
 const { getAvailability, todayLocal, addDays } = require('../services/slotService');
 const geo = require('../services/geoService');
 const { leaderboard } = require('../services/referralService');
-const { fetchRates, listServiceCities } = require('../services/rateService');
+const { fetchRates } = require('../services/rateService');
 const { track } = require('../services/jobs');
 const { isAiEnabled } = require('../services/chat/claudeAgent');
 
 async function config(req, res, next) {
   try {
     const pub = await settings.getPublic();
-    const [areas, cities] = await Promise.all([listAreas(), listServiceCities()]);
+    const [areas, cities, fallbackCity] = await Promise.all([listAreas(), listCities(), defaultCity()]);
     res.json({
       success: true,
       data: {
         ...pub,
-        cities,
-        serviceAreas: areas.map((a) => ({ city: a.city, state: a.state, minPickupWeightKg: a.minPickupWeightKg, minPickupValue: a.minPickupValue })),
+        // Everything about where we operate comes from admin-managed cities and
+        // service areas (no hard-coded lists in the apps).
+        cities: cities.map((c) => c.name),
+        cityList: cities.map((c) => ({
+          name: c.name,
+          nameNe: c.nameNe,
+          slug: c.slug,
+          district: c.district,
+          province: c.province,
+          center: c.center?.lat != null ? c.center : null,
+          isDefault: c.isDefault,
+          areaCount: areas.filter((a) => a.city === c.name).length,
+        })),
+        defaultCity: fallbackCity,
+        serviceAreas: areas.map((a) => ({
+          _id: a._id,
+          name: a.name,
+          nameNe: a.nameNe,
+          city: a.city,
+          type: a.type,
+          district: a.district,
+          state: a.state,
+          wards: a.wards,
+          servedWards: a.servedWards,
+          pinCodes: a.pinCodes,
+          center: a.center?.lat != null ? a.center : null,
+          minPickupWeightKg: a.minPickupWeightKg,
+          minPickupValue: a.minPickupValue,
+        })),
+        provinces: PROVINCES,
         features: {
           ai: isAiEnabled(),
           onlinePayments: process.env.KHALTI_SECRET_KEY ? 'khalti' : 'mock',
@@ -36,7 +65,8 @@ async function config(req, res, next) {
 
 async function serviceability(req, res, next) {
   try {
-    res.json({ success: true, data: await checkPin(req.query.pin, req.query.city) });
+    const data = req.query.area ? await checkArea(req.query.area, req.query.ward) : await checkPin(req.query.pin, req.query.city);
+    res.json({ success: true, data });
   } catch (err) {
     next(err);
   }
@@ -45,7 +75,7 @@ async function serviceability(req, res, next) {
 async function slots(req, res, next) {
   try {
     const date = req.query.date || todayLocal();
-    res.json({ success: true, data: await getAvailability(date, { pinCode: req.query.pin, excludePickupId: req.query.exclude }) });
+    res.json({ success: true, data: await getAvailability(date, { areaId: req.query.area, pinCode: req.query.pin, excludePickupId: req.query.exclude }) });
   } catch (err) {
     next(err);
   }
@@ -59,7 +89,7 @@ async function slotCalendar(req, res, next) {
     const days = [];
     for (let i = 0; i <= cfg.maxDaysAhead; i += 1) {
       const date = addDays(today, i);
-      const a = await getAvailability(date, { pinCode: req.query.pin });
+      const a = await getAvailability(date, { areaId: req.query.area, pinCode: req.query.pin });
       days.push({ date, open: a.open, reason: a.reason, freeSlots: a.slots.filter((s) => s.available).length });
     }
     res.json({ success: true, data: { days } });
@@ -157,11 +187,23 @@ const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').repla
 // Data for /sell-scrap/:city landing pages.
 async function cityPage(req, res, next) {
   try {
-    const cities = await listServiceCities();
-    const city = cities.find((c) => slugify(c) === slugify(req.params.city));
-    if (!city) return res.status(404).json({ success: false, message: 'We are not in this city yet' });
-    const rates = await fetchRates({ city });
-    res.json({ success: true, data: { city, slug: slugify(city), rates: rates.slice(0, 40), itemCount: rates.length } });
+    const found = await findCity(req.params.city);
+    if (!found) return res.status(404).json({ success: false, message: 'We are not in this city yet' });
+    const city = found.name;
+    const [rates, areas] = await Promise.all([fetchRates({ city }), listAreas({ city })]);
+    res.json({
+      success: true,
+      data: {
+        city,
+        nameNe: found.nameNe,
+        slug: found.slug,
+        district: found.district,
+        province: found.province,
+        areas: areas.map((a) => ({ name: a.name, nameNe: a.nameNe, type: a.type, wards: a.wards })),
+        rates: rates.slice(0, 40),
+        itemCount: rates.length,
+      },
+    });
   } catch (err) {
     next(err);
   }
@@ -170,9 +212,8 @@ async function cityPage(req, res, next) {
 async function sitemap(req, res, next) {
   try {
     const base = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '');
-    const cities = await listServiceCities();
     const paths = ['/', '/rates', '/business', '/donate', '/how-it-works', '/login', '/register', '/schedule-pickup', '/referrals/leaderboard'];
-    const urls = [...paths, ...cities.map((c) => `/sell-scrap/${slugify(c)}`)];
+    const urls = [...paths, ...(await listCities()).map((c) => `/sell-scrap/${c.slug}`)];
     const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
       .map((u) => `  <url><loc>${base}${u}</loc><changefreq>${u.startsWith('/sell-scrap') || u === '/rates' ? 'daily' : 'weekly'}</changefreq></url>`)
       .join('\n')}\n</urlset>\n`;

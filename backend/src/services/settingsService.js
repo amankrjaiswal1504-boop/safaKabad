@@ -58,9 +58,15 @@ const DEFAULTS = {
     ],
   },
   conditionMultipliers: { working: 1, not_working: 0.6, damaged: 0.35 },
+  wallet: { minWithdrawal: 50, maxWithdrawal: 100000 },
+  // Which payout options collectors can offer and customers can withdraw to.
+  payments: {
+    payoutMethods: ['cash', 'esewa', 'khalti', 'bank_transfer', 'wallet'],
+    withdrawalMethods: ['esewa', 'khalti', 'bank_transfer'],
+  },
 };
 
-const PUBLIC_KEYS = ['support', 'home', 'slots', 'referral', 'firstPickupBonus', 'loyalty', 'conditionMultipliers'];
+const PUBLIC_KEYS = ['support', 'home', 'slots', 'referral', 'firstPickupBonus', 'loyalty', 'conditionMultipliers', 'wallet', 'payments', 'business'];
 
 let cache = null;
 let cacheAt = 0;
@@ -90,8 +96,30 @@ async function get(key) {
   return (await getAll())[key];
 }
 
+const PAYOUT_METHODS = ['cash', 'esewa', 'khalti', 'bank_transfer', 'wallet'];
+const WITHDRAWAL_METHODS = ['esewa', 'khalti', 'bank_transfer'];
+const bad = (message) => Object.assign(new Error(message), { status: 400 });
+
+// Sanity checks for settings that the server enforces elsewhere.
+const VALIDATORS = {
+  wallet(v) {
+    const min = Number(v?.minWithdrawal);
+    const max = Number(v?.maxWithdrawal);
+    if (!(min >= 1) || !(max >= min)) throw bad('Minimum withdrawal must be at least 1 and not above the maximum');
+    return { minWithdrawal: Math.round(min), maxWithdrawal: Math.round(max) };
+  },
+  payments(v) {
+    const payout = [...new Set(v?.payoutMethods || [])].filter((m) => PAYOUT_METHODS.includes(m));
+    const withdrawal = [...new Set(v?.withdrawalMethods || [])].filter((m) => WITHDRAWAL_METHODS.includes(m));
+    if (!payout.length) throw bad('Keep at least one payout method');
+    if (!withdrawal.length) throw bad('Keep at least one withdrawal method');
+    return { payoutMethods: payout, withdrawalMethods: withdrawal };
+  },
+};
+
 async function set(key, value, userId) {
   if (!(key in DEFAULTS)) throw Object.assign(new Error(`Unknown setting: ${key}`), { status: 400 });
+  if (VALIDATORS[key]) value = VALIDATORS[key](value);
   await Setting.findOneAndUpdate({ key }, { value, updatedBy: userId }, { upsert: true });
   cache = null;
   return get(key);
@@ -106,4 +134,4 @@ function clearCache() {
   cache = null;
 }
 
-module.exports = { get, getAll, set, getPublic, clearCache, DEFAULTS };
+module.exports = { get, getAll, set, getPublic, clearCache, DEFAULTS, PAYOUT_METHODS, WITHDRAWAL_METHODS };

@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUp, CalendarCheck, CalendarX, Plus, RotateCcw, Save, Tr
 import api from '../../services/api';
 import useApi from '../../hooks/useApi';
 import { fmtDay, todayISO } from '../../utils/format';
-import { POSTAL_CODE_RE } from '../../utils/locale';
+import { useConfig } from '../../context/ConfigContext';
 import { Badge, Button, Card, Field, IconButton, Input, PageHeader, SectionTitle, Select, Spinner, cx } from '../../components/ui';
 import { Async, Callout, NumberInput, isBlank, useAction } from './_catalog/shared';
 
@@ -25,10 +25,11 @@ function validate(v) {
     if (isBlank(s.capacity) || !Number.isInteger(Number(s.capacity)) || s.capacity < 0) se.capacity = 'Whole number, 0+';
     if (Object.keys(se).length) e.slots[i] = se;
   });
+  if (isBlank(v.sameDayCutoffHour)) e.sameDayCutoffHour = 'Choose an hour';
   if (isBlank(v.maxDaysAhead) || v.maxDaysAhead < 0 || v.maxDaysAhead > 90) e.maxDaysAhead = 'Between 0 and 90 days';
   if (isBlank(v.rescheduleCutoffHours) || v.rescheduleCutoffHours < 0 || v.rescheduleCutoffHours > 168) e.rescheduleCutoffHours = 'Between 0 and 168 hours';
   if (v.closedWeekdays.length === 7) e.closedWeekdays = 'At least one day must stay open';
-  const has = e.general || e.slots.some(Boolean) || e.maxDaysAhead || e.rescheduleCutoffHours || e.closedWeekdays;
+  const has = e.general || e.slots.some(Boolean) || e.sameDayCutoffHour || e.maxDaysAhead || e.rescheduleCutoffHours || e.closedWeekdays;
   return has ? e : null;
 }
 
@@ -55,11 +56,11 @@ export default function AdminSlots() {
 function normalize(s) {
   return {
     slots: (s.slots || []).map((x) => ({ label: x.label || '', capacity: x.capacity ?? 0 })),
-    sameDayCutoffHour: s.sameDayCutoffHour ?? 12,
-    maxDaysAhead: s.maxDaysAhead ?? 14,
+    sameDayCutoffHour: s.sameDayCutoffHour ?? '',
+    maxDaysAhead: s.maxDaysAhead ?? '',
     holidays: [...(s.holidays || [])].sort(),
     closedWeekdays: [...(s.closedWeekdays || [])].sort(),
-    rescheduleCutoffHours: s.rescheduleCutoffHours ?? 4,
+    rescheduleCutoffHours: s.rescheduleCutoffHours ?? '',
   };
 }
 
@@ -119,7 +120,7 @@ function SlotsEditor({ initial, onSaved }) {
             title="Daily slots"
             subtitle={'Use the format "9:00 AM - 11:00 AM" so same-day cutoffs work.'}
             action={
-              <Button variant="outline" size="sm" icon={Plus} onClick={() => set('slots')([...v.slots, { label: '', capacity: 8 }])}>
+              <Button variant="outline" size="sm" icon={Plus} onClick={() => set('slots')([...v.slots, { label: '', capacity: v.slots[v.slots.length - 1]?.capacity ?? base.slots[base.slots.length - 1]?.capacity ?? '' }])}>
                 Add slot
               </Button>
             }
@@ -157,7 +158,7 @@ function SlotsEditor({ initial, onSaved }) {
               );
             })}
           </ol>
-          <p className="text-xs text-steel-500 mt-3">Capacity is the number of pickups per slot per postal code. 0 closes the slot.</p>
+          <p className="text-xs text-steel-500 mt-3">Capacity is the number of pickups per slot per municipality. 0 closes the slot.</p>
           {renamed.length > 0 && (
             <Callout tone="amber" className="mt-3">
               Existing bookings in {renamed.map((r) => `"${r.label}"`).join(', ')} keep their old slot name. Reschedule them if the window has really changed.
@@ -168,9 +169,10 @@ function SlotsEditor({ initial, onSaved }) {
         <Card>
           <SectionTitle title="Booking rules" />
           <div className="grid sm:grid-cols-3 gap-4">
-            <Field label="Same-day cutoff" hint="Same-day bookings close at this hour">
+            <Field label="Same-day cutoff" hint="Same-day bookings close at this hour" error={e.sameDayCutoffHour}>
               {(id) => (
                 <Select id={id} value={v.sameDayCutoffHour} onChange={(ev) => set('sameDayCutoffHour')(Number(ev.target.value))}>
+                  {v.sameDayCutoffHour === '' && <option value="">Choose…</option>}
                   {Array.from({ length: 24 }, (_, h) => (
                     <option key={h} value={h}>
                       {hourLabel(h)}
@@ -273,8 +275,10 @@ function SlotsEditor({ initial, onSaved }) {
 
 function Preview({ dirty }) {
   const [date, setDate] = useState(todayISO());
-  const [pin, setPin] = useState('');
-  const params = POSTAL_CODE_RE.test(pin) ? { date, pin } : { date };
+  const { serviceAreas, cities } = useConfig();
+  const [area, setArea] = useState('');
+  const params = area ? { date, area } : { date };
+  const groups = cities.map((c) => ({ city: c, areas: serviceAreas.filter((a) => a.city === c) })).filter((g) => g.areas.length);
   const res = useApi('/public/slots', { params, enabled: Boolean(date) });
   // Re-check after a save so the preview reflects new settings.
   const wasDirty = useRef(dirty);
@@ -288,11 +292,24 @@ function Preview({ dirty }) {
       <SectionTitle title="Availability preview" subtitle="What customers see for a date, using saved settings." />
       <div className="grid grid-cols-2 gap-3">
         <Field label="Date">{(id) => <Input id={id} type="date" value={date} onChange={(ev) => setDate(ev.target.value)} />}</Field>
-        <Field label="Postal code" hint={pin && !POSTAL_CODE_RE.test(pin) ? '5 digits' : 'Optional'}>
-          {(id) => <Input id={id} inputMode="numeric" maxLength={5} value={pin} onChange={(ev) => setPin(ev.target.value.replace(/\D/g, ''))} placeholder="44600" />}
+        <Field label="Municipality">
+          {(id) => (
+            <Select id={id} value={area} onChange={(ev) => setArea(ev.target.value)}>
+              <option value="">All areas</option>
+              {groups.map((g) => (
+                <optgroup key={g.city} label={g.city}>
+                  {g.areas.map((a) => (
+                    <option key={a._id} value={a._id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </Select>
+          )}
         </Field>
       </div>
-      {!POSTAL_CODE_RE.test(pin) && <p className="text-xs text-steel-500 mt-2">Capacity is per postal code; without one, bookings across all postal codes are counted.</p>}
+      {!area && <p className="text-xs text-steel-500 mt-2">Capacity is per municipality; with “All areas”, bookings across every area are counted.</p>}
       <div className="mt-4">
         {res.error && !d ? (
           <p className="text-sm text-danger-600" role="alert">{res.error.message}</p>

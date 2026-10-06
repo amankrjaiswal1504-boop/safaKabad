@@ -10,10 +10,23 @@ import { addressLine, fmtDay, rupees, unitLabel } from '../../utils/format';
 import { DIAL_CODE } from '../../utils/locale';
 import { flushQueue, readQueue } from './offlineQueue';
 
+// ---------- Address ----------
+// "<house>, <tole>, <locality or municipality-ward>, <city> – <pin>", tolerating
+// old addresses that only have street/locality/city.
+export function pickupAddress(a) {
+  if (!a) return '';
+  let place = a.locality || '';
+  if (!place && a.municipality) place = a.ward ? `${a.municipality}-${a.ward}` : a.municipality;
+  else if (place && a.ward && !/\d\s*$/.test(place)) place = `${place}-${a.ward}`;
+  const parts = [a.houseNumber, a.street, place, a.city !== place ? a.city : null].filter(Boolean);
+  if (!parts.length) return addressLine(a);
+  return parts.join(', ') + (a.pinCode ? ` – ${a.pinCode}` : '');
+}
+
 // ---------- Links ----------
 export function navigateUrl(p) {
   const l = p?.location;
-  const dest = l && Number.isFinite(l.lat) && Number.isFinite(l.lng) ? `${l.lat},${l.lng}` : encodeURIComponent(addressLine(p?.addressSnapshot));
+  const dest = l && Number.isFinite(l.lat) && Number.isFinite(l.lng) ? `${l.lat},${l.lng}` : encodeURIComponent(pickupAddress(p?.addressSnapshot));
   return `https://www.google.com/maps/dir/?api=1&destination=${dest}`;
 }
 
@@ -194,7 +207,7 @@ export function PickupCard({ pickup }) {
         <div className="mt-2 space-y-1 text-sm">
           <p className="flex items-center gap-1.5 text-steel-700">
             <MapPin className="w-4 h-4 text-steel-500 shrink-0" aria-hidden />
-            <span className="truncate">{[a.locality, a.city].filter(Boolean).join(', ') || addressLine(a)}</span>
+            <span className="truncate">{[a.locality || (a.municipality && (a.ward ? `${a.municipality}-${a.ward}` : a.municipality)), a.city].filter(Boolean).join(', ') || pickupAddress(a)}</span>
           </p>
           <p className="flex items-center gap-1.5 text-steel-700">
             <User className="w-4 h-4 text-steel-500 shrink-0" aria-hidden />

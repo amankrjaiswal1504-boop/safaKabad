@@ -1,29 +1,83 @@
-import { useEffect, useState } from 'react';
-import { CheckCircle2, Crosshair, Loader2, MapPin, Search, XCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { CheckCircle2, Crosshair, Info, Loader2, MapPin, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import { useDebounce } from '../hooks/useApi';
-import { Button, Field, Input, Select, cx } from './ui';
+import { Button, EmptyState, Field, Input, Select, cx } from './ui';
 import MapView from './MapView';
 import { useI18n } from '../i18n/I18nContext';
-import { POSTAL_CODE_LABEL, POSTAL_CODE_RE, PROVINCES } from '../utils/locale';
+import { useConfig } from '../context/ConfigContext';
+import { POSTAL_CODE_LABEL, POSTAL_CODE_RE, areaTypeLabel } from '../utils/locale';
+import { rupees } from '../utils/format';
 
-const EMPTY = { houseNumber: '', street: '', locality: '', city: '', state: '', pinCode: '', landmark: '', addressType: 'home', location: null };
+const EMPTY = { city: '', areaId: '', ward: '', street: '', houseNumber: '', landmark: '', pinCode: '', addressType: 'home', location: null };
 
-// Address entry with search autocomplete (Google / OpenStreetMap via the API),
-// "use my location", a draggable map pin, and a live serviceability check.
+const wardServed = (area, ward) => !area?.servedWards?.length || area.servedWards.includes(Number(ward));
+const norm = (s) => String(s || '').toLowerCase();
+
+function distanceKm(a, b) {
+  if (!a || !b) return Infinity;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(h));
+}
+
+// Best municipality for a geocoded place: one whose name appears in the place
+// label (nearest if several), else the nearest one within ~6 km.
+function matchArea(areas, place) {
+  const label = norm([place.label, place.locality, place.city, place.street].join(' '));
+  const at = place.lat != null ? { lat: place.lat, lng: place.lng } : null;
+  const byDistance = (list) => [...list].sort((x, y) => distanceKm(at, x.center) - distanceKm(at, y.center));
+  const named = areas.filter((a) => label.includes(norm(a.name)) || label.includes(norm(a.name.split(/[\s-]/)[0])));
+  if (named.length) return at ? byDistance(named)[0] : named[0];
+  if (!at) return null;
+  const [nearest] = byDistance(areas.filter((a) => a.center));
+  return nearest && distanceKm(at, nearest.center) <= 6 ? nearest : null;
+}
+
+// Nepali address entry: city -> municipality -> ward come from the service areas
+// set up by the admin, so customers can only pick places we serve. District,
+// province and postal code are filled in from the municipality. A map pin (search,
+// "use my location" or tap) helps the collector find the exact gate.
 export default function AddressForm({ initial, onSubmit, onCancel, submitLabel = 'Save address', busy }) {
-  const { t } = useI18n();
-  const [form, setForm] = useState({ ...EMPTY, ...initial });
+  const { t, lang } = useI18n();
+  const { cities, cityList, city: browsingCity, defaultCity, areasFor, areaById, serviceAreas, mapCenter, loading } = useConfig();
+
+  const [form, setForm] = useState(() => {
+    const start = { ...EMPTY, ...(initial || {}) };
+    const area = initial?.area ? areaById(initial.area) : null;
+    return {
+      ...start,
+      areaId: area ? String(area._id) : '',
+      city: area?.city || initial?.city || browsingCity || defaultCity || '',
+      ward: initial?.ward ? String(initial.ward) : '',
+    };
+  });
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [locating, setLocating] = useState(false);
-  const [service, setService] = useState(null);
   const [errors, setErrors] = useState({});
   const q = useDebounce(query, 400);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const areas = useMemo(() => areasFor(form.city), [areasFor, form.city]);
+  const area = form.areaId ? areaById(form.areaId) : null;
+  const savedAreaGone = Boolean(initial?.area) && !areaById(initial.area);
+  const nameOf = (x) => (lang === 'ne' && x?.nameNe) || x?.name || '';
+
+  // If config finishes loading after mount, fill in the city.
+  useEffect(() => {
+    if (!form.city && (browsingCity || defaultCity)) set('city', browsingCity || defaultCity);
+  }, [browsingCity, defaultCity, form.city]);
+
+  // Keep the postal code valid for the chosen municipality.
+  useEffect(() => {
+    if (!area) return;
+    if (area.pinCodes?.length && !area.pinCodes.includes(form.pinCode)) set('pinCode', area.pinCodes[0]);
+  }, [area, form.pinCode]);
 
   useEffect(() => {
     if (q.trim().length < 3) {
@@ -38,42 +92,37 @@ export default function AddressForm({ initial, onSubmit, onCancel, submitLabel =
       .finally(() => setSearching(false));
   }, [q]);
 
-  useEffect(() => {
-    if (!POSTAL_CODE_RE.test(form.pinCode)) {
-      setService(null);
-      return;
-    }
-    api
-      .get('/public/serviceability', { params: { pin: form.pinCode, city: form.city } })
-      .then((res) => setService(res.data.data))
-      .catch(() => setService(null));
-  }, [form.pinCode, form.city]);
-
-  function applyGeo(g) {
+  function chooseArea(a) {
     setForm((f) => ({
       ...f,
-      houseNumber: g.houseNumber || f.houseNumber,
-      street: g.street || f.street,
-      locality: g.locality || f.locality,
-      city: g.city || f.city,
-      state: g.state || f.state,
-      pinCode: g.pinCode || f.pinCode,
-      location: g.lat != null ? { lat: g.lat, lng: g.lng } : f.location,
+      city: a.city,
+      areaId: String(a._id),
+      ward: f.areaId === String(a._id) ? f.ward : '',
+      pinCode: a.pinCodes?.[0] || f.pinCode,
     }));
+  }
+
+  // Apply a search result / reverse-geocoded point.
+  function applyPlace(place) {
+    const location = place.lat != null ? { lat: place.lat, lng: place.lng } : form.location;
+    const match = matchArea(serviceAreas, place);
+    setForm((f) => ({ ...f, location, street: f.street || place.street || place.locality || '' }));
+    if (match) chooseArea(match);
+    else toast(t('address.outsideAreas'), { icon: 'ℹ️' });
   }
 
   async function reverse(lat, lng) {
     set('location', { lat, lng });
     try {
       const res = await api.get('/public/geo/reverse', { params: { lat, lng } });
-      if (res.data.data.result) applyGeo({ ...res.data.data.result, lat, lng });
+      applyPlace({ ...(res.data.data.result || {}), lat, lng });
     } catch {
-      /* keep the pin even if lookup fails */
+      applyPlace({ lat, lng });
     }
   }
 
   function useMyLocation() {
-    if (!navigator.geolocation) return toast.error('Location is not available on this device');
+    if (!navigator.geolocation) return toast.error(t('address.noGeo'));
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -82,7 +131,7 @@ export default function AddressForm({ initial, onSubmit, onCancel, submitLabel =
       },
       () => {
         setLocating(false);
-        toast.error('Allow location access, or search for your address instead');
+        toast.error(t('address.geoDenied'));
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -90,117 +139,213 @@ export default function AddressForm({ initial, onSubmit, onCancel, submitLabel =
 
   function validate() {
     const e = {};
-    if (!form.houseNumber.trim()) e.houseNumber = 'Required';
-    if (!form.street.trim()) e.street = 'Required';
-    if (!form.locality.trim()) e.locality = 'Required';
-    if (!form.city.trim()) e.city = 'Required';
-    if (!form.state.trim()) e.state = 'Choose your province';
-    if (!POSTAL_CODE_RE.test(form.pinCode)) e.pinCode = 'Enter a 5-digit postal code';
+    if (!form.city) e.city = t('address.chooseCity');
+    if (!area) e.areaId = t('address.chooseArea');
+    if (!form.ward) e.ward = t('address.chooseWard');
+    if (form.street.trim().length < 2) e.street = t('address.enterTole');
+    if (area && !area.pinCodes?.length && !POSTAL_CODE_RE.test(form.pinCode)) e.pinCode = t('address.enterPostal');
     setErrors(e);
     return !Object.keys(e).length;
   }
 
+  function submit(e) {
+    e.preventDefault();
+    if (!validate()) return;
+    onSubmit({
+      // Sent to the API:
+      areaId: String(area._id),
+      ward: Number(form.ward),
+      street: form.street.trim(),
+      houseNumber: form.houseNumber.trim() || undefined,
+      landmark: form.landmark.trim() || undefined,
+      pinCode: form.pinCode || undefined,
+      addressType: form.addressType,
+      location: form.location || undefined,
+      // For display before the address is saved (guest booking):
+      municipality: area.name,
+      locality: `${area.name}-${form.ward}`,
+      city: area.city,
+      district: area.district,
+      state: area.state,
+      area: area._id,
+      serviceable: true,
+    });
+  }
+
+  if (!loading && !cities.length) {
+    return <EmptyState icon={MapPin} title={t('address.notOpenTitle')} description={t('address.notOpenText')} />;
+  }
+
+  const showCityPicker = cityList.length > 1;
+  const pin = form.location || (area?.center ? { lat: area.center.lat, lng: area.center.lng } : null);
+
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (validate()) onSubmit({ ...form, location: form.location || undefined });
-      }}
-      className="space-y-4"
-      noValidate
-    >
-      <div className="relative">
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-steel-400" aria-hidden />
-            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('book.searchAddress')} className="pl-9" aria-label={t('book.searchAddress')} />
-            {searching && <Loader2 className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-steel-400" aria-hidden />}
-          </div>
-          <Button variant="outline" icon={locating ? Loader2 : Crosshair} onClick={useMyLocation} disabled={locating} className="shrink-0" aria-label={t('book.useLocation')}>
-            <span className="hidden sm:inline">{t('book.useLocation')}</span>
-          </Button>
-        </div>
-        {results.length > 0 && (
-          <ul className="absolute z-20 mt-1 w-full rounded-xl border border-steel-100 bg-surface shadow-lift max-h-64 overflow-y-auto" role="listbox">
-            {results.map((r, i) => (
-              <li key={i}>
-                <button
-                  type="button"
-                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-steel-50 flex gap-2"
-                  onClick={() => {
-                    applyGeo(r);
-                    setResults([]);
-                    setQuery('');
-                  }}
-                >
-                  <MapPin className="w-4 h-4 text-steel-400 mt-0.5 shrink-0" aria-hidden />
-                  <span className="line-clamp-2">{r.label}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <MapView
-        height={200}
-        markers={form.location ? [{ id: 'pin', lat: form.location.lat, lng: form.location.lng, color: 'rust', draggable: true, onDragEnd: (ll) => reverse(ll.lat, ll.lng) }] : []}
-        onPick={(ll) => reverse(ll.lat, ll.lng)}
-      />
-      <p className="text-xs text-steel-500 -mt-2">Tap the map or drag the pin to your exact gate. It helps the collector find you.</p>
-
-      <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="House / flat no." required error={errors.houseNumber}>
-          {(id) => <Input id={id} value={form.houseNumber} onChange={(e) => set('houseNumber', e.target.value)} invalid={!!errors.houseNumber} autoComplete="address-line1" />}
-        </Field>
-        <Field label="Street / building" required error={errors.street}>
-          {(id) => <Input id={id} value={form.street} onChange={(e) => set('street', e.target.value)} invalid={!!errors.street} autoComplete="address-line2" />}
-        </Field>
-        <Field label="Locality / area" required error={errors.locality}>
-          {(id) => <Input id={id} value={form.locality} onChange={(e) => set('locality', e.target.value)} invalid={!!errors.locality} />}
-        </Field>
-        <Field label="Landmark">{(id) => <Input id={id} value={form.landmark} onChange={(e) => set('landmark', e.target.value)} />}</Field>
-        <Field label="City" required error={errors.city}>
-          {(id) => <Input id={id} value={form.city} onChange={(e) => set('city', e.target.value)} invalid={!!errors.city} autoComplete="address-level2" />}
-        </Field>
-        <Field label="Province" required error={errors.state}>
-          {(id) => (
-            <Select id={id} value={form.state} onChange={(e) => set('state', e.target.value)} invalid={!!errors.state} autoComplete="address-level1">
-              <option value="">Select province</option>
-              {PROVINCES.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-        <Field label={POSTAL_CODE_LABEL} required error={errors.pinCode}>
-          {(id) => (
-            <Input id={id} value={form.pinCode} inputMode="numeric" maxLength={5} onChange={(e) => set('pinCode', e.target.value.replace(/\D/g, ''))} invalid={!!errors.pinCode} autoComplete="postal-code" />
-          )}
-        </Field>
-        <Field label="Address type">
-          {(id) => (
-            <Select id={id} value={form.addressType} onChange={(e) => set('addressType', e.target.value)}>
-              <option value="home">Home</option>
-              <option value="work">Work / shop</option>
-              <option value="other">Other</option>
-            </Select>
-          )}
-        </Field>
-      </div>
-
-      {service && (
-        <div className={cx('flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm', service.serviceable ? 'bg-patina-50 text-patina-700' : 'bg-danger-50 text-danger-700')} role="status">
-          {service.serviceable ? <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" aria-hidden /> : <XCircle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden />}
-          <span>
-            {service.serviceable
-              ? `Great, we pick up here${service.area?.minPickupWeightKg ? ` (minimum ${service.area.minPickupWeightKg} kg)` : ''}.`
-              : `${service.reason} You can still save the address; we're expanding fast.`}
-          </span>
-        </div>
+    <form onSubmit={submit} className="space-y-5" noValidate>
+      {savedAreaGone && (
+        <p className="flex items-start gap-2 rounded-lg bg-amber-50 text-amber-700 px-3 py-2.5 text-sm" role="status">
+          <Info className="w-4 h-4 mt-0.5 shrink-0" aria-hidden /> {t('address.areaGone')}
+        </p>
       )}
+
+      {/* Where: city -> municipality -> ward */}
+      <fieldset className="space-y-3">
+        <legend className="text-sm font-semibold text-steel-900 mb-2">{t('address.where')}</legend>
+        <div className={cx('grid gap-3', showCityPicker ? 'sm:grid-cols-[1fr_1.6fr_0.8fr]' : 'sm:grid-cols-[1.6fr_0.8fr]')}>
+          {showCityPicker && (
+            <Field label={t('address.city')} required error={errors.city}>
+              {(id) => (
+                <Select id={id} value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value, areaId: '', ward: '' }))} invalid={!!errors.city}>
+                  {cityList.map((c) => (
+                    <option key={c.name} value={c.name}>
+                      {nameOf(c)}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+          )}
+          <Field label={t('address.municipality')} required error={errors.areaId}>
+            {(id) => (
+              <Select
+                id={id}
+                value={form.areaId}
+                onChange={(e) => {
+                  const a = areaById(e.target.value);
+                  if (a) chooseArea(a);
+                  else set('areaId', '');
+                }}
+                invalid={!!errors.areaId}
+              >
+                <option value="">{areas.length ? t('address.selectMunicipality') : t('address.noAreas')}</option>
+                {areas.map((a) => (
+                  <option key={a._id} value={a._id}>
+                    {nameOf(a)}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field label={t('address.ward')} required error={errors.ward}>
+            {(id) => (
+              <Select id={id} value={form.ward} onChange={(e) => set('ward', e.target.value)} disabled={!area} invalid={!!errors.ward}>
+                <option value="">{area ? t('address.selectWard') : '—'}</option>
+                {area &&
+                  Array.from({ length: area.wards }, (_, i) => i + 1).map((w) => (
+                    <option key={w} value={w} disabled={!wardServed(area, w)}>
+                      {t('address.wardN', { n: w })}
+                      {wardServed(area, w) ? '' : ` · ${t('address.comingSoon')}`}
+                    </option>
+                  ))}
+              </Select>
+            )}
+          </Field>
+        </div>
+
+        {area && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-patina-50 text-patina-800 px-3.5 py-2.5 text-sm" role="status">
+            <span className="inline-flex items-center gap-1.5 font-medium">
+              <CheckCircle2 className="w-4 h-4" aria-hidden /> {t('address.weServe', { area: nameOf(area) })}
+            </span>
+            <span className="text-patina-700">
+              {[areaTypeLabel(area.type), area.district && `${area.district} district`, area.state && `${area.state} Province`].filter(Boolean).join(' · ')}
+            </span>
+            {(area.minPickupWeightKg > 0 || area.minPickupValue > 0) && (
+              <span className="text-patina-700">
+                {t('address.minimum')}{' '}
+                {[area.minPickupWeightKg > 0 && `${area.minPickupWeightKg} kg`, area.minPickupValue > 0 && rupees(area.minPickupValue)].filter(Boolean).join(' / ')}
+              </span>
+            )}
+          </div>
+        )}
+      </fieldset>
+
+      {/* Street details */}
+      <div className="grid sm:grid-cols-2 gap-3">
+        <Field label={t('address.tole')} required error={errors.street} hint={t('address.toleHint')}>
+          {(id) => <Input id={id} value={form.street} onChange={(e) => set('street', e.target.value)} invalid={!!errors.street} autoComplete="address-line1" />}
+        </Field>
+        <Field label={t('address.house')}>
+          {(id) => <Input id={id} value={form.houseNumber} onChange={(e) => set('houseNumber', e.target.value)} autoComplete="address-line2" />}
+        </Field>
+        <Field label={t('address.landmark')} hint={t('address.landmarkHint')}>
+          {(id) => <Input id={id} value={form.landmark} onChange={(e) => set('landmark', e.target.value)} />}
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label={POSTAL_CODE_LABEL} error={errors.pinCode}>
+            {(id) =>
+              area?.pinCodes?.length > 1 ? (
+                <Select id={id} value={form.pinCode} onChange={(e) => set('pinCode', e.target.value)}>
+                  {area.pinCodes.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </Select>
+              ) : area?.pinCodes?.length === 1 ? (
+                <Input id={id} value={area.pinCodes[0]} readOnly className="bg-steel-50 tabular" />
+              ) : (
+                <Input id={id} value={form.pinCode} inputMode="numeric" maxLength={5} disabled={!area} onChange={(e) => set('pinCode', e.target.value.replace(/\D/g, ''))} invalid={!!errors.pinCode} autoComplete="postal-code" />
+              )
+            }
+          </Field>
+          <Field label={t('address.type')}>
+            {(id) => (
+              <Select id={id} value={form.addressType} onChange={(e) => set('addressType', e.target.value)}>
+                <option value="home">{t('address.home')}</option>
+                <option value="work">{t('address.work')}</option>
+                <option value="other">{t('address.other')}</option>
+              </Select>
+            )}
+          </Field>
+        </div>
+      </div>
+
+      {/* Map pin */}
+      <div className="space-y-2">
+        <div className="text-sm font-semibold text-steel-900">{t('address.pinTitle')}</div>
+        <div className="relative">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-steel-400" aria-hidden />
+              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('book.searchAddress')} className="pl-9" aria-label={t('book.searchAddress')} />
+              {searching && <Loader2 className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-steel-400" aria-hidden />}
+            </div>
+            <Button variant="outline" icon={locating ? Loader2 : Crosshair} onClick={useMyLocation} disabled={locating} className="shrink-0" aria-label={t('book.useLocation')}>
+              <span className="hidden sm:inline">{t('book.useLocation')}</span>
+            </Button>
+          </div>
+          {results.length > 0 && (
+            <ul className="absolute z-20 mt-1 w-full rounded-xl border border-steel-100 bg-surface shadow-lift max-h-64 overflow-y-auto" role="listbox">
+              {results.map((r, i) => (
+                <li key={i}>
+                  <button
+                    type="button"
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-steel-50 flex gap-2"
+                    onClick={() => {
+                      applyPlace(r);
+                      setResults([]);
+                      setQuery('');
+                    }}
+                  >
+                    <MapPin className="w-4 h-4 text-steel-400 mt-0.5 shrink-0" aria-hidden />
+                    <span className="line-clamp-2">{r.label}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <MapView
+          key={`${form.areaId}-${Boolean(form.location)}`}
+          height={220}
+          center={pin ? [pin.lat, pin.lng] : mapCenter(form.city)}
+          zoom={pin ? 15 : 12}
+          fit={false}
+          markers={pin ? [{ id: 'pin', lat: pin.lat, lng: pin.lng, color: 'rust', draggable: true, onDragEnd: (ll) => reverse(ll.lat, ll.lng) }] : []}
+          onPick={(ll) => reverse(ll.lat, ll.lng)}
+        />
+        <p className="text-xs text-steel-500">{t('address.pinHint')}</p>
+      </div>
 
       <div className="flex gap-2 justify-end pt-1">
         {onCancel && (

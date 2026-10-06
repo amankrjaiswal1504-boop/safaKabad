@@ -200,7 +200,7 @@ describe('booking -> door OTP -> weighing -> payout', () => {
         phone: '9802223333',
         code: otp.body.data.devCode,
         name: 'Guest Gupta',
-        address: { houseNumber: '7', street: 'Park St', locality: 'Baneshwor', city: 'Kathmandu', state: 'Bagmati', pinCode: '44600' },
+        address: { areaId: String(w.kmc._id), ward: 31, street: 'Old Baneshwor', houseNumber: '7' },
         items: [{ itemId: String(w.newspaper._id), estimatedQuantity: 20 }],
         scheduledDate: dayFromNow(2),
         timeSlot: '2:00 PM - 4:00 PM',
@@ -212,8 +212,9 @@ describe('booking -> door OTP -> weighing -> payout', () => {
 });
 
 describe('slots, serviceability and fraud controls', () => {
-  it('rejects unserviceable postal codes once areas are configured', async () => {
-    await ServiceArea.create({ city: 'Pokhara', pinCodes: ['33700'] });
+  it('stops booking when the municipality is switched off', async () => {
+    await ServiceArea.updateOne({ _id: w.kmc._id }, { isActive: false });
+    require('../src/services/cityService').clearGeoCache();
     const res = await book(w.alice);
     expect(res.status).toBe(400);
     expect(res.body.message).toMatch(/don't pick up/);

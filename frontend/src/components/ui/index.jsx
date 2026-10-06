@@ -72,16 +72,16 @@ export const Input = forwardRef(function Input({ className, invalid, ...rest }, 
   return <input ref={ref} className={cx('input', invalid && '!border-danger-600', className)} aria-invalid={invalid || undefined} {...rest} />;
 });
 
-export const Select = forwardRef(function Select({ className, children, ...rest }, ref) {
+export const Select = forwardRef(function Select({ className, children, invalid, ...rest }, ref) {
   return (
-    <select ref={ref} className={cx('input pr-8', className)} {...rest}>
+    <select ref={ref} className={cx('input pr-8', invalid && '!border-danger-600', className)} aria-invalid={invalid || undefined} {...rest}>
       {children}
     </select>
   );
 });
 
-export const Textarea = forwardRef(function Textarea({ className, ...rest }, ref) {
-  return <textarea ref={ref} className={cx('input min-h-[88px]', className)} {...rest} />;
+export const Textarea = forwardRef(function Textarea({ className, invalid, ...rest }, ref) {
+  return <textarea ref={ref} className={cx('input min-h-[88px]', invalid && '!border-danger-600', className)} aria-invalid={invalid || undefined} {...rest} />;
 });
 
 export function Toggle({ checked, onChange, label, disabled, description }) {
@@ -381,7 +381,7 @@ export function DataTable({ columns, rows, rowKey = '_id', loading, empty, selec
   if (loading && !rows) return <SkeletonRows rows={6} />;
   if (rows && !rows.length) return empty || <EmptyState title="Nothing here yet" />;
   return (
-    <div className={cx('bg-surface border border-steel-100 rounded-xl shadow-card overflow-x-auto transition-opacity', loading && 'opacity-60')}>
+    <div className={cx('relative bg-surface border border-steel-100 rounded-xl shadow-card overflow-x-auto transition-opacity', loading && 'opacity-60')}>
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-steel-500 border-b border-steel-100 bg-surface-2">

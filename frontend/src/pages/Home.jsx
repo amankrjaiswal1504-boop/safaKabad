@@ -4,7 +4,7 @@ import {
   BadgeCheck,
   Building2,
   Camera,
-  CheckCircle2,
+  CalendarCheck,
   Clock,
   Banknote,
   Leaf,
@@ -21,57 +21,84 @@ import { useI18n } from '../i18n/I18nContext';
 import Estimator from '../components/Estimator';
 import CategoryIcon from '../components/CategoryIcon';
 import { Skeleton, Stars } from '../components/ui';
-import { compact } from '../utils/format';
+import { compact, fmtDay, rupees, unitLabel } from '../utils/format';
 
-// Product-style collage instead of stock photography: an original, on-brand hero visual.
+const compactRs = (n) => Number(n).toLocaleString('en-IN');
+
+// Live product collage (no stock photos, no made-up numbers): today's rates for
+// the visitor's city, the next free pickup day, and the municipalities we serve.
 function HeroVisual() {
+  const { t, tr, lang } = useI18n();
+  const { city, areasFor, cityInfo } = useConfig();
+  const { data: rateData } = useApi(city ? '/scrap/rates' : null, { params: { city } });
+  const { data: cal } = useApi('/public/slots/calendar');
+  // One item per category, up to four.
+  const sample = [];
+  const seen = new Set();
+  for (const r of rateData?.rates || []) {
+    if (sample.length === 4) break;
+    if (seen.has(r.category?.slug)) continue;
+    seen.add(r.category?.slug);
+    sample.push(r);
+  }
+  const nextDay = cal?.days?.find((d) => d.open);
+  const areas = areasFor(city);
+  const cityName = (lang === 'ne' && cityInfo(city)?.nameNe) || city;
+  if (!city) return null;
   return (
     <div className="relative h-[360px] hidden lg:block" aria-hidden>
-      <div className="absolute right-6 top-2 w-72 rounded-2xl bg-surface shadow-lift border border-steel-100 p-4 rotate-[2deg]">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-steel-500">Today's rates · Kathmandu</span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-patina-100 text-patina-700">Live</span>
+      {sample.length > 0 && (
+        <div className="absolute right-6 top-2 w-72 rounded-2xl bg-surface shadow-lift border border-steel-100 p-4 rotate-[2deg]">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-steel-500">{t('home.todaysRates', { city: cityName })}</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-patina-100 text-patina-700">{t('home.live')}</span>
+          </div>
+          {sample.map((r) => (
+            <div key={r.itemId} className="flex justify-between gap-3 text-sm py-2 border-b border-steel-100 last:border-0">
+              <span className="text-steel-700 truncate">{tr(r)}</span>
+              <span className="font-semibold text-steel-900 tabular whitespace-nowrap">
+                {rupees(r.minPrice)}–{compactRs(r.maxPrice)}
+                <span className="text-steel-500 font-normal">/{unitLabel(r.unit)}</span>
+              </span>
+            </div>
+          ))}
         </div>
-        {[
-          ['Copper', 'Rs. 780–900', 'kg'],
-          ['Newspaper', 'Rs. 15–20', 'kg'],
-          ['Laptop', 'Rs. 300–1,000', 'pc'],
-          ['Refrigerator', 'Rs. 800–2,000', 'pc'],
-        ].map(([n, p, u]) => (
-          <div key={n} className="flex justify-between text-sm py-2 border-b border-steel-100 last:border-0">
-            <span className="text-steel-700">{n}</span>
-            <span className="font-semibold text-steel-900 tabular">
-              {p}
-              <span className="text-steel-500 font-normal">/{u}</span>
+      )}
+      {nextDay && (
+        <div className="absolute left-0 top-44 w-64 rounded-2xl bg-surface shadow-lift border border-steel-100 p-4 -rotate-[2deg]">
+          <div className="flex items-center gap-3">
+            <span className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
+              <CalendarCheck className="w-5 h-5" />
             </span>
-          </div>
-        ))}
-      </div>
-      <div className="absolute left-0 top-44 w-64 rounded-2xl bg-surface shadow-lift border border-steel-100 p-4 -rotate-[2deg]">
-        <div className="flex items-center gap-3">
-          <span className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
-            <Truck className="w-5 h-5" />
-          </span>
-          <div>
-            <div className="text-sm font-semibold text-steel-900">Ramesh is on the way</div>
-            <div className="text-xs text-steel-500">Arriving in ~12 min · 4.9 ★</div>
+            <div>
+              <div className="text-xs text-steel-500">{t('home.nextFree')}</div>
+              <div className="text-sm font-semibold text-steel-900">{fmtDay(nextDay.date)}</div>
+              <div className="text-xs text-steel-500">{t('home.slotsOpen', { n: nextDay.freeSlots })}</div>
+            </div>
           </div>
         </div>
-        <div className="mt-3 h-1.5 rounded-full bg-steel-100">
-          <div className="h-1.5 w-2/3 rounded-full bg-amber-600" />
-        </div>
-      </div>
-      <div className="absolute right-0 bottom-0 w-60 rounded-2xl bg-surface shadow-lift border border-steel-100 p-4">
-        <div className="flex items-center gap-3">
-          <span className="w-10 h-10 rounded-full bg-patina-100 text-patina-700 flex items-center justify-center">
-            <CheckCircle2 className="w-5 h-5" />
-          </span>
-          <div>
-            <div className="text-xs text-steel-500">Paid via eSewa</div>
-            <div className="font-head text-xl font-bold text-steel-900">Rs. 3,690</div>
+      )}
+      {areas.length > 0 && (
+        <div className="absolute right-0 bottom-0 w-64 rounded-2xl bg-surface shadow-lift border border-steel-100 p-4">
+          <div className="flex items-center gap-3">
+            <span className="w-10 h-10 rounded-full bg-patina-100 text-patina-700 flex items-center justify-center shrink-0">
+              <MapPin className="w-5 h-5" />
+            </span>
+            <div className="min-w-0">
+              <div className="text-xs text-steel-500">{t('home.weServeIn', { city: cityName })}</div>
+              <div className="text-sm font-semibold text-steel-900">{t('home.areaCount', { n: areas.length })}</div>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {areas.slice(0, 3).map((a) => (
+              <span key={a._id} className="text-[11px] px-2 py-0.5 rounded-full bg-steel-100 text-steel-700 truncate max-w-full">
+                {(lang === 'ne' && a.nameNe) || a.name}
+              </span>
+            ))}
+            {areas.length > 3 && <span className="text-[11px] px-2 py-0.5 rounded-full bg-steel-100 text-steel-500">+{areas.length - 3}</span>}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -82,7 +109,7 @@ function StatsBand() {
   const items = [
     { v: data ? `${compact(data.kgRecycled)}+` : null, l: t('home.statKg') },
     { v: data ? `${compact(data.pickups)}+` : null, l: t('home.statPickups') },
-    { v: data ? String(data.cities) : null, l: t('home.statCities') },
+    { v: data ? String(data.areas ?? data.cities) : null, l: t('home.statCities') },
     { v: data ? (data.rating ? `${data.rating}/5` : 'New') : null, l: t('home.statRating') },
   ];
   return (
@@ -99,7 +126,7 @@ function StatsBand() {
 
 export default function Home() {
   const { t, tr, lang } = useI18n();
-  const { cities, config } = useConfig();
+  const { config, serviceAreas } = useConfig();
   const { data: cats } = useApi('/scrap/categories');
   const { data: tst } = useApi('/public/testimonials');
   const { data: faq } = useApi('/public/faqs');
@@ -144,9 +171,11 @@ export default function Home() {
         <div className="container-page relative py-12 sm:py-16 lg:py-20">
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] gap-10 items-center">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-[#D9B66A]/30 bg-white/[0.04] px-3.5 py-1 text-xs font-medium tracking-wide text-[#E9D9B4]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#7FD3A8]" aria-hidden /> {t('home.badge', { count: cities.length || 10 })}
-              </span>
+              {serviceAreas.length > 0 && (
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#D9B66A]/30 bg-white/[0.04] px-3.5 py-1 text-xs font-medium tracking-wide text-[#E9D9B4]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#7FD3A8]" aria-hidden /> {t('home.badge', { count: serviceAreas.length })}
+                </span>
+              )}
               <h1 className="font-head text-[2.3rem] sm:text-5xl lg:text-[3.6rem] font-bold leading-[1.05] mt-5 tracking-tight">
                 {lang === 'en' && home.heroTitle ? home.heroTitle : t('home.title')}
               </h1>

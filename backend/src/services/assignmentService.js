@@ -19,18 +19,19 @@ function etaMinutes(km) {
   return Math.max(2, Math.round((km * 1.3 * 60) / 18));
 }
 
-// Ranks available collectors for a pickup: serves the PIN (else the city),
-// fewest pickups that day, then nearest. Best first.
+// Ranks available collectors for a pickup: serves the municipality (else the
+// postal code, else the city), fewest pickups that day, then nearest. Best first.
 async function rankCollectors(pickup) {
-  const city = pickup.addressSnapshot?.city || '';
+  const city = pickup.city || pickup.addressSnapshot?.city || '';
+  const areaId = pickup.area || pickup.addressSnapshot?.area || null;
+  const or = [{ 'collectorProfile.city': new RegExp(`^${escapeRegex(city)}$`, 'i') }];
+  if (areaId) or.push({ 'collectorProfile.serviceAreas': areaId });
+  if (pickup.pinCode) or.push({ 'collectorProfile.servicePinCodes': pickup.pinCode });
   const collectors = await User.find({
     role: 'collector',
     isActive: true,
     'collectorProfile.isAvailable': true,
-    $or: [
-      { 'collectorProfile.servicePinCodes': pickup.pinCode },
-      { 'collectorProfile.city': new RegExp(`^${escapeRegex(city)}$`, 'i') },
-    ],
+    $or: or,
   }).lean();
   if (!collectors.length) return [];
 
@@ -52,9 +53,16 @@ async function rankCollectors(pickup) {
       collector: c,
       load: loadBy[String(c._id)] || 0,
       km: haversineKm(c.collectorProfile?.location, pickup.location),
-      servesPin: (c.collectorProfile?.servicePinCodes || []).includes(pickup.pinCode),
+      servesArea: Boolean(areaId) && (c.collectorProfile?.serviceAreas || []).some((a) => String(a) === String(areaId)),
+      servesPin: Boolean(pickup.pinCode) && (c.collectorProfile?.servicePinCodes || []).includes(pickup.pinCode),
     }))
-    .sort((a, b) => Number(b.servesPin) - Number(a.servesPin) || a.load - b.load || (a.km ?? 999) - (b.km ?? 999));
+    .sort(
+      (a, b) =>
+        Number(b.servesArea) - Number(a.servesArea) ||
+        Number(b.servesPin) - Number(a.servesPin) ||
+        a.load - b.load ||
+        (a.km ?? 999) - (b.km ?? 999)
+    );
 }
 
 // Assigns the best collector when auto-assignment is on. Admins can override.

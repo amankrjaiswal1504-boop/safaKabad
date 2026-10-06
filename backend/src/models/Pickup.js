@@ -37,6 +37,8 @@ const pickupSchema = new mongoose.Schema(
     address: { type: mongoose.Schema.Types.ObjectId, ref: 'Address', required: true },
     addressSnapshot: { type: Object, required: true },
     pinCode: { type: String, index: true },
+    area: { type: mongoose.Schema.Types.ObjectId, ref: 'ServiceArea', index: true },
+    city: { type: String, index: true },
     location: { lat: Number, lng: Number },
     scheduledDate: { type: Date, required: true, index: true },
     timeSlot: { type: String, required: true },

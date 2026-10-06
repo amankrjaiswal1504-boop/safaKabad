@@ -3,7 +3,8 @@ import { CalendarClock, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
 import api from '../../services/api';
 import useApi from '../../hooks/useApi';
 import { rupees } from '../../utils/format';
-import { DIAL_CODE, TIMEZONE } from '../../utils/locale';
+import { useConfig } from '../../context/ConfigContext';
+import { DIAL_CODE, PAYOUT_METHODS, TIMEZONE } from '../../utils/locale';
 import { Badge, Button, Card, Field, IconButton, Input, PageHeader, SectionTitle, Tabs, Textarea, Toggle, cx } from '../../components/ui';
 import { Async, Callout, NumberInput, isBlank, useAction } from './_catalog/shared';
 
@@ -15,12 +16,18 @@ const TABS = [
   { value: 'collectors', label: 'Collectors' },
   { value: 'fraud', label: 'Fraud limits' },
   { value: 'pricing', label: 'Pricing' },
+  { value: 'payments', label: 'Wallet & payments' },
 ];
 
 export default function AdminSettings() {
   const res = useApi('/admin/settings');
   const [tab, setTab] = useState('support');
-  const onSaved = (key, value) => res.setData((d) => ({ ...d, settings: { ...d.settings, [key]: value } }));
+  const { reloadConfig } = useConfig();
+  const onSaved = (key, value) => {
+    res.setData((d) => ({ ...d, settings: { ...d.settings, [key]: value } }));
+    // Customer and collector apps read these from the public config.
+    reloadConfig?.();
+  };
   return (
     <div>
       <PageHeader
@@ -53,6 +60,12 @@ export default function AdminSettings() {
               {tab === 'collectors' && card('collector', CollectorCard)}
               {tab === 'fraud' && card('fraud', FraudCard)}
               {tab === 'pricing' && card('conditionMultipliers', ConditionCard)}
+              {tab === 'payments' && (
+                <>
+                  {card('wallet', WalletCard)}
+                  {card('payments', PaymentsCard)}
+                </>
+              )}
             </div>
           );
         }}
@@ -66,6 +79,7 @@ function useSection(settingKey, initial, onSaved, validate, serialize = (v) => v
   const [base, setBase] = useState(initial);
   const [v, setV] = useState(initial);
   const [showErrors, setShowErrors] = useState(false);
+  const [serverError, setServerError] = useState('');
   const { busy, run } = useAction();
   const dirty = JSON.stringify(v) !== JSON.stringify(base);
   const errors = useMemo(() => validate?.(v) || {}, [v, validate]);
@@ -76,7 +90,9 @@ function useSection(settingKey, initial, onSaved, validate, serialize = (v) => v
     setShowErrors(true);
     if (hasErrors) return;
     const value = serialize(v);
+    setServerError('');
     const r = await run('save', () => api.put(`/admin/settings/${settingKey}`, { value }), { success: 'Settings saved' });
+    if (!r.ok) setServerError(r.err?.message || 'Could not save');
     if (r.ok) {
       const saved = r.out.data.data.value ?? value;
       setBase(saved);
@@ -88,12 +104,13 @@ function useSection(settingKey, initial, onSaved, validate, serialize = (v) => v
   function reset() {
     setV(base);
     setShowErrors(false);
+    setServerError('');
   }
-  return { v, setV, set, dirty, errors: showErrors ? errors : {}, save, reset, saving: busy === 'save' };
+  return { v, setV, set, dirty, errors: showErrors ? errors : {}, serverError, save, reset, saving: busy === 'save' };
 }
 
 function SectionCard({ title, subtitle, section, children, badge }) {
-  const { dirty, save, reset, saving } = section;
+  const { dirty, save, reset, saving, serverError } = section;
   return (
     <Card padded={false}>
       <div className="p-5">
@@ -107,6 +124,11 @@ function SectionCard({ title, subtitle, section, children, badge }) {
           subtitle={subtitle}
         />
         <div className="space-y-5">{children}</div>
+        {serverError && (
+          <p className="mt-4 text-sm text-danger-600" role="alert">
+            {serverError}
+          </p>
+        )}
       </div>
       <div className={cx('flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-t border-steel-100 rounded-b-xl', dirty ? 'bg-rust-50' : 'bg-surface-2')}>
         <span className="text-sm text-steel-600">{dirty ? 'Unsaved changes' : 'Saved'}</span>
@@ -427,7 +449,7 @@ function CollectorCard({ settingKey, initial, onSaved }) {
         <Num label="Weekly bonus (Rs.)" k="weeklyBonusAmount" s={s} min={0} />
       </div>
       {example != null && <p className="text-sm text-steel-600">A {rupees(500)} pickup earns the collector {rupees(example, { decimals: 2 })}.</p>}
-      <Toggle checked={!!s.v.autoAssign} onChange={s.set('autoAssign')} label="Auto-assign new pickups" description="On booking, assign the best collector: serves that postal code first, then lightest load that day, then nearest." />
+      <Toggle checked={!!s.v.autoAssign} onChange={s.set('autoAssign')} label="Auto-assign new pickups" description="On booking, assign the best collector: serves that municipality first, then lightest load that day, then nearest." />
     </SectionCard>
   );
 }
@@ -479,6 +501,95 @@ function ConditionCard({ settingKey, initial, onSaved }) {
         .
       </p>
       <p className="text-xs text-steel-500">Turn condition grading on per category under Categories & items.</p>
+    </SectionCard>
+  );
+}
+
+// ---------- Wallet & payments ----------
+const validateWallet = (v) => ({
+  minWithdrawal: req(v.minWithdrawal, { min: 1, int: true }),
+  maxWithdrawal:
+    req(v.maxWithdrawal, { min: 1, int: true }) ||
+    (!isBlank(v.minWithdrawal) && Number(v.maxWithdrawal) < Number(v.minWithdrawal) ? 'Must be at least the minimum' : null),
+});
+const serializeWallet = (v) => ({ minWithdrawal: Number(v.minWithdrawal), maxWithdrawal: Number(v.maxWithdrawal) });
+function WalletCard({ settingKey, initial, onSaved }) {
+  const s = useSection(settingKey, initial || {}, onSaved, validateWallet, serializeWallet);
+  return (
+    <SectionCard title="Wallet" subtitle="Limits for each customer withdrawal from the ScrapMate wallet." section={s}>
+      <div className="grid grid-cols-2 gap-4">
+        <Num label="Minimum withdrawal (Rs.)" k="minWithdrawal" s={s} min={1} step={1} />
+        <Num label="Maximum withdrawal (Rs.)" k="maxWithdrawal" s={s} min={1} step={1} />
+      </div>
+      {!isBlank(s.v.minWithdrawal) && !isBlank(s.v.maxWithdrawal) && (
+        <p className="text-sm text-steel-600">
+          Customers can withdraw between {rupees(s.v.minWithdrawal)} and {rupees(s.v.maxWithdrawal)} at a time.
+        </p>
+      )}
+    </SectionCard>
+  );
+}
+
+// Cash and the wallet itself can't be withdrawal destinations.
+const WITHDRAWAL_OPTIONS = PAYOUT_METHODS.filter((m) => m.value !== 'cash' && m.value !== 'wallet');
+const validatePayments = (v) => ({
+  payoutMethods: !v.payoutMethods?.length ? 'Keep at least one payout method' : null,
+  withdrawalMethods: !v.withdrawalMethods?.length ? 'Keep at least one withdrawal method' : null,
+});
+
+function MethodChecklist({ legend, description, options, value = [], onChange, error }) {
+  return (
+    <fieldset>
+      <legend className="text-sm font-semibold text-steel-900">{legend}</legend>
+      {description && <p className="text-xs text-steel-500 mt-0.5 mb-3">{description}</p>}
+      <div className="grid sm:grid-cols-2 gap-2">
+        {options.map((m) => {
+          const on = value.includes(m.value);
+          return (
+            <label
+              key={m.value}
+              className={cx('flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm cursor-pointer transition-colors', on ? 'border-rust-500 bg-rust-50' : 'border-steel-200 hover:border-steel-400')}
+            >
+              <input
+                type="checkbox"
+                className="accent-rust-600"
+                checked={on}
+                onChange={() => onChange(on ? value.filter((x) => x !== m.value) : [...value, m.value])}
+              />
+              <span className="text-steel-900">{m.label}</span>
+            </label>
+          );
+        })}
+      </div>
+      {error && (
+        <p className="text-danger-600 text-xs mt-1.5" role="alert">
+          {error}
+        </p>
+      )}
+    </fieldset>
+  );
+}
+
+function PaymentsCard({ settingKey, initial, onSaved }) {
+  const s = useSection(settingKey, { payoutMethods: initial?.payoutMethods || [], withdrawalMethods: initial?.withdrawalMethods || [] }, onSaved, validatePayments);
+  return (
+    <SectionCard title="Payments" subtitle="Which payment options are switched on across the apps." section={s}>
+      <MethodChecklist
+        legend="Payout methods"
+        description="How collectors can pay customers at pickup."
+        options={PAYOUT_METHODS}
+        value={s.v.payoutMethods}
+        onChange={s.set('payoutMethods')}
+        error={s.errors.payoutMethods}
+      />
+      <MethodChecklist
+        legend="Withdrawal methods"
+        description="Where customers can withdraw their wallet balance to."
+        options={WITHDRAWAL_OPTIONS}
+        value={s.v.withdrawalMethods}
+        onChange={s.set('withdrawalMethods')}
+        error={s.errors.withdrawalMethods}
+      />
     </SectionCard>
   );
 }

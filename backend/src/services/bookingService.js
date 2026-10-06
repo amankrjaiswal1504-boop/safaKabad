@@ -8,7 +8,7 @@ const User = require('../models/User');
 const Payment = require('../models/Payment');
 const { Coupon, Ngo } = require('../models/platform');
 const { estimateItems } = require('./rateService');
-const { checkPin } = require('./serviceabilityService');
+const { checkAddress } = require('./cityService');
 const { assertSlotAvailable } = require('./slotService');
 const { checkBooking } = require('./fraudService');
 const { validateCoupon, couponBonus, firstPickupBonus } = require('./couponService');
@@ -54,26 +54,29 @@ async function createPickupForUser(user, payload, { ip, actor } = {}) {
   const address = await Address.findOne({ _id: addressId, user: user._id });
   if (!address) throw new BookingError('Address not found', 404);
 
-  const service = await checkPin(address.pinCode, address.city);
+  const service = await checkAddress(address);
   if (!service.serviceable) throw new BookingError(service.reason);
 
   const date = String(scheduledDate).slice(0, 10);
   if (!skipSlotCheck) {
-    const slotProblem = await assertSlotAvailable(date, timeSlot, { pinCode: address.pinCode });
+    const slotProblem = await assertSlotAvailable(date, timeSlot, { areaId: address.area, pinCode: address.pinCode });
     if (slotProblem) throw new BookingError(slotProblem);
   }
 
   const conditionMultipliers = await settings.get('conditionMultipliers');
   const estimate = await estimateItems(items, address.city, { conditionMultipliers });
   if (!estimate.lines.length) throw new BookingError('None of the selected items are available');
+  if (estimate.unpriced.length) {
+    throw new BookingError(`We don't buy ${estimate.unpriced.join(', ')} in ${address.city} yet. Remove ${estimate.unpriced.length > 1 ? 'them' : 'it'} to continue.`);
+  }
 
   if (type !== 'donation' && service.area) {
     const { minPickupWeightKg, minPickupValue } = service.area;
     if (minPickupWeightKg && estimate.weightKg < minPickupWeightKg) {
-      throw new BookingError(`Minimum pickup in ${service.area.city} is ${minPickupWeightKg} kg`);
+      throw new BookingError(`Minimum pickup in ${service.area.name} is ${minPickupWeightKg} kg`);
     }
     if (minPickupValue && estimate.max < minPickupValue) {
-      throw new BookingError(`Minimum pickup value in ${service.area.city} is Rs. ${minPickupValue}`);
+      throw new BookingError(`Minimum pickup value in ${service.area.name} is Rs. ${minPickupValue}`);
     }
   }
 
@@ -110,6 +113,8 @@ async function createPickupForUser(user, payload, { ip, actor } = {}) {
     address: address._id,
     addressSnapshot: address.toObject(),
     pinCode: address.pinCode,
+    area: address.area || service.area?._id || null,
+    city: address.city,
     location: address.location?.lat ? address.location : undefined,
     scheduledDate: new Date(`${date}T00:00:00.000Z`),
     timeSlot,
@@ -175,6 +180,8 @@ async function payOut(pickup, customer, { method, walletId, bankAccount }) {
     pickup.payout = { method: null, status: null };
     return null;
   }
+  const { payoutMethods } = await settings.get('payments');
+  if (!payoutMethods.includes(method)) throw new BookingError('This payout method is not available right now');
   if (method === 'wallet') {
     return wallet.withTransaction(async (session) => {
       await wallet.credit(customer._id, amount, 'pickup_payout', { reference: pickup.pickupId }, session);

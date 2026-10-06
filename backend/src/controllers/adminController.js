@@ -10,6 +10,8 @@ const { releaseCoupon } = require('../services/pickupService');
 const { createPickupForUser, BookingError } = require('../services/bookingService');
 const { STAFF_ROLES } = require('../models/User');
 const { TIMEZONE, todayLocal } = require('../config/locale');
+const { ServiceArea } = require('../models/platform');
+const { findCity } = require('../services/cityService');
 
 const ACTIVE = ['BOOKED', 'ASSIGNED', 'COLLECTOR_ON_THE_WAY', 'ARRIVED', 'WEIGHING'];
 const fail = (res, status, message) => res.status(status).json({ success: false, message });
@@ -169,17 +171,32 @@ async function listCollectors(req, res, next) {
   }
 }
 
+// A collector works in one city and covers some of its municipalities.
+async function collectorPlace(cityName, areaIds) {
+  const city = await findCity(cityName, { includeInactive: true });
+  if (!city) return { error: 'Choose a city from the list' };
+  if (!areaIds) return { city: city.name };
+  const areas = await ServiceArea.find({ _id: { $in: areaIds } }).select('city').lean();
+  if (areas.length !== new Set(areaIds.map(String)).size || areas.some((a) => a.city !== city.name)) {
+    return { error: `Service areas must be municipalities in ${city.name}` };
+  }
+  return { city: city.name, serviceAreas: areas.map((a) => a._id) };
+}
+
 async function createCollector(req, res, next) {
   try {
-    const { name, email, phone, password, city, vehicleNumber, servicePinCodes, commissionRate } = req.body;
+    const { name, email, phone, password, vehicleNumber, servicePinCodes, commissionRate } = req.body;
     if (await User.exists({ email })) return fail(res, 409, 'Email already in use');
+    const place = await collectorPlace(req.body.city, req.body.serviceAreas || []);
+    if (place.error) return fail(res, 400, place.error);
+    const { city } = place;
     const collector = await User.create({
       name,
       email,
       phone,
       password,
       role: 'collector',
-      collectorProfile: { city, vehicleNumber, servicePinCodes: servicePinCodes || [], commissionRate: commissionRate ?? null },
+      collectorProfile: { city, vehicleNumber, serviceAreas: place.serviceAreas, servicePinCodes: servicePinCodes || [], commissionRate: commissionRate ?? null },
     });
     await audit(req, 'collector.create', { entity: 'User', entityId: collector._id, after: { name, email, city } });
     res.status(201).json({ success: true, data: { collector: collector.toSafeObject() } });
@@ -193,10 +210,16 @@ async function updateCollector(req, res, next) {
     const collector = await User.findOne({ _id: req.params.id, role: 'collector' });
     if (!collector) return fail(res, 404, 'Collector not found');
     const before = { ...collector.collectorProfile.toObject(), isActive: collector.isActive };
-    const { name, phone, city, vehicleNumber, isActive, isAvailable, servicePinCodes, commissionRate, workingHours } = req.body;
+    const { name, phone, city, vehicleNumber, isActive, isAvailable, servicePinCodes, serviceAreas, commissionRate, workingHours } = req.body;
+    if (city || serviceAreas) {
+      const keepAreas = serviceAreas || (city ? [] : collector.collectorProfile.serviceAreas);
+      const place = await collectorPlace(city || collector.collectorProfile.city, keepAreas);
+      if (place.error) return fail(res, 400, place.error);
+      collector.collectorProfile.city = place.city;
+      collector.collectorProfile.serviceAreas = place.serviceAreas;
+    }
     if (name) collector.name = name;
     if (phone) collector.phone = phone;
-    if (city) collector.collectorProfile.city = city;
     if (vehicleNumber !== undefined) collector.collectorProfile.vehicleNumber = vehicleNumber;
     if (typeof isActive === 'boolean') collector.isActive = isActive;
     if (typeof isAvailable === 'boolean') collector.collectorProfile.isAvailable = isAvailable;
@@ -323,7 +346,7 @@ async function getPickupAdmin(req, res, next) {
       success: true,
       data: {
         pickup,
-        candidates: candidates.slice(0, 5).map((c) => ({ id: c.collector._id, name: c.collector.name, load: c.load, km: c.km && Math.round(c.km * 10) / 10, servesPin: c.servesPin })),
+        candidates: candidates.slice(0, 5).map((c) => ({ id: c.collector._id, name: c.collector.name, load: c.load, km: c.km && Math.round(c.km * 10) / 10, servesPin: c.servesPin, servesArea: c.servesArea })),
       },
     });
   } catch (err) {

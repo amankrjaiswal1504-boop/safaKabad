@@ -13,7 +13,7 @@ const TYPES = [
   { value: 'phone', label: 'Phone number', placeholder: MOBILE_PLACEHOLDER },
   { value: 'email', label: 'Email address', placeholder: 'someone@example.com' },
   { value: 'ip', label: 'IP address', placeholder: '203.0.113.7' },
-  { value: 'pincode', label: POSTAL_CODE_LABEL, placeholder: '44600' },
+  { value: 'pincode', label: POSTAL_CODE_LABEL, placeholder: '5-digit postal code' },
 ];
 const typeLabel = (t) => TYPES.find((x) => x.value === t)?.label || t;
 
@@ -84,6 +84,9 @@ export default function AdminFraud() {
   const isAdmin = can('*');
   const canClear = can('pickups');
   const { data, error, loading, reload, setData } = useApi('/admin/fraud');
+  // The cancellation limit lives in Site settings (readable by full admins).
+  const settings = useApi('/admin/settings', { enabled: isAdmin });
+  const maxCancel = settings.data?.settings?.fraud?.maxCancellationsPer30Days;
   const [tab, setTab] = useState('flagged');
   const [blocking, setBlocking] = useState(null);
   const [removing, setRemoving] = useState(null);
@@ -147,7 +150,7 @@ export default function AdminFraud() {
   const cancellerCols = [
     { key: 'name', header: 'Customer', render: (c) => <span className="text-steel-900">{c.name}</span> },
     { key: 'phone', header: 'Phone', render: (c) => <span className="tabular text-steel-700">{c.phone}</span> },
-    { key: 'cancellations', header: 'Cancellations (30 days)', className: 'tabular', render: (c) => <Badge tone={c.cancellations >= 5 ? 'danger' : 'amber'}>{c.cancellations}</Badge> },
+    { key: 'cancellations', header: 'Cancellations (30 days)', className: 'tabular', render: (c) => <Badge tone={maxCancel != null && c.cancellations >= maxCancel ? 'danger' : 'amber'}>{c.cancellations}</Badge> },
     {
       key: 'act',
       header: <span className="sr-only">Actions</span>,
@@ -217,7 +220,10 @@ export default function AdminFraud() {
             )}
             {tab === 'cancellers' && (
               <>
-                <p className="text-sm text-steel-500 mb-3">Customers who cancelled 2 or more pickups in the last 30 days.</p>
+                <p className="text-sm text-steel-500 mb-3">
+                  Customers who cancelled 2 or more pickups in the last 30 days.
+                  {maxCancel != null && ` New bookings are refused at ${maxCancel} cancellations (highlighted in red).`}
+                </p>
                 <DataTable rows={data.frequentCancellers} columns={cancellerCols} empty={<EmptyState icon={UserX} title="No repeat cancellers" description="Nobody has cancelled more than once in the last 30 days." />} />
               </>
             )}

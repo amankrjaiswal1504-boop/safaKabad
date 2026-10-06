@@ -1,7 +1,17 @@
 import { CheckCircle2 } from 'lucide-react';
+import { useConfig } from '../context/ConfigContext';
+import { useI18n } from '../i18n/I18nContext';
 
 // Split layout for auth pages: brand panel (desktop) + form card.
 export default function AuthShell({ title, subtitle, children, footer }) {
+  const { serviceAreas, payoutMethods } = useConfig();
+  const { t } = useI18n();
+  const points = [
+    serviceAreas.length ? t('auth.pitch1', { n: serviceAreas.length }) : null,
+    'Rates you can see before you book',
+    'Weighed in front of you, with photos',
+    payoutMethods.length ? `Paid instantly: ${payoutMethods.map((m) => m.label).join(', ')}` : null,
+  ].filter(Boolean);
   return (
     <div className="container-page py-10 sm:py-16">
       <div className="max-w-5xl mx-auto grid lg:grid-cols-2 rounded-2xl overflow-hidden border border-steel-100 shadow-lift bg-surface">
@@ -10,7 +20,7 @@ export default function AuthShell({ title, subtitle, children, footer }) {
           <div className="relative">
             <h2 className="font-head text-3xl font-bold leading-tight">Turn clutter into cash, without leaving home.</h2>
             <ul className="mt-8 space-y-3 text-[#DDE5E1]">
-              {['Free doorstep pickup in 10 cities', 'Rates you can see before you book', 'Weighed in front of you, with photos', 'Paid instantly: eSewa, Khalti, bank, cash or wallet'].map((x) => (
+              {points.map((x) => (
                 <li key={x} className="flex items-center gap-2.5 text-sm">
                   <CheckCircle2 className="w-4 h-4 text-[#7FD3A8] shrink-0" aria-hidden /> {x}
                 </li>

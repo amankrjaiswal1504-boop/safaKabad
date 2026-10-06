@@ -8,7 +8,6 @@ import { useRealtime } from '../../context/RealtimeContext';
 import MapView from '../../components/MapView';
 import { Badge, Button, Card, EmptyState, ErrorState, Field, IconButton, Input, PageHeader, Segmented, Skeleton, cx } from '../../components/ui';
 import { STATUS_LABEL, STATUS_TONE, fmtDay, timeAgo, todayISO } from '../../utils/format';
-import { DEFAULT_CENTER } from '../../utils/locale';
 import { AssignModal, CityField, FilterBar, flagLabel, useMutation } from './_ops/shared';
 
 const COLUMNS = ['BOOKED', 'ASSIGNED', 'COLLECTOR_ON_THE_WAY', 'ARRIVED', 'WEIGHING'];
@@ -135,7 +134,7 @@ function Board({ date, city }) {
   );
 }
 
-function LiveMap() {
+function LiveMap({ center }) {
   const { subscribe, connected } = useRealtime() || {};
   const { data, error, loading, reload } = useApi('/admin/live-map');
   const [live, setLive] = useState({});
@@ -234,7 +233,7 @@ function LiveMap() {
         <IconButton label="Refresh map" icon={RefreshCw} onClick={reload} className={cx('!w-8 !h-8', loading && 'animate-spin')} />
       </div>
       {markers.length ? (
-        <MapView markers={markers} center={DEFAULT_CENTER} height={480} className="!rounded-none !border-0" />
+        <MapView markers={markers} center={center} height={480} className="!rounded-none !border-0" />
       ) : (
         <div className="p-5">
           <EmptyState icon={MapIcon} title="Nothing to show yet" description="Collector locations appear once they share their location from the collector app." />
@@ -245,7 +244,7 @@ function LiveMap() {
 }
 
 export default function AdminDispatch() {
-  const { cities } = useConfig();
+  const { cities, mapCenter } = useConfig();
   const [view, setView] = useState('board');
   const [date, setDate] = useState(todayISO());
   const [city, setCity] = useState('');
@@ -283,13 +282,13 @@ export default function AdminDispatch() {
               </Button>
             </div>
             <p className="text-xs text-steel-500 sm:ml-auto self-center max-w-xs">
-              Auto picks an available collector serving the postal code (else the city) with the fewest pickups that day, then the nearest.
+              Auto picks an available collector serving the municipality (else the city) with the fewest pickups that day, then the nearest.
             </p>
           </FilterBar>
           <Board date={date} city={city} />
         </>
       ) : (
-        <LiveMap />
+        <LiveMap center={mapCenter(city || undefined)} />
       )}
     </div>
   );

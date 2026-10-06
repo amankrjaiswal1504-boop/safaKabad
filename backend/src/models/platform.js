@@ -71,20 +71,48 @@ const refreshTokenSchema = new mongoose.Schema(
 );
 refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-// ---------- Serviceable areas ----------
+// ---------- Cities (price zones) ----------
+// A city owns one price list (ScrapPrice.city === City.name) and groups the
+// service areas (municipalities) customers can book from. Admin-managed; the
+// customer site, chat and SEO pages read the active list from here.
+const citySchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true, unique: true },
+    nameNe: { type: String, trim: true, default: '' },
+    slug: { type: String, required: true, unique: true },
+    district: { type: String, trim: true, default: '' },
+    province: { type: String, trim: true, default: '' },
+    center: { lat: Number, lng: Number },
+    isActive: { type: Boolean, default: true },
+    isDefault: { type: Boolean, default: false },
+    sortOrder: { type: Number, default: 0 },
+  },
+  { timestamps: true }
+);
+
+// ---------- Serviceable areas (municipalities within a city) ----------
+const AREA_TYPES = ['metropolitan', 'sub_metropolitan', 'municipality', 'rural_municipality'];
 const serviceAreaSchema = new mongoose.Schema(
   {
-    city: { type: String, required: true, trim: true, index: true },
-    state: { type: String, default: '' },
-    pinCodes: { type: [String], default: [] },
+    name: { type: String, required: true, trim: true }, // municipality, e.g. "Kirtipur"
+    nameNe: { type: String, trim: true, default: '' },
+    city: { type: String, required: true, trim: true, index: true }, // City.name (price list)
+    type: { type: String, enum: AREA_TYPES, default: 'municipality' },
+    district: { type: String, trim: true, default: '' },
+    state: { type: String, default: '' }, // province
+    wards: { type: Number, min: 1, max: 40, default: 1 },
+    servedWards: { type: [Number], default: [] }, // empty = every ward
+    pinCodes: { type: [String], default: [] }, // post offices serving the area; first = default
     minPickupWeightKg: { type: Number, default: 0 },
     minPickupValue: { type: Number, default: 0 },
     center: { lat: Number, lng: Number },
     isActive: { type: Boolean, default: true },
+    sortOrder: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
 serviceAreaSchema.index({ pinCodes: 1 });
+serviceAreaSchema.index({ city: 1, name: 1 }, { unique: true });
 
 // ---------- Reviews ----------
 const reviewSchema = new mongoose.Schema(
@@ -252,6 +280,8 @@ module.exports = {
   OtpCode: mongoose.model('OtpCode', otpCodeSchema),
   RefreshToken: mongoose.model('RefreshToken', refreshTokenSchema),
   ServiceArea: mongoose.model('ServiceArea', serviceAreaSchema),
+  City: mongoose.model('City', citySchema),
+  AREA_TYPES,
   Review: mongoose.model('Review', reviewSchema),
   Coupon: mongoose.model('Coupon', couponSchema),
   WalletTransaction: mongoose.model('WalletTransaction', walletTransactionSchema),

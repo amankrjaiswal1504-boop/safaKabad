@@ -45,7 +45,7 @@ log, mock, local file, or OpenStreetMap).
 - SEO city pages: `/sell-scrap/<city>` with structured data, sitemap and Open Graph image
 - Booking wizard: sell or **donate** to an NGO, item picker with condition grading for
   e-waste/appliances, photos, saved or new address with **search autocomplete, map pin and
-  "use my location"**, live **postal-code serviceability**, slots with remaining capacity,
+  "use my location"**, **city → municipality → ward** picked from the served areas (postal code, district and province filled in), slots with remaining capacity,
   coupons, auto-saved draft, and a confirmation with the door code and a calendar file
 - **Guest booking with phone OTP** (account created automatically) and phone-OTP login
 - Pickup tracking: status timeline, **4-digit door code**, **live collector map with ETA**,
@@ -77,7 +77,7 @@ log, mock, local file, or OpenStreetMap).
 - Customers, collectors and **staff roles** (support / operations / finance) with permissions
 - Categories & items (images, units, CO₂ factors, active toggles), **city prices** with
   bulk % change, copy-city and full price history
-- Service areas & postal codes, **time slots** (capacity, cutoffs, holidays, closed days)
+- **Cities & service areas**: cities (one price list each, one default) and their municipalities with wards, served wards, post-office codes, minimums and map centres; safe rename (updates every reference) and delete guards. **Time slots** (capacity per municipality, cutoffs, holidays, closed days)
 - Coupons, review moderation (featured testimonials), NGO partners, business quotes,
   payouts & withdrawals
 - **Fraud & abuse**: blocklist (phone/email/IP/postal code), duplicate-booking flags,
@@ -213,13 +213,14 @@ Created by `npm run seed` — **development only, never use in production.**
 |---|---|---|
 | Admin | admin@scrapmate.dev | Admin@123 |
 | Staff — support / operations / finance | support@ · ops@ · finance@scrapmate.dev | Staff@123 |
-| Collectors (one per city; `collector1` = Kathmandu) | collector1…11@scrapmate.dev | Collector@123 |
+| Collectors (1–3 Kathmandu, 4–5 Lalitpur, 6–7 Bhaktapur) | collector1…7@scrapmate.dev | Collector@123 |
 | Customer | customer@scrapmate.dev (or mobile 9800000003 + OTP) | Customer@123 |
 | Business customer | business@scrapmate.dev | Business@123 |
 
-The seed covers 10 Nepali cities (Kathmandu, Lalitpur, Bhaktapur, Pokhara, Bharatpur,
-Biratnagar, Dharan, Birgunj, Butwal, Nepalgunj) with service areas and postal codes, NPR prices, city prices with recycler prices and
-history, completed pickups with payments and reviews, coupons (`FIRST5`, `BULK100`,
+The seed covers the **Kathmandu valley only**: 3 cities (Kathmandu, Lalitpur, Bhaktapur, one
+price list each) and their 21 municipalities (`backend/src/seed/kathmanduValley.js`: wards,
+post-office codes, centres; two hill rural municipalities are inactive). It adds NPR prices with
+recycler prices and history, completed pickups with payments and reviews, coupons (`FIRST5`, `BULK100`,
 `DASHAIN10`, `EWASTE150`), NGOs, FAQs, a business quote, a recurring plan, a price alert, chat
 tickets and funnel events.
 
@@ -260,7 +261,7 @@ ADDRESSES   GET/POST /addresses · PUT/DELETE /addresses/:id   (each with servic
 PUBLIC      GET /scrap/categories · /scrap/items · /scrap/rates?city&search&category
             GET /scrap/cities · /scrap/stats · /scrap/trends/:itemId?city
             POST /scrap/estimate {city, items[{itemId, estimatedQuantity, condition?}]}
-            GET /public/config · /public/serviceability?pin&city · /public/slots?date&pin
+            GET /public/config · /public/serviceability?area&ward · /public/slots?date&area
             GET /public/slots/calendar · /public/geo/search?q · /public/geo/reverse?lat&lng
             GET /public/testimonials · /public/faqs · /public/ngos · /public/leaderboard
             GET /public/cities/:city · POST /public/events · GET /sitemap.xml
@@ -286,13 +287,21 @@ ADMIN       (admin, or staff with the matching permission)
             /admin/users · /admin/collectors · /admin/staff · /admin/pickups (+ /bulk, /:id,
             /:id/status, /:id/auto-assign, /:id/clear-flags) · /admin/assign-collector
             /admin/dispatch · /admin/live-map · /admin/categories · /admin/scrap-items
-            /admin/prices/bulk · /admin/prices/copy-city · /admin/prices/history
-            /admin/service-areas · /admin/coupons · /admin/reviews · /admin/ngos
+            /admin/prices?city (grid) · DELETE /admin/prices/:itemId?city · /admin/prices/bulk
+            /admin/prices/copy-city · /admin/prices/history · /admin/cities · /admin/service-areas · /admin/coupons · /admin/reviews · /admin/ngos
             /admin/quotes · /admin/withdrawals · /admin/payments · /admin/settings/:key
             /admin/audit-log · /admin/fraud (+ /blocklist) · /admin/support/* · /admin/faqs
 ```
 
 ## 10. How things work
+
+- **Where we operate (no hard-coding).** Admin → Service areas holds the cities (each owns a
+  price list; one is the default) and their municipalities (wards, served wards, post-office
+  codes, minimums, map centre). `GET /public/config` sends them to the apps; every city list,
+  map centre, address form, chat answer and SEO page reads from there. Customers pick city →
+  municipality → ward; the server fills in district, province and postal code. Items a city
+  doesn't price can't be booked there. Withdrawal limits, payout/withdrawal methods and business
+  tiers are Settings, enforced by the API.
 
 - **Booking.** One server function (`bookingService.createPickupForUser`) handles web, guest,
   recurring, chat and admin bookings. It runs the serviceability and minimum checks, slot

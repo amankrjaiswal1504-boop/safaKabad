@@ -5,7 +5,8 @@ import { Skeleton, cx } from './ui';
 import { useI18n } from '../i18n/I18nContext';
 
 // Date strip (next N days, closed days greyed out) + slots with remaining capacity.
-export default function SlotPicker({ pinCode, date, slot, onChange, excludePickupId }) {
+// Capacity is per municipality (areaId); pinCode is the fallback for old addresses.
+export default function SlotPicker({ areaId, pinCode, date, slot, onChange, excludePickupId }) {
   const { t } = useI18n();
   const [days, setDays] = useState(null);
   const [avail, setAvail] = useState(null);
@@ -13,7 +14,7 @@ export default function SlotPicker({ pinCode, date, slot, onChange, excludePicku
 
   useEffect(() => {
     api
-      .get('/public/slots/calendar', { params: { pin: pinCode } })
+      .get('/public/slots/calendar', { params: areaId ? { area: areaId } : { pin: pinCode } })
       .then((res) => {
         setDays(res.data.data.days);
         if (!date) {
@@ -22,17 +23,17 @@ export default function SlotPicker({ pinCode, date, slot, onChange, excludePicku
         }
       })
       .catch(() => setDays([]));
-  }, [pinCode]);
+  }, [areaId, pinCode]);
 
   useEffect(() => {
     if (!date) return;
     setLoadingSlots(true);
     api
-      .get('/public/slots', { params: { date, pin: pinCode, exclude: excludePickupId } })
+      .get('/public/slots', { params: { date, ...(areaId ? { area: areaId } : { pin: pinCode }), exclude: excludePickupId } })
       .then((res) => setAvail(res.data.data))
       .catch(() => setAvail(null))
       .finally(() => setLoadingSlots(false));
-  }, [date, pinCode, excludePickupId]);
+  }, [date, areaId, pinCode, excludePickupId]);
 
   if (!days) return <Skeleton className="h-40" />;
 

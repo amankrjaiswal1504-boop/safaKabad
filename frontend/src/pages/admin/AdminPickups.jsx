@@ -4,12 +4,12 @@ import { AlertTriangle, Truck, UserPlus, Wand2, X, XCircle } from 'lucide-react'
 import useApi, { useDebounce } from '../../hooks/useApi';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { useConfig } from '../../context/ConfigContext';
 import { Badge, Button, Card, DataTable, EmptyState, ErrorState, Field, Input, Modal, PageHeader, Pagination, Select, StatusBadge, Textarea } from '../../components/ui';
 import { STATUS_LABEL, fmtDate, rupees } from '../../utils/format';
 import { CURRENCY_SYMBOL, NUMBER_LOCALE } from '../../utils/locale';
 import { AssignModal, CityField, ExportButton, FilterBar, SearchField, flagLabel, qs, useMutation } from './_ops/shared';
 import PickupDetailModal from './_ops/PickupDetailModal';
+import { useAdminCities } from './_geo/shared';
 
 const FILTER_KEYS = ['search', 'status', 'city', 'collector', 'type', 'flagged', 'dateFrom', 'dateTo', 'sort'];
 const STATUSES = ['BOOKED', 'ASSIGNED', 'COLLECTOR_ON_THE_WAY', 'ARRIVED', 'WEIGHING', 'COMPLETED', 'CANCELLED'];
@@ -18,7 +18,7 @@ const LIMIT = 20;
 
 export default function AdminPickups() {
   const { can } = useAuth();
-  const { cities } = useConfig();
+  const { cities } = useAdminCities();
   const [sp, setSp] = useSearchParams();
   const f = Object.fromEntries(FILTER_KEYS.map((k) => [k, sp.get(k) || '']));
   const page = Number(sp.get('page')) || 1;
@@ -184,7 +184,7 @@ export default function AdminPickups() {
             </Select>
           )}
         </Field>
-        <CityField value={f.city} onChange={(v) => update({ city: v })} cities={cities} />
+        <CityField value={f.city} onChange={(v) => update({ city: v })} cities={cities.map((c) => c.name)} />
         <Field label="Collector" className="w-full sm:w-40">
           {(id) => (
             <Select id={id} value={f.collector === 'none' ? 'none' : f.collector ? 'id' : ''} onChange={(e) => update({ collector: e.target.value === 'id' ? f.collector : e.target.value })}>

@@ -1,5 +1,6 @@
-// Country settings for Nepal. Everything country-specific in the UI reads from
-// here so the app can be re-targeted in one place.
+// Country conventions for Nepal (formats, phone and postal rules, labels).
+// Business data (cities, municipalities, wards, postal codes per area, prices,
+// payment options, limits) is NOT here: it comes from the API via ConfigContext.
 export const COUNTRY = 'Nepal';
 export const DIAL_CODE = '977';
 export const TIMEZONE = 'Asia/Kathmandu';
@@ -8,10 +9,16 @@ export const CURRENCY_SYMBOL = 'Rs.';
 // Nepal uses the same lakh/crore digit grouping as en-IN (1,23,456).
 export const NUMBER_LOCALE = 'en-IN';
 export const DATE_LOCALE = 'en-GB';
-export const DEFAULT_CITY = 'Kathmandu';
-export const DEFAULT_CENTER = [27.7172, 85.324]; // Kathmandu
+// Only used for maps before any city is configured.
+export const COUNTRY_CENTER = [28.3949, 84.124];
 
-export const PROVINCES = ['Koshi', 'Madhesh', 'Bagmati', 'Gandaki', 'Lumbini', 'Karnali', 'Sudurpashchim'];
+export const AREA_TYPES = [
+  { value: 'metropolitan', label: 'Metropolitan city' },
+  { value: 'sub_metropolitan', label: 'Sub-metropolitan city' },
+  { value: 'municipality', label: 'Municipality' },
+  { value: 'rural_municipality', label: 'Rural municipality' },
+];
+export const areaTypeLabel = (t) => AREA_TYPES.find((x) => x.value === t)?.label || '';
 
 // 10-digit mobile numbers: NTC 984/985/986/974/975/976, Ncell 980/981/982/970,
 // SmartCell 961/962/988.
@@ -30,7 +37,8 @@ export const cleanPhone = (p) =>
 
 export const isMobile = (p) => MOBILE_RE.test(cleanPhone(p));
 
-// Customer payout / withdrawal methods.
+// Labels for every payout method the backend supports. Which ones are switched
+// on comes from Settings > Payments (useConfig().payoutMethods / withdrawalMethods).
 export const PAYOUT_METHODS = [
   { value: 'cash', label: 'Cash' },
   { value: 'esewa', label: 'eSewa' },

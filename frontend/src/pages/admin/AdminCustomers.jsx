@@ -1,19 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Building2, UserCheck, UserX, Users } from 'lucide-react';
 import useApi, { useDebounce } from '../../hooks/useApi';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useConfig } from '../../context/ConfigContext';
 import { Avatar, Badge, Button, Card, DataTable, EmptyState, ErrorState, Field, Modal, PageHeader, Pagination, Select, Toggle } from '../../components/ui';
 import { fmtDate, rupees, timeAgo } from '../../utils/format';
 import { NUMBER_LOCALE } from '../../utils/locale';
 import { ExportButton, FilterBar, SearchField, qs, useMutation } from './_ops/shared';
 
-const TIERS = [
-  { value: 'standard', label: 'Standard', desc: 'No extra bonus' },
-  { value: 'silver', label: 'Silver', desc: 'Default +3% bonus on completed pickups (~200 kg/month)' },
-  { value: 'gold', label: 'Gold', desc: 'Default +6% bonus on completed pickups (~1,000 kg/month)' },
-];
-const TIER_TONE = { standard: 'steel', silver: 'blue', gold: 'amber' };
+const TIER_TONES = ['steel', 'blue', 'amber', 'patina', 'rust'];
+const tierTitle = (name) => String(name || '').replace(/^./, (c) => c.toUpperCase());
+const tierDesc = (t) =>
+  `${t.bonusPercent > 0 ? `+${t.bonusPercent}% bonus on completed pickups` : 'No extra bonus'}${t.minMonthlyKg > 0 ? ` · from ${Number(t.minMonthlyKg).toLocaleString(NUMBER_LOCALE)} kg/month` : ''}`;
+
+// Business tiers come from Site settings (admin API, else the public config).
+function useTiers() {
+  const { can } = useAuth();
+  const { config } = useConfig();
+  const res = useApi('/admin/settings', { enabled: can('*') });
+  const tiers = res.data?.settings?.business?.tiers || config?.business?.tiers;
+  return useMemo(() => [...(tiers || [])].sort((a, b) => (a.minMonthlyKg || 0) - (b.minMonthlyKg || 0)), [tiers]);
+}
 const SORTS = [
   { value: '-createdAt', label: 'Newest first' },
   { value: 'createdAt', label: 'Oldest first' },
@@ -22,12 +30,12 @@ const SORTS = [
   { value: '-lastLoginAt', label: 'Recently active' },
 ];
 
-function TierModal({ user, onClose, onSaved }) {
-  const [tier, setTier] = useState('standard');
+function TierModal({ user, tiers, onClose, onSaved }) {
+  const [tier, setTier] = useState('');
   const { busy, run } = useMutation();
   useEffect(() => {
-    if (user) setTier(user.business?.pricingTier || 'standard');
-  }, [user]);
+    if (user) setTier(user.business?.pricingTier || tiers[0]?.name || '');
+  }, [user, tiers]);
   const save = async () => {
     const res = await run('tier', () => api.put(`/admin/users/${user._id}/business-tier`, { pricingTier: tier }), `${user.name} moved to ${tier}`);
     if (res) {
@@ -46,7 +54,7 @@ function TierModal({ user, onClose, onSaved }) {
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button loading={busy === 'tier'} onClick={save}>
+          <Button loading={busy === 'tier'} onClick={save} disabled={!tier}>
             Save tier
           </Button>
         </>
@@ -61,12 +69,13 @@ function TierModal({ user, onClose, onSaved }) {
           <fieldset>
             <legend className="label">Tier</legend>
             <div className="space-y-2">
-              {TIERS.map((t) => (
-                <label key={t.value} className="flex items-start gap-3 rounded-lg border border-steel-100 p-3 cursor-pointer has-[:checked]:border-rust-600 has-[:checked]:bg-rust-50">
-                  <input type="radio" name="tier" value={t.value} checked={tier === t.value} onChange={() => setTier(t.value)} className="accent-rust-600 mt-1" />
+              {!tiers.length && <p className="text-sm text-steel-500">No business tiers are configured. Add them under Site settings → Business tiers.</p>}
+              {tiers.map((t) => (
+                <label key={t.name} className="flex items-start gap-3 rounded-lg border border-steel-100 p-3 cursor-pointer has-[:checked]:border-rust-600 has-[:checked]:bg-rust-50">
+                  <input type="radio" name="tier" value={t.name} checked={tier === t.name} onChange={() => setTier(t.name)} className="accent-rust-600 mt-1" />
                   <span>
-                    <span className="block text-sm font-medium text-steel-900">{t.label}</span>
-                    <span className="block text-xs text-steel-500">{t.desc}</span>
+                    <span className="block text-sm font-medium text-steel-900">{tierTitle(t.name)}</span>
+                    <span className="block text-xs text-steel-500">{tierDesc(t)}</span>
                   </span>
                 </label>
               ))}
@@ -90,6 +99,8 @@ export default function AdminCustomers() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState([]);
   const [tierUser, setTierUser] = useState(null);
+  const tiers = useTiers();
+  const tierTone = (name) => TIER_TONES[Math.max(0, tiers.findIndex((t) => t.name === name)) % TIER_TONES.length];
   const { busy, run } = useMutation();
 
   const filters = { search: debounced.trim(), status, accountType };
@@ -135,7 +146,7 @@ export default function AdminCustomers() {
         u.accountType === 'business' ? (
           <div className="flex flex-wrap items-center gap-1.5">
             <Badge tone="blue">Business</Badge>
-            <Badge tone={TIER_TONE[u.business?.pricingTier] || 'steel'}>{u.business?.pricingTier || 'standard'}</Badge>
+            {u.business?.pricingTier && <Badge tone={tierTone(u.business.pricingTier)}>{tierTitle(u.business.pricingTier)}</Badge>}
           </div>
         ) : (
           <span className="text-steel-500">Individual</span>
@@ -252,7 +263,7 @@ export default function AdminCustomers() {
         </>
       )}
 
-      <TierModal user={tierUser} onClose={() => setTierUser(null)} onSaved={reload} />
+      <TierModal user={tierUser} tiers={tiers} onClose={() => setTierUser(null)} onSaved={reload} />
     </div>
   );
 }

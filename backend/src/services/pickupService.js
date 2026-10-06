@@ -71,7 +71,7 @@ async function rescheduleCustomerPickup(user, pickupId, date, slot) {
   if (!(await canReschedule(pickup))) {
     throw new PickupActionError('It is too close to the pickup time to reschedule. Please contact support.');
   }
-  const invalid = validateSlot(date, slot) || (await assertSlotAvailable(date, slot, { pinCode: pickup.pinCode, excludePickupId: pickup.pickupId }));
+  const invalid = validateSlot(date, slot) || (await assertSlotAvailable(date, slot, { areaId: pickup.area, pinCode: pickup.pinCode, excludePickupId: pickup.pickupId }));
   if (invalid) throw new PickupActionError(invalid);
   pickup.scheduledDate = new Date(`${date}T00:00:00.000Z`);
   pickup.timeSlot = slot;

@@ -1,13 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Clock, MapPinned, Palette, Plus, Save, Truck, User, X } from 'lucide-react';
+import { Check, Clock, MapPinned, Palette, Save, Truck, User } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useConfig } from '../../context/ConfigContext';
 import { PreferenceButtons } from '../../components/Navbar';
-import { Button, Card, Field, Input, Stars, Toggle, cx } from '../../components/ui';
-import { POSTAL_CODE_RE } from '../../utils/locale';
+import { Button, Card, EmptyState, Field, Input, Skeleton, Stars, Toggle, cx } from '../../components/ui';
+import { areaTypeLabel } from '../../utils/locale';
 
-const PIN_RE = POSTAL_CODE_RE;
+const sortedKey = (ids) => JSON.stringify([...ids].map(String).sort());
+
+function wardsLabel(area) {
+  const served = area.servedWards || [];
+  if (served.length && served.length < (area.wards || 0)) return `Wards ${served.join(', ')}`;
+  return area.wards ? `${area.wards} wards` : '';
+}
 
 function Section({ icon: Icon, title, subtitle, children }) {
   return (
@@ -28,15 +35,16 @@ function Section({ icon: Icon, title, subtitle, children }) {
 
 export default function CollectorSettings() {
   const { user, refreshMe } = useAuth();
+  const { areasFor, loading: configLoading } = useConfig();
   const profile = user?.collectorProfile || {};
+  const areas = useMemo(() => (profile.city ? areasFor(profile.city) : []), [areasFor, profile.city]);
+  const savedAreas = useMemo(() => (profile.serviceAreas || []).map(String), [profile.serviceAreas]);
 
   const [available, setAvailable] = useState(profile.isAvailable !== false);
   const [savingAvail, setSavingAvail] = useState(false);
   const [start, setStart] = useState(profile.workingHours?.start || '09:00');
   const [end, setEnd] = useState(profile.workingHours?.end || '19:00');
-  const [pins, setPins] = useState(profile.servicePinCodes || []);
-  const [pinInput, setPinInput] = useState('');
-  const [pinError, setPinError] = useState('');
+  const [selected, setSelected] = useState(savedAreas);
   const [hoursError, setHoursError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -44,20 +52,25 @@ export default function CollectorSettings() {
   useEffect(() => {
     setAvailable(profile.isAvailable !== false);
   }, [profile.isAvailable]);
-  const savedKey = JSON.stringify([profile.workingHours, profile.servicePinCodes]);
+  const savedKey = JSON.stringify([profile.workingHours, savedAreas]);
   useEffect(() => {
     setStart(profile.workingHours?.start || '09:00');
     setEnd(profile.workingHours?.end || '19:00');
-    setPins(profile.servicePinCodes || []);
+    setSelected(savedAreas);
   }, [savedKey]);
 
-  const dirty = useMemo(
-    () =>
-      start !== (profile.workingHours?.start || '09:00') ||
-      end !== (profile.workingHours?.end || '19:00') ||
-      JSON.stringify(pins) !== JSON.stringify(profile.servicePinCodes || []),
-    [start, end, pins, profile.workingHours, profile.servicePinCodes]
-  );
+  // Only municipalities the office currently lists for this city count; any
+  // other saved id (e.g. a deactivated area) is dropped on the next save.
+  const areaIds = useMemo(() => areas.map((a) => String(a._id)), [areas]);
+  const chosen = useMemo(() => selected.filter((id) => areaIds.includes(id)), [selected, areaIds]);
+  const allSelected = areaIds.length > 0 && chosen.length === areaIds.length;
+  const areasDirty = areaIds.length > 0 && sortedKey(chosen) !== sortedKey(savedAreas);
+
+  const dirty = start !== (profile.workingHours?.start || '09:00') || end !== (profile.workingHours?.end || '19:00') || areasDirty;
+
+  function toggleArea(id) {
+    setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+  }
 
   async function toggleAvailability(next) {
     setAvailable(next);
@@ -74,24 +87,6 @@ export default function CollectorSettings() {
     }
   }
 
-  function addPins() {
-    const found = pinInput.split(/[\s,]+/).map((p) => p.trim()).filter(Boolean);
-    if (!found.length) return;
-    const bad = found.filter((p) => !PIN_RE.test(p));
-    if (bad.length) {
-      setPinError(`${bad.join(', ')} ${bad.length > 1 ? "aren't" : "isn't"} a valid 5-digit postal code`);
-      return;
-    }
-    const next = [...new Set([...pins, ...found])];
-    if (next.length > 50) {
-      setPinError('You can serve up to 50 postal codes');
-      return;
-    }
-    setPins(next);
-    setPinInput('');
-    setPinError('');
-  }
-
   async function save(e) {
     e.preventDefault();
     if (!/^\d{2}:\d{2}$/.test(start) || !/^\d{2}:\d{2}$/.test(end)) {
@@ -103,13 +98,11 @@ export default function CollectorSettings() {
       return;
     }
     setHoursError('');
-    if (pinInput.trim()) {
-      setPinError('Tap Add to include the postal code you typed, or clear it');
-      return;
-    }
     setSaving(true);
     try {
-      await api.put('/collector/availability', { workingHours: { start, end }, servicePinCodes: pins });
+      const body = { workingHours: { start, end } };
+      if (areaIds.length) body.serviceAreas = chosen;
+      await api.put('/collector/availability', body);
       await refreshMe();
       toast.success('Settings saved');
     } catch (err) {
@@ -153,56 +146,78 @@ export default function CollectorSettings() {
           )}
         </Section>
 
-        <Section icon={MapPinned} title="Service postal codes" subtitle="Areas where you take pickups.">
-          <Field label="Add postal code" error={pinError} hint="5 digits. Separate several with commas or spaces.">
-            {(id) => (
-              <div className="flex gap-2">
-                <Input
-                  id={id}
-                  inputMode="numeric"
-                  value={pinInput}
-                  onChange={(e) => {
-                    setPinInput(e.target.value.replace(/[^\d,\s]/g, ''));
-                    setPinError('');
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addPins();
-                    }
-                  }}
-                  placeholder="44600"
-                  invalid={Boolean(pinError)}
-                  className="min-h-[48px] tabular"
-                />
-                <Button variant="outline" icon={Plus} onClick={addPins} className="min-h-[48px] shrink-0">
-                  Add
+        <Section
+          icon={MapPinned}
+          title="Service areas"
+          subtitle={profile.city ? `Municipalities in ${profile.city} where you take pickups.` : 'Municipalities where you take pickups.'}
+        >
+          {configLoading ? (
+            <div className="space-y-2" role="status" aria-label="Loading service areas">
+              <Skeleton className="h-14" />
+              <Skeleton className="h-14" />
+              <Skeleton className="h-14" />
+            </div>
+          ) : areas.length === 0 ? (
+            <EmptyState
+              icon={MapPinned}
+              title="No areas set up yet"
+              description={`Ask the office to add your areas${profile.city ? ` in ${profile.city}` : ''}. Until then you may get pickups from anywhere in your city.`}
+              className="!py-6 !px-4"
+            />
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <p className="text-sm text-steel-600 tabular" aria-live="polite">
+                  {chosen.length} of {areas.length} selected
+                </p>
+                <Button variant="ghost" size="sm" onClick={() => setSelected(allSelected ? [] : areaIds)} className="min-h-[44px]">
+                  {allSelected ? 'Clear all' : 'Select all'}
                 </Button>
               </div>
-            )}
-          </Field>
-          {pins.length ? (
-            <ul className="flex flex-wrap gap-2 mt-4" aria-label="Service postal codes">
-              {pins.map((p) => (
-                <li key={p} className="inline-flex items-center gap-1 rounded-full bg-steel-100 text-steel-800 pl-3 pr-1 h-9 text-sm font-medium tabular">
-                  {p}
-                  <button
-                    type="button"
-                    onClick={() => setPins(pins.filter((x) => x !== p))}
-                    className="w-7 h-7 rounded-full inline-flex items-center justify-center text-steel-500 hover:bg-steel-200 hover:text-steel-900"
-                    aria-label={`Remove postal code ${p}`}
-                  >
-                    <X className="w-4 h-4" aria-hidden />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-amber-700 mt-3">No postal codes yet — you may get pickups from anywhere in your city.</p>
+              <ul className="space-y-2" aria-label="Service areas">
+                {areas.map((area) => {
+                  const aid = String(area._id);
+                  const on = chosen.includes(aid);
+                  const meta = [areaTypeLabel(area.type), wardsLabel(area)].filter(Boolean).join(' · ');
+                  return (
+                    <li key={aid}>
+                      <label
+                        className={cx(
+                          'flex items-center gap-3 min-h-[56px] px-3 py-2 rounded-xl border cursor-pointer transition-colors',
+                          on ? 'border-rust-600 bg-rust-50' : 'border-steel-200 hover:bg-steel-50'
+                        )}
+                      >
+                        <input type="checkbox" className="sr-only peer" checked={on} onChange={() => toggleArea(aid)} />
+                        <span
+                          className={cx(
+                            'w-6 h-6 rounded-md border-2 flex items-center justify-center shrink-0 peer-focus-visible:ring-2 peer-focus-visible:ring-rust-500/40',
+                            on ? 'bg-rust-600 border-rust-600 text-white' : 'border-steel-300 bg-surface'
+                          )}
+                          aria-hidden
+                        >
+                          {on && <Check className="w-4 h-4" />}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-medium text-steel-900">
+                            {area.name}
+                            {area.nameNe && <span className="font-normal text-steel-500 ml-1.5">{area.nameNe}</span>}
+                          </span>
+                          {meta && <span className="block text-xs text-steel-500 tabular">{meta}</span>}
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+              {chosen.length === 0 && (
+                <p className="text-sm text-amber-700 mt-3">No areas selected — you may get pickups from anywhere in {profile.city || 'your city'}.</p>
+              )}
+              {chosen.length > 0 && <p className="text-xs text-steel-500 mt-3">Pickups in these areas come to you first. You may still get the odd job elsewhere in {profile.city || 'your city'}.</p>}
+            </>
           )}
         </Section>
 
-        <Button type="submit" size="lg" icon={Save} loading={saving} disabled={!dirty && !pinInput} className="w-full min-h-[52px]">
+        <Button type="submit" size="lg" icon={Save} loading={saving} disabled={!dirty} className="w-full min-h-[52px]">
           {dirty ? 'Save changes' : 'Saved'}
         </Button>
       </form>

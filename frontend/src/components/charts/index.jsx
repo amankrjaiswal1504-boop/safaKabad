@@ -3,7 +3,8 @@
 // tooltips, text in text tokens (never the series colour), legend for >= 2
 // series, and every chart has a table fallback via `summary`.
 import { useMemo, useRef, useState } from 'react';
-import { compact } from '../../utils/format';
+import { compact, rupees } from '../../utils/format';
+import { NUMBER_LOCALE } from '../../utils/locale';
 
 const W = 640;
 
@@ -139,7 +140,7 @@ export function LineChart({ data, x, series, height = 220, format = compact, xFo
 }
 
 // Min-max price band over time (rate trends).
-export function RangeChart({ points, height = 200, format = (v) => `Rs. ${v}` }) {
+export function RangeChart({ points, height = 200, format = (v) => rupees(v) }) {
   const ref = useRef(null);
   const [hover, setHover] = useState(null);
   const H = height;
@@ -315,7 +316,7 @@ export function Funnel({ steps }) {
             <div className="flex justify-between text-sm mb-1 gap-2">
               <span className="text-steel-700">{s.step}</span>
               <span className="tabular">
-                <span className="font-medium text-steel-900">{s.count.toLocaleString('en-IN')}</span>
+                <span className="font-medium text-steel-900">{s.count.toLocaleString(NUMBER_LOCALE)}</span>
                 {conv != null && <span className="text-steel-500 ml-2">{conv}% of previous</span>}
               </span>
             </div>

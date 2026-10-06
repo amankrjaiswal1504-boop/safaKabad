@@ -16,6 +16,7 @@ import {
   Tag,
   Trash2,
   XCircle,
+  AlertTriangle,
 } from 'lucide-react';
 import api, { download } from '../services/api';
 import useApi, { useDebounce } from '../hooks/useApi';
@@ -181,7 +182,7 @@ export default function SchedulePickup() {
 
   const addLine = (r) => {
     if (lines.some((l) => l.itemId === r.itemId)) return;
-    setLines((ls) => [...ls, { itemId: r.itemId, qty: r.unit === 'kg' ? '5' : '1', condition: 'working' }]);
+    setLines((ls) => [...ls, { itemId: r.itemId, name: r.name, qty: r.unit === 'kg' ? '5' : '1', condition: 'working' }]);
   };
   const updateLine = (itemId, patch) => setLines((ls) => ls.map((l) => (l.itemId === itemId ? { ...l, ...patch } : l)));
 
@@ -221,7 +222,12 @@ export default function SchedulePickup() {
     }
   }
 
+  // Items picked earlier that the chosen address's city doesn't buy.
+  const unavailable = rates ? lines.filter((l) => !byId[l.itemId]) : [];
+  const dropUnavailable = () => setLines((ls) => ls.filter((l) => byId[l.itemId]));
+
   function canContinue() {
+    if (unavailable.length) return false;
     if (step === 0) return validLines.length > 0 && (type === 'sale' || ngoId);
     if (step === 1) return Boolean(selectedAddress) && selectedAddress.serviceable !== false;
     if (step === 2) return Boolean(date && slot);
@@ -335,6 +341,17 @@ export default function SchedulePickup() {
   }
 
   const selectedLines = lines.map((l) => ({ ...l, rate: byId[l.itemId] })).filter((l) => l.rate);
+  const unavailableNotice = unavailable.length > 0 && (
+    <div className="flex flex-wrap items-start gap-3 rounded-xl border border-amber-100 bg-amber-50 text-amber-700 px-4 py-3 text-sm mb-4" role="alert">
+      <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden />
+      <span className="flex-1 min-w-[12rem]">
+        {t('book.notBoughtIn', { city, items: unavailable.map((l) => l.name || t('book.anItem')).join(', ') })}
+      </span>
+      <Button size="sm" variant="outline" onClick={dropUnavailable}>
+        {t('book.removeThem')}
+      </Button>
+    </div>
+  );
   const estLine = (id) => estimate?.lines?.find((x) => x.itemId === id);
 
   return (
@@ -348,6 +365,7 @@ export default function SchedulePickup() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_20rem] gap-6 items-start">
           <div>
+            {unavailableNotice}
             {/* STEP 1: items */}
             {step === 0 && (
               <div className="space-y-5">
@@ -539,11 +557,7 @@ export default function SchedulePickup() {
                   <AddressForm
                     initial={guestAddress || undefined}
                     submitLabel="Use this address"
-                    onSubmit={async (addr) => {
-                      const s = await api.get('/public/serviceability', { params: { pin: addr.pinCode, city: addr.city } }).catch(() => null);
-                      if (s && !s.data.data.serviceable) return toast.error(s.data.data.reason);
-                      saveAddress(addr);
-                    }}
+                    onSubmit={saveAddress}
                   />
                 )}
               </Card>
@@ -553,6 +567,7 @@ export default function SchedulePickup() {
             {step === 2 && (
               <Card>
                 <SlotPicker
+                  areaId={selectedAddress?.area}
                   pinCode={selectedAddress?.pinCode}
                   date={date}
                   slot={slot}
