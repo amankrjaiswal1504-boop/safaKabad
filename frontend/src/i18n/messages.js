@@ -204,6 +204,8 @@ export const en = {
   'home.weServeIn': "We pick up in {city}",
   'home.areaCount': "{n} municipalities",
   'auth.pitch1': "Free doorstep pickup in {n} municipalities",
+  'address.tolePh': "e.g. Naya Bazar, near Bhatbhateni",
+  'address.housePh': "House no. / building name",
 };
 
 export const ne = {
@@ -410,6 +412,8 @@ export const ne = {
   'home.weServeIn': "{city} मा हाम्रो सेवा",
   'home.areaCount': "{n} नगरपालिका",
   'auth.pitch1': "{n} नगरपालिकामा निःशुल्क घरदैलो पिकअप",
+  'address.tolePh': "जस्तै नयाँ बजार, भाटभटेनी नजिक",
+  'address.housePh': "घर नं. / भवनको नाम",
 };
 
 export const LANGUAGES = [

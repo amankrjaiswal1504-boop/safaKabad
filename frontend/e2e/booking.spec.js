@@ -18,8 +18,8 @@ test('guest books a pickup with phone OTP and sees the tracking page', async ({ 
 
   // Step 2: address. City, municipality and ward come from the admin-managed
   // service areas; district, province and postal code are filled in for us.
-  await page.getByRole('combobox', { name: /^City/ }).selectOption('Kathmandu');
-  await page.getByRole('combobox', { name: /Municipality/ }).selectOption({ label: 'Kirtipur' });
+  await page.getByRole('radio', { name: 'Kathmandu', exact: true }).click();
+  await page.getByRole('radio', { name: 'Kirtipur', exact: true }).click();
   await page.getByRole('combobox', { name: /^Ward/ }).selectOption('5');
   await expect(page.getByText(/We pick up in Kirtipur/)).toBeVisible();
   await expect(page.getByRole('combobox', { name: 'Postal code' })).toHaveValue('44618');

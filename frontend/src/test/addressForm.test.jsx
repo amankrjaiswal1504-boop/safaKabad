@@ -32,10 +32,10 @@ describe('AddressForm', () => {
     const onSubmit = vi.fn();
     renderWithProviders(<AddressForm onSubmit={onSubmit} />);
 
-    const municipality = screen.getByLabelText(/Municipality/);
-    // Only Kathmandu's municipalities while Kathmandu is selected.
-    expect([...municipality.options].map((o) => o.textContent)).toEqual(['Select municipality', 'Kirtipur', 'Tokha']);
-    fireEvent.change(municipality, { target: { value: 'a1' } });
+    // Only Kathmandu's municipalities (as chips) while Kathmandu is selected.
+    const municipalities = screen.getByRole('radiogroup', { name: 'Municipality' });
+    expect([...municipalities.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Kirtipur', 'Tokha']);
+    fireEvent.click(screen.getByRole('radio', { name: 'Kirtipur' }));
 
     const ward = screen.getByLabelText(/Ward/);
     expect(ward.options).toHaveLength(11); // placeholder + 10 wards
@@ -58,8 +58,9 @@ describe('AddressForm', () => {
   it('switching city lists that city’s municipalities and validates required fields', () => {
     const onSubmit = vi.fn();
     renderWithProviders(<AddressForm onSubmit={onSubmit} />);
-    fireEvent.change(screen.getByLabelText(/^City/), { target: { value: 'Bhaktapur' } });
-    expect([...screen.getByLabelText(/Municipality/).options].map((o) => o.textContent)).toEqual(['Select municipality', 'Bhaktapur']);
+    fireEvent.click(screen.getByRole('radio', { name: 'Bhaktapur' }));
+    const municipalities = screen.getByRole('radiogroup', { name: 'Municipality' });
+    expect([...municipalities.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Bhaktapur']);
     fireEvent.click(screen.getByRole('button', { name: 'Save address' }));
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByText('Choose your municipality')).toBeInTheDocument();

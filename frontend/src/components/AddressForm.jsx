@@ -7,8 +7,7 @@ import { Button, EmptyState, Field, Input, Select, cx } from './ui';
 import MapView from './MapView';
 import { useI18n } from '../i18n/I18nContext';
 import { useConfig } from '../context/ConfigContext';
-import { POSTAL_CODE_LABEL, POSTAL_CODE_RE, areaTypeLabel } from '../utils/locale';
-import { rupees } from '../utils/format';
+import { POSTAL_CODE_LABEL, POSTAL_CODE_RE } from '../utils/locale';
 
 const EMPTY = { city: '', areaId: '', ward: '', street: '', houseNumber: '', landmark: '', pinCode: '', addressType: 'home', location: null };
 
@@ -37,6 +36,24 @@ function matchArea(areas, place) {
   return nearest && distanceKm(at, nearest.center) <= 6 ? nearest : null;
 }
 
+function Chip({ active, onClick, children, small }) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={active}
+      onClick={onClick}
+      className={cx(
+        'rounded-full border font-medium transition-colors',
+        small ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm',
+        active ? 'bg-rust-600 border-rust-600 text-white shadow-sm' : 'bg-rust-50/60 border-steel-200 text-steel-800 hover:border-rust-500'
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
 // Nepali address entry: city -> municipality -> ward come from the service areas
 // set up by the admin, so customers can only pick places we serve. District,
 // province and postal code are filled in from the municipality. A map pin (search,
@@ -60,6 +77,7 @@ export default function AddressForm({ initial, onSubmit, onCancel, submitLabel =
   const [searching, setSearching] = useState(false);
   const [locating, setLocating] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showMap, setShowMap] = useState(Boolean(initial?.location));
   const q = useDebounce(query, 400);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -187,120 +205,112 @@ export default function AddressForm({ initial, onSubmit, onCancel, submitLabel =
         </p>
       )}
 
-      {/* Where: city -> municipality -> ward */}
-      <fieldset className="space-y-3">
-        <legend className="text-sm font-semibold text-steel-900 mb-2">{t('address.where')}</legend>
-        <div className={cx('grid gap-3', showCityPicker ? 'sm:grid-cols-[1fr_1.6fr_0.8fr]' : 'sm:grid-cols-[1.6fr_0.8fr]')}>
-          {showCityPicker && (
-            <Field label={t('address.city')} required error={errors.city}>
-              {(id) => (
-                <Select id={id} value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value, areaId: '', ward: '' }))} invalid={!!errors.city}>
-                  {cityList.map((c) => (
-                    <option key={c.name} value={c.name}>
-                      {nameOf(c)}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </Field>
+      {/* Where: city -> municipality chips, then ward */}
+      <div className="space-y-4">
+        {showCityPicker && (
+          <div>
+            <div className="label">
+              {t('address.city')} <span className="text-rust-600">*</span>
+            </div>
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('address.city')}>
+              {cityList.map((c) => (
+                <Chip key={c.name} active={form.city === c.name} onClick={() => setForm((f) => ({ ...f, city: c.name, areaId: '', ward: '' }))}>
+                  {nameOf(c)}
+                </Chip>
+              ))}
+            </div>
+          </div>
+        )}
+        <div>
+          <div className="label">
+            {t('address.municipality')} <span className="text-rust-600">*</span>
+          </div>
+          {areas.length ? (
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('address.municipality')}>
+              {areas.map((a) => (
+                <Chip key={a._id} active={form.areaId === String(a._id)} onClick={() => chooseArea(a)}>
+                  {nameOf(a).replace(/ Metropolitan City$/, ' Metro')}
+                </Chip>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-steel-500">{t('address.noAreas')}</p>
           )}
-          <Field label={t('address.municipality')} required error={errors.areaId}>
-            {(id) => (
-              <Select
-                id={id}
-                value={form.areaId}
-                onChange={(e) => {
-                  const a = areaById(e.target.value);
-                  if (a) chooseArea(a);
-                  else set('areaId', '');
-                }}
-                invalid={!!errors.areaId}
-              >
-                <option value="">{areas.length ? t('address.selectMunicipality') : t('address.noAreas')}</option>
-                {areas.map((a) => (
-                  <option key={a._id} value={a._id}>
-                    {nameOf(a)}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <Field label={t('address.ward')} required error={errors.ward}>
-            {(id) => (
-              <Select id={id} value={form.ward} onChange={(e) => set('ward', e.target.value)} disabled={!area} invalid={!!errors.ward}>
-                <option value="">{area ? t('address.selectWard') : '—'}</option>
-                {area &&
-                  Array.from({ length: area.wards }, (_, i) => i + 1).map((w) => (
+          {errors.areaId && (
+            <p className="text-danger-600 text-xs mt-1.5" role="alert">
+              {errors.areaId}
+            </p>
+          )}
+        </div>
+        {area && (
+          <div className="grid grid-cols-[minmax(0,9rem)_1fr] gap-3 items-end">
+            <Field label={t('address.ward')} required error={errors.ward}>
+              {(id) => (
+                <Select id={id} value={form.ward} onChange={(e) => set('ward', e.target.value)} invalid={!!errors.ward}>
+                  <option value="">{t('address.selectWard')}</option>
+                  {Array.from({ length: area.wards }, (_, i) => i + 1).map((w) => (
                     <option key={w} value={w} disabled={!wardServed(area, w)}>
                       {t('address.wardN', { n: w })}
                       {wardServed(area, w) ? '' : ` · ${t('address.comingSoon')}`}
                     </option>
                   ))}
-              </Select>
-            )}
-          </Field>
-        </div>
-
-        {area && (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-patina-50 text-patina-800 px-3.5 py-2.5 text-sm" role="status">
-            <span className="inline-flex items-center gap-1.5 font-medium">
-              <CheckCircle2 className="w-4 h-4" aria-hidden /> {t('address.weServe', { area: nameOf(area) })}
-            </span>
-            <span className="text-patina-700">
-              {[areaTypeLabel(area.type), area.district && `${area.district} district`, area.state && `${area.state} Province`].filter(Boolean).join(' · ')}
-            </span>
-            {(area.minPickupWeightKg > 0 || area.minPickupValue > 0) && (
-              <span className="text-patina-700">
-                {t('address.minimum')}{' '}
-                {[area.minPickupWeightKg > 0 && `${area.minPickupWeightKg} kg`, area.minPickupValue > 0 && rupees(area.minPickupValue)].filter(Boolean).join(' / ')}
-              </span>
-            )}
+                </Select>
+              )}
+            </Field>
+            <p className="flex flex-wrap items-center gap-1.5 text-sm text-patina-700 pb-3">
+              <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden /> {t('address.weServe', { area: nameOf(area) })}
+              {area.minPickupWeightKg > 0 && <span className="text-steel-500">· min {area.minPickupWeightKg} kg</span>}
+            </p>
           </div>
         )}
-      </fieldset>
+      </div>
 
-      {/* Street details */}
+      <Field label={t('address.tole')} required error={errors.street}>
+        {(id) => <Input id={id} value={form.street} onChange={(e) => set('street', e.target.value)} invalid={!!errors.street} placeholder={t('address.tolePh')} autoComplete="address-line1" />}
+      </Field>
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label={t('address.tole')} required error={errors.street} hint={t('address.toleHint')}>
-          {(id) => <Input id={id} value={form.street} onChange={(e) => set('street', e.target.value)} invalid={!!errors.street} autoComplete="address-line1" />}
-        </Field>
         <Field label={t('address.house')}>
-          {(id) => <Input id={id} value={form.houseNumber} onChange={(e) => set('houseNumber', e.target.value)} autoComplete="address-line2" />}
+          {(id) => <Input id={id} value={form.houseNumber} onChange={(e) => set('houseNumber', e.target.value)} placeholder={t('address.housePh')} autoComplete="address-line2" />}
         </Field>
-        <Field label={t('address.landmark')} hint={t('address.landmarkHint')}>
-          {(id) => <Input id={id} value={form.landmark} onChange={(e) => set('landmark', e.target.value)} />}
+        <Field label={t('address.landmark')}>
+          {(id) => <Input id={id} value={form.landmark} onChange={(e) => set('landmark', e.target.value)} placeholder={t('address.landmarkHint')} />}
         </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label={POSTAL_CODE_LABEL} error={errors.pinCode}>
-            {(id) =>
-              area?.pinCodes?.length > 1 ? (
-                <Select id={id} value={form.pinCode} onChange={(e) => set('pinCode', e.target.value)}>
-                  {area.pinCodes.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </Select>
-              ) : area?.pinCodes?.length === 1 ? (
-                <Input id={id} value={area.pinCodes[0]} readOnly className="bg-steel-50 tabular" />
-              ) : (
-                <Input id={id} value={form.pinCode} inputMode="numeric" maxLength={5} disabled={!area} onChange={(e) => set('pinCode', e.target.value.replace(/\D/g, ''))} invalid={!!errors.pinCode} autoComplete="postal-code" />
-              )
-            }
-          </Field>
-          <Field label={t('address.type')}>
-            {(id) => (
-              <Select id={id} value={form.addressType} onChange={(e) => set('addressType', e.target.value)}>
-                <option value="home">{t('address.home')}</option>
-                <option value="work">{t('address.work')}</option>
-                <option value="other">{t('address.other')}</option>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label={POSTAL_CODE_LABEL} error={errors.pinCode}>
+          {(id) =>
+            area?.pinCodes?.length > 1 ? (
+              <Select id={id} value={form.pinCode} onChange={(e) => set('pinCode', e.target.value)}>
+                {area.pinCodes.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
               </Select>
-            )}
-          </Field>
+            ) : area?.pinCodes?.length === 1 ? (
+              <Input id={id} value={area.pinCodes[0]} readOnly className="bg-steel-50 tabular" />
+            ) : (
+              <Input id={id} value={form.pinCode} inputMode="numeric" maxLength={5} disabled={!area} onChange={(e) => set('pinCode', e.target.value.replace(/\D/g, ''))} invalid={!!errors.pinCode} autoComplete="postal-code" />
+            )
+          }
+        </Field>
+        <div>
+          <div className="label">{t('address.type')}</div>
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('address.type')}>
+            {['home', 'work', 'other'].map((v) => (
+              <Chip key={v} active={form.addressType === v} onClick={() => set('addressType', v)} small>
+                {t(`address.${v}`)}
+              </Chip>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Map pin */}
+      {!showMap ? (
+        <button type="button" onClick={() => setShowMap(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-rust-600 hover:text-rust-700">
+          <MapPin className="w-4 h-4" aria-hidden /> {t('address.pinTitle')}
+        </button>
+      ) : (
       <div className="space-y-2">
         <div className="text-sm font-semibold text-steel-900">{t('address.pinTitle')}</div>
         <div className="relative">
@@ -346,6 +356,7 @@ export default function AddressForm({ initial, onSubmit, onCancel, submitLabel =
         />
         <p className="text-xs text-steel-500">{t('address.pinHint')}</p>
       </div>
+      )}
 
       <div className="flex gap-2 justify-end pt-1">
         {onCancel && (
