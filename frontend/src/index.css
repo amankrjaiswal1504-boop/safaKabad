@@ -2,106 +2,110 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ---------- Design tokens (R G B triplets) ---------- */
+/* ---------- Design tokens (R G B triplets) ----------
+   Palette: deep emerald brand ("rust" token name kept for compatibility),
+   warm ivory neutrals ("steel"), sage success ("patina"), brass-gold accent
+   ("amber"), and a near-black green ink band for hero/footer. */
 :root {
   color-scheme: light;
-  --steel-50: 247 246 242;
-  --steel-100: 236 234 227;
-  --steel-200: 222 219 210;
-  --steel-300: 190 194 198;
-  --steel-400: 141 149 157;
-  --steel-500: 99 108 117;
-  --steel-600: 79 87 96;
-  --steel-700: 61 67 74;
-  --steel-800: 45 49 54;
-  --steel-900: 35 38 43;
-  --steel-950: 22 24 27;
+  --steel-50: 248 247 243;
+  --steel-100: 238 236 229;
+  --steel-200: 225 222 213;
+  --steel-300: 200 201 195;
+  --steel-400: 146 153 149;
+  --steel-500: 103 112 108;
+  --steel-600: 80 89 85;
+  --steel-700: 60 68 65;
+  --steel-800: 40 47 45;
+  --steel-900: 23 31 28;
+  --steel-950: 13 20 17;
 
-  --rust-50: 252 243 237;
-  --rust-100: 246 223 209;
-  --rust-200: 236 191 166;
-  --rust-500: 189 91 53;
-  --rust-600: 164 74 42;
-  --rust-700: 138 58 33;
-  --rust-800: 110 45 25;
+  --rust-50: 236 245 240;
+  --rust-100: 211 232 221;
+  --rust-200: 167 207 186;
+  --rust-500: 22 122 88;
+  --rust-600: 15 98 71;
+  --rust-700: 11 78 57;
+  --rust-800: 8 60 44;
 
-  --patina-50: 240 246 241;
-  --patina-100: 220 232 222;
-  --patina-200: 189 212 194;
-  --patina-500: 82 125 92;
-  --patina-600: 61 104 72;
-  --patina-700: 47 84 57;
-  --patina-800: 36 64 44;
+  --patina-50: 240 246 238;
+  --patina-100: 222 235 218;
+  --patina-200: 192 214 186;
+  --patina-500: 88 135 80;
+  --patina-600: 66 112 59;
+  --patina-700: 50 90 45;
+  --patina-800: 38 70 35;
 
-  --amber-50: 254 248 235;
-  --amber-100: 252 236 200;
-  --amber-600: 180 110 12;
-  --amber-700: 140 84 8;
+  --amber-50: 251 246 234;
+  --amber-100: 244 232 203;
+  --amber-600: 160 112 26;
+  --amber-700: 122 85 18;
 
   --danger-50: 254 242 241;
   --danger-100: 252 222 219;
-  --danger-600: 196 48 43;
-  --danger-700: 160 34 30;
+  --danger-600: 190 46 42;
+  --danger-700: 155 33 29;
 
   --surface: 255 255 255;
-  --surface-2: 250 249 246;
-  --ink: 28 31 34;
-  --ink-2: 40 44 49;
+  --surface-2: 251 250 247;
+  --ink: 14 31 26;
+  --ink-2: 22 44 37;
 
-  /* Chart palette (validated: CVD-safe pair, >=3:1 on the surface) */
-  --viz-1: 180 83 46;
-  --viz-2: 47 109 181;
-  --viz-grid: 228 225 216;
+  /* Chart palette: emerald + brass differ in both hue and lightness (CVD-safe),
+     each >= 3:1 on the surface. */
+  --viz-1: 15 98 71;
+  --viz-2: 176 128 40;
+  --viz-grid: 229 226 217;
 }
 
 .dark {
   color-scheme: dark;
-  --steel-50: 17 19 22;
-  --steel-100: 33 37 42;
-  --steel-200: 45 50 56;
-  --steel-300: 68 75 82;
-  --steel-400: 108 116 124;
-  --steel-500: 141 149 157;
-  --steel-600: 170 177 184;
-  --steel-700: 198 203 208;
-  --steel-800: 220 223 226;
-  --steel-900: 236 234 228;
-  --steel-950: 246 245 240;
+  --steel-50: 12 17 15;
+  --steel-100: 26 33 30;
+  --steel-200: 38 47 43;
+  --steel-300: 60 71 66;
+  --steel-400: 102 114 109;
+  --steel-500: 140 151 146;
+  --steel-600: 170 179 175;
+  --steel-700: 199 206 203;
+  --steel-800: 222 227 224;
+  --steel-900: 238 237 231;
+  --steel-950: 247 246 241;
 
-  --rust-50: 43 26 20;
-  --rust-100: 60 34 24;
-  --rust-200: 92 50 33;
-  --rust-500: 221 120 80;
-  --rust-600: 196 92 54;
-  --rust-700: 232 141 104;
-  --rust-800: 244 176 147;
+  --rust-50: 15 38 30;
+  --rust-100: 20 54 42;
+  --rust-200: 28 82 62;
+  --rust-500: 64 180 136;
+  --rust-600: 34 150 108;
+  --rust-700: 104 204 162;
+  --rust-800: 156 224 195;
 
-  --patina-50: 22 34 26;
-  --patina-100: 30 48 36;
-  --patina-200: 44 70 52;
-  --patina-500: 112 166 125;
-  --patina-600: 88 143 101;
-  --patina-700: 140 192 152;
-  --patina-800: 176 214 185;
+  --patina-50: 24 36 22;
+  --patina-100: 32 50 30;
+  --patina-200: 48 74 44;
+  --patina-500: 128 178 118;
+  --patina-600: 104 156 95;
+  --patina-700: 152 200 142;
+  --patina-800: 186 220 178;
 
-  --amber-50: 44 33 12;
-  --amber-100: 64 47 14;
-  --amber-600: 230 165 60;
-  --amber-700: 245 194 110;
+  --amber-50: 42 33 14;
+  --amber-100: 62 48 18;
+  --amber-600: 222 172 82;
+  --amber-700: 238 200 124;
 
   --danger-50: 48 20 20;
   --danger-100: 70 26 25;
   --danger-600: 240 110 102;
   --danger-700: 250 150 143;
 
-  --surface: 26 29 33;
-  --surface-2: 31 35 40;
-  --ink: 12 14 16;
-  --ink-2: 24 27 31;
+  --surface: 20 27 24;
+  --surface-2: 25 33 30;
+  --ink: 8 13 11;
+  --ink-2: 18 25 22;
 
-  --viz-1: 217 112 63;
-  --viz-2: 79 143 214;
-  --viz-grid: 45 50 56;
+  --viz-1: 64 180 136;
+  --viz-2: 214 168 84;
+  --viz-grid: 38 47 43;
 }
 
 @layer base {
@@ -113,14 +117,15 @@
   body {
     @apply bg-steel-50 text-steel-900 font-body antialiased;
     font-feature-settings: 'cv11', 'ss01';
+    text-rendering: optimizeLegibility;
   }
   h1,
   h2,
   h3,
   h4,
   .font-head {
-    font-family: 'Space Grotesk', system-ui, sans-serif;
-    letter-spacing: -0.01em;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    letter-spacing: -0.015em;
   }
   :focus-visible {
     @apply outline-none ring-2 ring-rust-500 ring-offset-2 ring-offset-steel-50;
@@ -140,16 +145,16 @@
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap select-none;
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-[-0.005em] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap select-none;
   }
   .btn-primary {
-    @apply btn bg-rust-600 text-white px-5 py-2.5 hover:bg-rust-700 shadow-sm;
+    @apply btn bg-rust-600 text-white px-5 py-2.5 hover:bg-rust-700 shadow-[0_1px_2px_rgb(0_0_0/0.08),0_4px_14px_-6px_rgb(var(--rust-600)/0.6)] hover:shadow-[0_1px_2px_rgb(0_0_0/0.08),0_8px_20px_-8px_rgb(var(--rust-600)/0.7)];
   }
   .btn-secondary {
     @apply btn bg-ink text-white px-5 py-2.5 hover:bg-ink-2 dark:bg-steel-200 dark:hover:bg-steel-300;
   }
   .btn-outline {
-    @apply btn border border-steel-300 bg-surface text-steel-900 px-5 py-2.5 hover:border-steel-500 hover:bg-steel-50;
+    @apply btn border border-steel-300 bg-surface text-steel-900 px-5 py-2.5 hover:border-steel-900 hover:bg-surface;
   }
   .btn-ghost {
     @apply btn text-steel-700 px-3 py-2 hover:bg-steel-100 hover:text-steel-900;
@@ -158,16 +163,16 @@
     @apply btn bg-danger-600 text-white px-5 py-2.5 hover:bg-danger-700;
   }
   .input {
-    @apply w-full rounded-lg border border-steel-300 bg-surface px-3 py-2.5 text-steel-900 placeholder:text-steel-400 transition-colors focus:outline-none focus:border-rust-500 focus:ring-2 focus:ring-rust-500/25 disabled:bg-steel-100 disabled:text-steel-500;
+    @apply w-full rounded-xl border border-steel-200 bg-surface px-3.5 py-2.5 text-steel-900 placeholder:text-steel-400 transition-colors hover:border-steel-300 focus:outline-none focus:border-rust-500 focus:ring-4 focus:ring-rust-500/15 disabled:bg-steel-100 disabled:text-steel-500;
   }
   .card {
-    @apply bg-surface border border-steel-100 rounded-xl p-5 shadow-card;
+    @apply bg-surface border border-steel-200/70 rounded-2xl p-5 shadow-card;
   }
   .label {
     @apply block text-sm font-medium text-steel-800 mb-1.5;
   }
   .link {
-    @apply text-rust-600 font-medium hover:text-rust-700 underline-offset-2 hover:underline;
+    @apply text-rust-600 font-semibold hover:text-rust-700 underline-offset-4 hover:underline;
   }
   .container-page {
     @apply max-w-6xl mx-auto px-4 sm:px-6;
@@ -175,6 +180,23 @@
   .tabular {
     font-variant-numeric: tabular-nums;
   }
+  /* Small uppercase label above section titles. */
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-600;
+  }
+}
+
+/* Elegant serif for page titles and large section headings only; small UI
+   headings stay in the sans. */
+h1.font-head,
+h2.font-head[class*='text-xl'],
+h2.font-head[class*='text-2xl'],
+h2.font-head[class*='text-3xl'],
+.font-display {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-optical-sizing: auto;
 }
 
 /* Leave room under the last content so the floating chat/WhatsApp buttons

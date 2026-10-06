@@ -3,9 +3,9 @@
 const PDFDocument = require('pdfkit');
 const { TIMEZONE } = require('../config/locale');
 
-const BRAND = '#A44A2A';
-const INK = '#23262B';
-const MUTED = '#5C6670';
+const BRAND = '#0F6247';
+const INK = '#171F1C';
+const MUTED = '#59625E';
 
 const rs = (n) => `Rs. ${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 const date = (d) => new Date(d).toLocaleDateString('en-GB', { timeZone: TIMEZONE, day: 'numeric', month: 'long', year: 'numeric' });

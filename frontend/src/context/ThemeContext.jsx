@@ -27,7 +27,7 @@ export function ThemeProvider({ children }) {
   const dark = mode === 'dark' || (mode === 'system' && systemDark);
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#111316' : '#A44A2A');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0C1110' : '#0F6247');
   }, [dark]);
 
   const set = (m) => {

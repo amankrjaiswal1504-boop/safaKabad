@@ -15,11 +15,11 @@ function drawCard(canvas, { name, kg, co2, trees, tier }) {
   canvas.width = W;
   canvas.height = H;
   const g = ctx.createLinearGradient(0, 0, W, H);
-  g.addColorStop(0, '#1C1F22');
-  g.addColorStop(1, '#2F5439');
+  g.addColorStop(0, '#0E1F1A');
+  g.addColorStop(1, '#325A2D');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = '#A44A2A';
+  ctx.fillStyle = '#0F6247';
   ctx.beginPath();
   ctx.roundRect(80, 80, 90, 90, 22);
   ctx.fill();
@@ -27,20 +27,20 @@ function drawCard(canvas, { name, kg, co2, trees, tier }) {
   ctx.font = '700 44px "Space Grotesk", sans-serif';
   ctx.fillText('ScrapMate', 195, 140);
   ctx.font = '500 40px Inter, sans-serif';
-  ctx.fillStyle = '#c9ced3';
+  ctx.fillStyle = '#C7D2CD';
   ctx.fillText(`${name}'s recycling impact`, 80, 300);
   const stat = (y, value, label) => {
     ctx.fillStyle = '#fff';
     ctx.font = '700 120px "Space Grotesk", sans-serif';
     ctx.fillText(value, 80, y);
-    ctx.fillStyle = '#c9ced3';
+    ctx.fillStyle = '#C7D2CD';
     ctx.font = '500 38px Inter, sans-serif';
     ctx.fillText(label, 80, y + 55);
   };
   stat(470, `${kg} kg`, 'of scrap recycled');
   stat(680, `${co2} kg`, 'of CO₂ emissions avoided');
   stat(890, `${trees}`, 'trees’ worth of yearly CO₂ absorption');
-  ctx.fillStyle = '#e8a07f';
+  ctx.fillStyle = '#D9B66A';
   ctx.font = '600 36px Inter, sans-serif';
   ctx.fillText(`${tier} member · scrapmate`, 80, 1010);
 }
@@ -78,10 +78,10 @@ export default function Impact() {
   return (
     <div>
       <PageHeader title="Your eco impact" subtitle="Calculated from the actual weights of your completed pickups." />
-      <div className="rounded-2xl p-6 sm:p-8 mb-6 text-white relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgb(var(--ink)), #2F5439)' }}>
+      <div className="rounded-2xl p-6 sm:p-8 mb-6 text-white relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgb(var(--ink)), #325A2D)' }}>
         <div className="flex items-center gap-3">
           <LogoMark className="w-8 h-8" />
-          <span className="text-sm text-[#c9ced3]">{user.name.split(' ')[0]}'s recycling impact</span>
+          <span className="text-sm text-[#C7D2CD]">{user.name.split(' ')[0]}'s recycling impact</span>
         </div>
         <div className="grid sm:grid-cols-3 gap-6 mt-6">
           {[
@@ -91,7 +91,7 @@ export default function Impact() {
           ].map(([v, l]) => (
             <div key={l}>
               <div className="font-head text-4xl font-bold tabular">{v}</div>
-              <div className="text-sm text-[#c9ced3]">{l}</div>
+              <div className="text-sm text-[#C7D2CD]">{l}</div>
             </div>
           ))}
         </div>

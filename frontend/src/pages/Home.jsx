@@ -86,11 +86,11 @@ function StatsBand() {
     { v: data ? (data.rating ? `${data.rating}/5` : 'New') : null, l: t('home.statRating') },
   ];
   return (
-    <dl className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-white/10 rounded-2xl overflow-hidden mt-10">
+    <dl className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-white/10 rounded-2xl overflow-hidden mt-12 ring-1 ring-white/10">
       {items.map((s) => (
-        <div key={s.l} className="bg-ink px-5 py-4">
-          <dd className="font-head text-2xl sm:text-3xl font-bold text-white tabular">{s.v ?? <span className="inline-block w-16 h-7 rounded bg-white/10 animate-pulse2" />}</dd>
-          <dt className="text-xs sm:text-sm text-[#aab1b8] mt-0.5">{s.l}</dt>
+        <div key={s.l} className="bg-ink/95 px-5 py-5">
+          <dd className="font-display text-3xl sm:text-4xl text-white tabular">{s.v ?? <span className="inline-block w-16 h-7 rounded bg-white/10 animate-pulse2" />}</dd>
+          <dt className="text-xs sm:text-sm text-[#A3B3AC] mt-0.5">{s.l}</dt>
         </div>
       ))}
     </dl>
@@ -132,29 +132,37 @@ export default function Home() {
     <div>
       {/* Hero */}
       <section className="bg-ink text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.07] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '22px 22px' }} aria-hidden />
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage:
+              'radial-gradient(60rem 30rem at 85% -10%, rgb(34 150 108 / 0.28), transparent 60%), radial-gradient(40rem 24rem at -10% 110%, rgb(217 182 106 / 0.14), transparent 60%)',
+          }}
+          aria-hidden
+        />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#D9B66A]/40 to-transparent" aria-hidden />
         <div className="container-page relative py-12 sm:py-16 lg:py-20">
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] gap-10 items-center">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-[#F1DDCE]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#7fd39a]" aria-hidden /> {t('home.badge', { count: cities.length || 10 })}
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#D9B66A]/30 bg-white/[0.04] px-3.5 py-1 text-xs font-medium tracking-wide text-[#E9D9B4]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#7FD3A8]" aria-hidden /> {t('home.badge', { count: cities.length || 10 })}
               </span>
-              <h1 className="font-head text-[2.1rem] sm:text-5xl lg:text-[3.4rem] font-bold leading-[1.08] mt-4 tracking-tight">
+              <h1 className="font-head text-[2.3rem] sm:text-5xl lg:text-[3.6rem] font-bold leading-[1.05] mt-5 tracking-tight">
                 {lang === 'en' && home.heroTitle ? home.heroTitle : t('home.title')}
               </h1>
-              <p className="mt-4 text-[#c9ced3] text-base sm:text-lg max-w-xl">{lang === 'en' && home.heroSubtitle ? home.heroSubtitle : t('home.subtitle')}</p>
+              <p className="mt-4 text-[#C7D2CD] text-base sm:text-lg max-w-xl">{lang === 'en' && home.heroSubtitle ? home.heroSubtitle : t('home.subtitle')}</p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <Link to="/schedule-pickup" className="btn-primary !px-6 !py-3 text-base">
                   {t('home.ctaBook')} <ArrowRight className="w-4 h-4" aria-hidden />
                 </Link>
-                <Link to="/rates" className="btn border border-white/25 text-white !px-6 !py-3 text-base hover:bg-white/10">
+                <Link to="/rates" className="btn border border-white/20 text-white !px-6 !py-3 text-base hover:bg-white/10 hover:border-white/40">
                   {t('home.ctaRates')}
                 </Link>
               </div>
               <ul className="mt-7 grid grid-cols-2 gap-x-4 gap-y-2.5 max-w-lg">
                 {trust.map((x) => (
-                  <li key={x.text} className="flex items-center gap-2 text-sm text-[#dfe3e6]">
-                    <x.icon className="w-4 h-4 text-[#e8a07f] shrink-0" aria-hidden /> {x.text}
+                  <li key={x.text} className="flex items-center gap-2 text-sm text-[#DDE5E1]">
+                    <x.icon className="w-4 h-4 text-[#D9B66A] shrink-0" aria-hidden /> {x.text}
                   </li>
                 ))}
               </ul>
@@ -256,9 +264,9 @@ export default function Home() {
       {/* Business + impact */}
       <section className="container-page py-14 grid lg:grid-cols-2 gap-6">
         <div className="rounded-2xl bg-ink text-white p-8 relative overflow-hidden">
-          <Building2 className="w-10 h-10 text-[#e8a07f]" aria-hidden />
+          <Building2 className="w-10 h-10 text-[#D9B66A]" aria-hidden />
           <h2 className="font-head text-2xl font-semibold mt-4">{t('home.businessTitle')}</h2>
-          <p className="text-[#c9ced3] mt-2 max-w-md">{t('home.businessSub')}</p>
+          <p className="text-[#C7D2CD] mt-2 max-w-md">{t('home.businessSub')}</p>
           <Link to="/business" className="btn-primary mt-6">
             {t('home.businessCta')} <ArrowRight className="w-4 h-4" aria-hidden />
           </Link>

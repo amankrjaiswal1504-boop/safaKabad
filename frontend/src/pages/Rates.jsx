@@ -196,7 +196,7 @@ export default function Rates() {
       <div className="mt-12 rounded-2xl bg-ink text-white p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-head text-xl font-semibold">Ready to sell?</h2>
-          <p className="text-[#c9ced3] text-sm mt-1">Free pickup in {city}. Weighed in front of you, paid instantly.</p>
+          <p className="text-[#C7D2CD] text-sm mt-1">Free pickup in {city}. Weighed in front of you, paid instantly.</p>
         </div>
         <Link to="/schedule-pickup" className="btn-primary">
           {t('home.ctaBook')}

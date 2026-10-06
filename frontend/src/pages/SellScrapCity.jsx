@@ -66,18 +66,18 @@ export default function SellScrapCity() {
             ) : (
               <h1 className="font-head text-3xl sm:text-5xl font-bold leading-tight">Sell scrap online in {city}</h1>
             )}
-            <p className="text-[#c9ced3] mt-4 max-w-xl text-lg">
+            <p className="text-[#C7D2CD] mt-4 max-w-xl text-lg">
               Book a free doorstep pickup anywhere in {city}. A verified ScrapMate collector weighs your scrap in front of you and pays instantly.
             </p>
-            <ul className="mt-6 space-y-2 text-sm text-[#dfe3e6]">
+            <ul className="mt-6 space-y-2 text-sm text-[#DDE5E1]">
               {['Free pickup, same-day or next-day slots', 'Digital weighing with photo proof', 'eSewa, Khalti, bank, cash or wallet payment', `${data?.itemCount || 30}+ items: paper, metals, e-waste, appliances, vehicles`].map((x) => (
                 <li key={x} className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#7fd39a]" aria-hidden /> {x}
+                  <CheckCircle2 className="w-4 h-4 text-[#7FD3A8]" aria-hidden /> {x}
                 </li>
               ))}
             </ul>
             {top.length > 0 && (
-              <p className="mt-6 text-sm text-[#aab1b8]">
+              <p className="mt-6 text-sm text-[#A3B3AC]">
                 Popular in {city}: {top.map((r) => `${r.name} ${rupees(r.minPrice)}–${rupees(r.maxPrice)}/${r.unit}`).join(' · ')}
               </p>
             )}

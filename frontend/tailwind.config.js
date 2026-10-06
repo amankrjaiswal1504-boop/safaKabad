@@ -23,12 +23,13 @@ export default {
         viz: { 1: v('viz-1'), 2: v('viz-2'), grid: v('viz-grid') },
       },
       fontFamily: {
-        head: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
+        head: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        display: ['"Fraunces"', 'Georgia', 'serif'],
         body: ['"Inter"', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        card: '0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.06)',
-        lift: '0 10px 30px -12px rgb(0 0 0 / 0.25)',
+        card: '0 1px 2px rgb(16 28 24 / 0.04), 0 4px 16px -8px rgb(16 28 24 / 0.08)',
+        lift: '0 24px 48px -20px rgb(14 31 26 / 0.30), 0 2px 6px rgb(14 31 26 / 0.05)',
       },
       borderRadius: { xl: '0.875rem', '2xl': '1.25rem' },
       keyframes: {

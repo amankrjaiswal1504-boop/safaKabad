@@ -6,7 +6,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { DEFAULT_CENTER } from '../utils/locale';
 
-const COLORS = { rust: '#A44A2A', patina: '#3D6848', blue: '#2F6DB5', steel: '#4F5760', amber: '#B46E0C' };
+const COLORS = { rust: '#0F6247', patina: '#4D8A45', blue: '#2F6DB5', steel: '#4F5955', amber: '#A0701A' };
 
 export function pinIcon(color = 'rust', label = '') {
   const c = COLORS[color] || color;

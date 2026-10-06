@@ -48,17 +48,17 @@ export default function Wallet() {
       <Card className="mb-6 bg-ink text-white border-0 !p-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <div className="text-sm text-[#aab1b8] flex items-center gap-2">
+            <div className="text-sm text-[#A3B3AC] flex items-center gap-2">
               <WalletIcon className="w-4 h-4" aria-hidden /> Available balance
             </div>
             <div className="font-head text-4xl sm:text-5xl font-bold mt-1 tabular">{data ? rupees(data.balance, { decimals: 2 }) : '—'}</div>
-            {pending && <div className="text-sm text-[#e8a07f] mt-1">{rupees(pending.amount)} withdrawal {pending.status}</div>}
+            {pending && <div className="text-sm text-[#D9B66A] mt-1">{rupees(pending.amount)} withdrawal {pending.status}</div>}
           </div>
           <Button icon={Banknote} onClick={() => setOpen(true)} disabled={!data || data.balance < 50 || Boolean(pending)}>
             Withdraw
           </Button>
         </div>
-        {data && data.balance < 50 && <p className="text-xs text-[#aab1b8] mt-3">Minimum withdrawal is Rs. 50.</p>}
+        {data && data.balance < 50 && <p className="text-xs text-[#A3B3AC] mt-3">Minimum withdrawal is Rs. 50.</p>}
       </Card>
 
       <h2 className="font-medium text-steel-900 mb-3">Transactions</h2>
