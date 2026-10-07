@@ -14,7 +14,7 @@ export default function Login() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
-  const [mode, setMode] = useState('phone');
+  const [mode, setMode] = useState('email');
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -74,8 +74,9 @@ export default function Login() {
           setError('');
         }}
         options={[
-          { value: 'phone', label: t('auth.withPhone'), icon: Smartphone },
+          
           { value: 'email', label: t('auth.withEmail'), icon: Mail },
+          { value: 'phone', label: t('auth.withPhone'), icon: Smartphone },
         ]}
       />
       {mode === 'phone' ? (
