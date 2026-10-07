@@ -3,6 +3,7 @@ import { Mail, MessageCircle, Phone } from 'lucide-react';
 import { useConfig } from '../context/ConfigContext';
 import { useI18n } from '../i18n/I18nContext';
 import Logo from './Logo';
+import AndroidAppButton from './AndroidAppButton';
 import { slugify } from '../utils/format';
 
 export default function Footer() {
@@ -36,6 +37,7 @@ export default function Footer() {
               </li>
             )}
           </ul>
+          <AndroidAppButton className="mt-6" />
         </div>
         <div>
           <div className="text-white font-semibold mb-3 text-sm">{t('footer.company')}</div>

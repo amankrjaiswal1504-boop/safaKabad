@@ -20,6 +20,7 @@ import { useConfig } from '../context/ConfigContext';
 import { useI18n } from '../i18n/I18nContext';
 import Estimator from '../components/Estimator';
 import TruckCta from '../components/TruckCta';
+import AndroidAppButton from '../components/AndroidAppButton';
 import CategoryIcon from '../components/CategoryIcon';
 import { Skeleton, Stars } from '../components/ui';
 import { compact, fmtDay, rupees, unitLabel } from '../utils/format';
@@ -194,6 +195,7 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
+              <AndroidAppButton className="mt-7" />
             </div>
             <HeroVisual />
           </div>

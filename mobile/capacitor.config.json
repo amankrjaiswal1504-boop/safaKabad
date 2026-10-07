@@ -1,0 +1,15 @@
+{
+  "appId": "com.safakabad.app",
+  "appName": "SafaKabad",
+  "webDir": "www",
+  "server": {
+    "url": "https://safakabad.com",
+    "errorPath": "offline.html",
+    "allowNavigation": ["safakabad.com", "*.safakabad.com", "*.onrender.com", "*.vercel.app"]
+  },
+  "appendUserAgent": "SafaKabadApp",
+  "backgroundColor": "#0E1F1A",
+  "android": {
+    "allowMixedContent": false
+  }
+}

@@ -1,0 +1,81 @@
+# Builds the SafaKabad Android app (mobile/) and publishes the APK as a GitHub
+# release. Customers download it from
+# https://github.com/amankrjaiswal1504-boop/safaKabad/releases/latest/download/SafaKabad.apk
+#
+# Signing: add these repository secrets (Settings > Secrets and variables > Actions)
+# so every build is signed with the same key and installs as an update:
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+# Without them the APK is signed with a temporary debug key (installs, but a
+# later build can't update it in place).
+name: Android app
+
+on:
+  push:
+    branches: [main]
+    paths: ['mobile/**', '.github/workflows/android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Install
+        run: npm ci
+
+      - name: Sync web config into the Android project
+        run: npx cap sync android
+
+      - name: Restore signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          else
+            echo "::warning::No signing secrets set; the APK will use a temporary debug key."
+          fi
+
+      - name: Build APK
+        working-directory: mobile/android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          APP_VERSION_CODE: ${{ github.run_number }}
+          APP_VERSION_NAME: 1.0.${{ github.run_number }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/SafaKabad.apk"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-v1.0.${{ github.run_number }}
+          name: SafaKabad Android app 1.0.${{ github.run_number }}
+          body: |
+            Download **SafaKabad.apk** below and open it on your Android phone.
+            If asked, allow installing apps from your browser ("Install unknown apps").
+          files: SafaKabad.apk
+          make_latest: true

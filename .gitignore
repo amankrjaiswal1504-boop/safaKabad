@@ -6,3 +6,8 @@ coverage/
 *.log
 frontend/test-results/
 frontend/playwright-report/
+
+# Android signing key: never commit (back it up somewhere safe)
+mobile/keystore/
+*.jks
+*.keystore

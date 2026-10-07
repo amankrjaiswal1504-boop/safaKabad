@@ -1,0 +1,20 @@
+{
+  "name": "safakabad-android",
+  "version": "1.0.0",
+  "description": "SafaKabad Android app (Capacitor shell that opens https://safakabad.com)",
+  "scripts": {
+    "sync": "cap sync android",
+    "assets:render": "node scripts/render-assets.js",
+    "assets:generate": "capacitor-assets generate --android --iconBackgroundColor \"#0F6247\" --splashBackgroundColor \"#0E1F1A\" --splashBackgroundColorDark \"#0E1F1A\""
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/core": "^8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.2"
+  },
+  "private": true
+}
