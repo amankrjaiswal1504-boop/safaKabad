@@ -41,8 +41,8 @@ async function requestWithdrawal(req, res, next) {
   try {
     const { amount, method, walletId, bankAccount } = req.body;
     const [limits, payments] = await Promise.all([settings.get('wallet'), settings.get('payments')]);
-    if (amount < limits.minWithdrawal) return fail(res, 400, `Minimum withdrawal is Rs. ${limits.minWithdrawal}`);
-    if (amount > limits.maxWithdrawal) return fail(res, 400, `Maximum withdrawal is Rs. ${limits.maxWithdrawal}`);
+    if (amount < limits.minWithdrawal) return fail(res, 400, `Minimum withdrawal is रु ${limits.minWithdrawal}`);
+    if (amount > limits.maxWithdrawal) return fail(res, 400, `Maximum withdrawal is रु ${limits.maxWithdrawal}`);
     if (!payments.withdrawalMethods.includes(method)) return fail(res, 400, 'This withdrawal method is not available right now');
     const pending = await Withdrawal.exists({ user: req.user._id, status: { $in: ['requested', 'processing'] } });
     if (pending) return fail(res, 409, 'You already have a withdrawal in progress');
@@ -51,7 +51,7 @@ async function requestWithdrawal(req, res, next) {
       await wallet.debit(req.user._id, amount, 'withdrawal', { reference: String(w._id) }, session);
       return w;
     });
-    await notifyAdmins({ type: 'withdrawal', title: 'New withdrawal request', body: `Rs. ${amount} by ${req.user.name}`, link: '/admin/finance' });
+    await notifyAdmins({ type: 'withdrawal', title: 'New withdrawal request', body: `रु ${amount} by ${req.user.name}`, link: '/admin/finance' });
     res.status(201).json({ success: true, data: { withdrawal } });
   } catch (err) {
     if (err instanceof wallet.WalletError) return fail(res, err.status, err.message);

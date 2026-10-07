@@ -124,7 +124,7 @@
   h3,
   h4,
   .font-head {
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', system-ui, sans-serif;
     letter-spacing: -0.015em;
   }
   :focus-visible {
@@ -193,7 +193,7 @@ h2.font-head[class*='text-xl'],
 h2.font-head[class*='text-2xl'],
 h2.font-head[class*='text-3xl'],
 .font-display {
-  font-family: 'Fraunces', Georgia, serif;
+  font-family: 'Fraunces', 'Noto Sans Devanagari', Georgia, serif;
   font-weight: 600;
   letter-spacing: -0.02em;
   font-optical-sizing: auto;

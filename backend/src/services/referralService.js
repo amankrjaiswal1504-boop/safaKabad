@@ -36,7 +36,7 @@ async function rewardOnFirstPickup(customerId) {
     await notify(referee.referredBy, {
       type: 'referral.reward',
       title: 'Referral reward credited',
-      body: `${referee.name.split(' ')[0]} completed their first pickup. Rs. ${cfg.referrerReward} added to your wallet.`,
+      body: `${referee.name.split(' ')[0]} completed their first pickup. रु ${cfg.referrerReward} added to your wallet.`,
       link: '/wallet',
       channels: ['inapp', 'push', 'whatsapp'],
     });

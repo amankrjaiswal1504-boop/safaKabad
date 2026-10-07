@@ -7,6 +7,7 @@ import { AREA_TYPES, POSTAL_CODE_RE, areaTypeLabel } from '../../utils/locale';
 import MapView from '../../components/MapView';
 import { Badge, Button, Card, DataTable, EmptyState, Field, IconButton, Input, PageHeader, Select, Toggle, cx } from '../../components/ui';
 import { Async, Callout, ConfirmModal, FormSection, NumberInput, isBlank, useAction, Modal } from './_catalog/shared';
+import { CURRENCY_SYMBOL } from '../../utils/locale';
 import { useAdminCities, useCityAreas, wardsLabel } from './_geo/shared';
 
 const hasPoint = (c) => Number.isFinite(c?.lat) && Number.isFinite(c?.lng);
@@ -773,7 +774,7 @@ function AreaForm({ city, area, nextSort, onClose, onSaved }) {
             <Field label="Min weight (kg)" error={errors.minPickupWeightKg}>
               {(id) => <NumberInput id={id} min={0} value={f.minPickupWeightKg} onChange={set('minPickupWeightKg')} invalid={!!errors.minPickupWeightKg} />}
             </Field>
-            <Field label="Min value (Rs.)" error={errors.minPickupValue}>
+            <Field label={`Min value (${CURRENCY_SYMBOL})`} error={errors.minPickupValue}>
               {(id) => <NumberInput id={id} min={0} value={f.minPickupValue} onChange={set('minPickupValue')} invalid={!!errors.minPickupValue} />}
             </Field>
           </div>

@@ -24,7 +24,7 @@ async function validateCoupon(code, user, { weightKg = 0, value = 0 } = {}) {
   if (coupon.validTo && coupon.validTo < now) throw new CouponError('This code has expired');
   if (coupon.usageLimit != null && coupon.usedCount >= coupon.usageLimit) throw new CouponError('This code has been fully used');
   if (weightKg < coupon.minWeightKg) throw new CouponError(`Needs at least ${coupon.minWeightKg} kg of scrap`);
-  if (value < coupon.minOrderValue) throw new CouponError(`Needs an estimated value of at least Rs. ${coupon.minOrderValue}`);
+  if (value < coupon.minOrderValue) throw new CouponError(`Needs an estimated value of at least रु ${coupon.minOrderValue}`);
   if (user) {
     const uses = await Pickup.countDocuments({ customer: user._id, 'coupon.code': coupon.code, status: { $ne: 'CANCELLED' } });
     if (uses >= (coupon.perUserLimit || 1)) throw new CouponError('You have already used this code');

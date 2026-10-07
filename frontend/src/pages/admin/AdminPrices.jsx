@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { fmtDateTime, rupees, unitLabel } from '../../utils/format';
 import { Badge, Button, DataTable, EmptyState, Field, IconButton, Input, PageHeader, Pagination, Select, Tabs, Toggle, cx } from '../../components/ui';
 import { Async, Callout, ConfirmModal, NumberInput, Toolbar, isBlank, useAction, Modal } from './_catalog/shared';
+import { CURRENCY_SYMBOL } from '../../utils/locale';
 import { CitySelect, cityLabel, useAdminCities } from './_geo/shared';
 
 export default function AdminPrices() {
@@ -250,7 +251,7 @@ function PriceGrid({ city, categories, canEdit, onHistory, onChanged }) {
     },
     ...['minPrice', 'maxPrice', 'recyclerPrice'].map((k) => ({
       key: k,
-      header: { minPrice: 'Min (Rs.)', maxPrice: 'Max (Rs.)', recyclerPrice: 'Recycler (Rs.)' }[k],
+      header: { minPrice: `Min (${CURRENCY_SYMBOL})`, maxPrice: `Max (${CURRENCY_SYMBOL})`, recyclerPrice: `Recycler (${CURRENCY_SYMBOL})` }[k],
       render: (i) => {
         const err = errorsById[String(i.itemId)];
         const invalid = !!err && (k !== 'recyclerPrice' || (!isBlank(val(i, k)) && val(i, k) < 0));

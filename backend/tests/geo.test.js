@@ -212,9 +212,9 @@ describe('settings that replaced hard-coded values', () => {
     await User.updateOne({ _id: w.alice._id }, { walletBalance: 1000 });
     await settings.set('wallet', { minWithdrawal: 200, maxWithdrawal: 500 });
     const low = await request(app).post('/api/wallet/withdraw').set(as(w.alice)).send({ amount: 100, method: 'esewa', walletId: '9800000002' });
-    expect(low.body.message).toMatch(/Minimum withdrawal is Rs. 200/);
+    expect(low.body.message).toMatch(/Minimum withdrawal is रु 200/);
     const high = await request(app).post('/api/wallet/withdraw').set(as(w.alice)).send({ amount: 600, method: 'esewa', walletId: '9800000002' });
-    expect(high.body.message).toMatch(/Maximum withdrawal is Rs. 500/);
+    expect(high.body.message).toMatch(/Maximum withdrawal is रु 500/);
     await settings.set('payments', { payoutMethods: ['cash'], withdrawalMethods: ['khalti'] });
     const method = await request(app).post('/api/wallet/withdraw').set(as(w.alice)).send({ amount: 300, method: 'esewa', walletId: '9800000002' });
     expect(method.body.message).toMatch(/not available/);

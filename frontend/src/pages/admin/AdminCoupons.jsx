@@ -286,11 +286,11 @@ function CouponForm({ coupon, onClose, onSaved }) {
           {(id) => <Textarea id={id} rows={2} value={f.description} onChange={(e) => set('description')(e.target.value)} maxLength={200} />}
         </Field>
         <div className="grid grid-cols-2 gap-4">
-          <Field label={f.type === 'percent' ? 'Bonus (%)' : 'Bonus (Rs.)'} required error={errors.value}>
+          <Field label={f.type === 'percent' ? 'Bonus (%)' : `Bonus (${CURRENCY_SYMBOL})`} required error={errors.value}>
             {(id) => <NumberInput id={id} min={0} step={f.type === 'percent' ? 0.5 : 1} value={f.value} onChange={set('value')} invalid={!!errors.value} />}
           </Field>
           {f.type === 'percent' && (
-            <Field label="Max bonus (Rs.)" error={errors.maxBonus} hint="Leave empty for no cap">
+            <Field label={`Max bonus (${CURRENCY_SYMBOL})`} error={errors.maxBonus} hint="Leave empty for no cap">
               {(id) => <NumberInput id={id} min={0} value={f.maxBonus} onChange={set('maxBonus')} invalid={!!errors.maxBonus} />}
             </Field>
           )}
@@ -301,7 +301,7 @@ function CouponForm({ coupon, onClose, onSaved }) {
             <Field label="Min weight (kg)" error={errors.minWeightKg}>
               {(id) => <NumberInput id={id} min={0} value={f.minWeightKg} onChange={set('minWeightKg')} invalid={!!errors.minWeightKg} />}
             </Field>
-            <Field label="Min order value (Rs.)" error={errors.minOrderValue}>
+            <Field label={`Min order value (${CURRENCY_SYMBOL})`} error={errors.minOrderValue}>
               {(id) => <NumberInput id={id} min={0} value={f.minOrderValue} onChange={set('minOrderValue')} invalid={!!errors.minOrderValue} />}
             </Field>
             <Field label="Total uses" error={errors.usageLimit} hint={coupon ? `Used ${coupon.usedCount || 0} times. Empty = unlimited` : 'Empty = unlimited'}>

@@ -139,7 +139,7 @@ async function updateQuote(req, res, next) {
       await notify(quote.customer, {
         type: 'quote.ready',
         title: 'Your bulk quote is ready',
-        body: `Quote ${quote.quoteId}: ${quote.quotedAmount != null ? `Rs. ${quote.quotedAmount}` : 'see details'}. ${quote.adminNote || ''}`,
+        body: `Quote ${quote.quoteId}: ${quote.quotedAmount != null ? `रु ${quote.quotedAmount}` : 'see details'}. ${quote.adminNote || ''}`,
         link: '/business',
         channels: ['inapp', 'email', 'whatsapp'],
       });
@@ -206,7 +206,7 @@ async function processWithdrawal(req, res, next) {
     await notify(w.user._id, {
       type: 'wallet.withdrawal',
       title: w.status === 'rejected' ? 'Withdrawal rejected' : 'Withdrawal sent',
-      body: w.status === 'rejected' ? `Rs. ${w.amount} is back in your wallet. ${w.note || ''}` : `Rs. ${w.amount} is on its way to your ${{ esewa: 'eSewa', khalti: 'Khalti', bank_transfer: 'bank account' }[w.method] || 'account'}.`,
+      body: w.status === 'rejected' ? `रु ${w.amount} is back in your wallet. ${w.note || ''}` : `रु ${w.amount} is on its way to your ${{ esewa: 'eSewa', khalti: 'Khalti', bank_transfer: 'bank account' }[w.method] || 'account'}.`,
       link: '/wallet',
       channels: ['inapp', 'push', 'whatsapp'],
     });
@@ -240,7 +240,7 @@ async function markPaymentPaid(req, res, next) {
       await notify(payment.user, {
         type: 'payment.paid',
         title: 'Payment sent',
-        body: `Rs. ${payment.amount} has been paid to your ${{ esewa: 'eSewa', khalti: 'Khalti', bank_transfer: 'bank account' }[payment.method] || 'account'}.`,
+        body: `रु ${payment.amount} has been paid to your ${{ esewa: 'eSewa', khalti: 'Khalti', bank_transfer: 'bank account' }[payment.method] || 'account'}.`,
         link: '/wallet',
         channels: ['inapp', 'push', 'whatsapp'],
       });

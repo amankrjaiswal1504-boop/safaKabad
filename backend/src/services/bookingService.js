@@ -76,7 +76,7 @@ async function createPickupForUser(user, payload, { ip, actor } = {}) {
       throw new BookingError(`Minimum pickup in ${service.area.name} is ${minPickupWeightKg} kg`);
     }
     if (minPickupValue && estimate.max < minPickupValue) {
-      throw new BookingError(`Minimum pickup value in ${service.area.name} is Rs. ${minPickupValue}`);
+      throw new BookingError(`Minimum pickup value in ${service.area.name} is रु ${minPickupValue}`);
     }
   }
 

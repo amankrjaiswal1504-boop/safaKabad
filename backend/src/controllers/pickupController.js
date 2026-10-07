@@ -147,7 +147,7 @@ async function decideAmount(req, res, next) {
         ticketId: generateTicketId(),
         user: req.user._id,
         pickupId: pickup.pickupId,
-        summary: `Weighing dispute on ${pickup.pickupId} (Rs. ${pickup.finalAmount}): ${note || 'no details'}`.slice(0, 2000),
+        summary: `Weighing dispute on ${pickup.pickupId} (रु ${pickup.finalAmount}): ${note || 'no details'}`.slice(0, 2000),
         reason: 'other',
       });
       await notifyAdmins({ type: 'dispute', title: 'Weighing disputed', body: `${pickup.pickupId}: ${note || ''}`, link: '/admin/support' });

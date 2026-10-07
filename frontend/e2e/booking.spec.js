@@ -13,7 +13,7 @@ test('guest books a pickup with phone OTP and sees the tracking page', async ({ 
   await page.getByRole('button', { name: /^Newspaper/ }).click();
   await page.getByRole('button', { name: /^Copper/ }).click();
   await expect(page.getByText('Your items')).toBeVisible();
-  await expect(page.getByText(/Rs\. \d[\d,]* – Rs\. \d/).first()).toBeVisible();
+  await expect(page.getByText(/रु \d[\d,]* – रु \d/).first()).toBeVisible();
   await page.getByRole('button', { name: 'Continue' }).click();
 
   // Step 2: address. City, municipality and ward come from the admin-managed

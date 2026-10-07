@@ -5,6 +5,7 @@ import useApi, { useDebounce } from '../../hooks/useApi';
 import { fmtDate, fmtDateTime, rupees } from '../../utils/format';
 import { NUMBER_LOCALE, TAX_ID_LABEL } from '../../utils/locale';
 import { Badge, Button, Card, DataTable, EmptyState, Field, Input, PageHeader, Pagination, Select, Textarea, cx } from '../../components/ui';
+import { CURRENCY_SYMBOL } from '../../utils/locale';
 import { Async, Callout, KeyValue, NumberInput, Toolbar, isBlank, toNumOrNull, useAction, Modal } from './_catalog/shared';
 
 const STATUSES = [
@@ -302,7 +303,7 @@ function QuoteModal({ quote, onClose, onSaved }) {
               </Select>
             )}
           </Field>
-          <Field label="Quoted amount (Rs.)" error={errors.quotedAmount}>
+          <Field label={`Quoted amount (${CURRENCY_SYMBOL})`} error={errors.quotedAmount}>
             {(id) => <NumberInput id={id} min={0} value={f.quotedAmount} onChange={set('quotedAmount')} invalid={!!errors.quotedAmount} />}
           </Field>
         </div>

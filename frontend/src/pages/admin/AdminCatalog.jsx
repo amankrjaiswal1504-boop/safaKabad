@@ -603,7 +603,7 @@ function ItemForm({ item, categories, cities, defaultCity, onClose, onSaved }) {
               <Field label={`Max (${CURRENCY_SYMBOL}/${unitWord})`} error={errors.maxPrice}>
                 {(id) => <NumberInput id={id} min={0} step="0.5" value={f.maxPrice} onChange={set('maxPrice')} invalid={!!errors.maxPrice} />}
               </Field>
-              <Field label="Recycler (Rs.)" error={errors.recyclerPrice} hint="What we sell at">
+              <Field label={`Recycler (${CURRENCY_SYMBOL})`} error={errors.recyclerPrice} hint="What we sell at">
                 {(id) => <NumberInput id={id} min={0} step="0.5" value={f.recyclerPrice} onChange={set('recyclerPrice')} invalid={!!errors.recyclerPrice} />}
               </Field>
             </div>

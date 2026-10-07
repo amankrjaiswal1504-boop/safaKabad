@@ -4,7 +4,7 @@ const TIMEZONE = process.env.APP_TIMEZONE || 'Asia/Kathmandu';
 const UTC_OFFSET = process.env.APP_UTC_OFFSET || '+05:45';
 const DIAL_CODE = '977';
 const CURRENCY = 'NPR';
-const CURRENCY_SYMBOL = 'Rs.';
+const CURRENCY_SYMBOL = 'रु';
 
 // 10-digit mobiles: NTC 984/985/986/974/975/976, Ncell 980/981/982/970, SmartCell 961/962/988.
 const MOBILE_RE = /^9[678]\d{8}$/;

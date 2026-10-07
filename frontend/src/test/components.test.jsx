@@ -16,8 +16,8 @@ vi.mock('../context/ConfigContext', () => ({ useConfig: () => ({ city: 'Kathmand
 
 describe('format utils', () => {
   it('formats Nepali rupees with lakh grouping', () => {
-    expect(rupees(123456)).toBe('Rs. 1,23,456');
-    expect(rupees(12.5, { decimals: 2 })).toBe('Rs. 12.50');
+    expect(rupees(123456)).toBe('रु 1,23,456');
+    expect(rupees(12.5, { decimals: 2 })).toBe('रु 12.50');
   });
   it('compacts large numbers in lakh/crore', () => {
     expect(compact(1500)).toBe('1.5K');
@@ -111,7 +111,7 @@ describe('Estimator', () => {
         </Routes>
       </MemoryRouter>
     );
-    expect(await screen.findByText('Rs. 120 – Rs. 140')).toBeInTheDocument();
+    expect(await screen.findByText('रु 120 – रु 140')).toBeInTheDocument();
     expect(apiMock.post).toHaveBeenCalledWith('/scrap/estimate', expect.objectContaining({ city: 'Kathmandu' }));
     fireEvent.click(screen.getByRole('button', { name: /book this pickup/i }));
     await waitFor(() => expect(screen.getByTestId('where').textContent).toContain(`/schedule-pickup?items=${encodeURIComponent(`${'a'.repeat(24)}:10`)}`));

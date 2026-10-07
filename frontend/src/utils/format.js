@@ -1,6 +1,6 @@
 import { CURRENCY_SYMBOL, DATE_LOCALE, NUMBER_LOCALE, TIMEZONE } from './locale';
 
-// Nepali rupees, e.g. "Rs. 1,23,456". (Name kept short and generic for callers.)
+// Nepali rupees, e.g. "रु 1,23,456". (Name kept short and generic for callers.)
 export const rupees = (n, { decimals = 0 } = {}) =>
   `${CURRENCY_SYMBOL} ${Number(n || 0).toLocaleString(NUMBER_LOCALE, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
 

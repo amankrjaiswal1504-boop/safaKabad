@@ -1,5 +1,5 @@
 // PDF documents (receipts, certificates, reports) with PDFKit. The built-in
-// Helvetica font has no rupee glyph, so amounts are written as "Rs.".
+// Helvetica has no Devanagari glyphs (रु), so PDFs write amounts as "NPR 1,250".
 const PDFDocument = require('pdfkit');
 const { TIMEZONE } = require('../config/locale');
 
@@ -7,7 +7,7 @@ const BRAND = '#0F6247';
 const INK = '#171F1C';
 const MUTED = '#59625E';
 
-const rs = (n) => `Rs. ${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+const rs = (n) => `NPR ${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 const date = (d) => new Date(d).toLocaleDateString('en-GB', { timeZone: TIMEZONE, day: 'numeric', month: 'long', year: 'numeric' });
 
 function toBuffer(build) {

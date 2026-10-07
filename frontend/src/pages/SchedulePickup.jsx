@@ -29,6 +29,103 @@ import PhotoUploader from '../components/PhotoUploader';
 import PhoneOtpForm from '../components/PhoneOtpForm';
 import CategoryIcon from '../components/CategoryIcon';
 import { addressLine, fmtDay, rupees, unitLabel } from '../utils/format';
+import { CURRENCY_SYMBOL } from '../utils/locale';
+
+// Animates a number from its previous value to the new one.
+function useCountUp(target, ms = 650) {
+  const [value, setValue] = useState(target || 0);
+  const from = useRef(target || 0);
+  useEffect(() => {
+    const start = performance.now();
+    const a = from.current;
+    const b = target || 0;
+    let raf;
+    const tick = (now) => {
+      const p = Math.min(1, (now - start) / ms);
+      const v = a + (b - a) * (1 - (1 - p) ** 3);
+      setValue(v);
+      if (p < 1) raf = requestAnimationFrame(tick);
+      else from.current = b;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, ms]);
+  return Math.round(value);
+}
+
+// Sidebar "You could get" card: dark emerald with a gold amount and a 3D coin.
+function EstimateCard({ donation, estimate, items, bonus, t }) {
+  const min = useCountUp(estimate?.min);
+  const max = useCountUp(estimate?.max);
+  return (
+    <div
+      className={cx(
+        'relative overflow-hidden rounded-3xl text-white shadow-lift ring-1 ring-white/10',
+        donation ? 'bg-gradient-to-br from-[#4a1d3a] via-[#2a1424] to-[#1b0f19]' : 'bg-gradient-to-br from-[#11523c] via-[#0c2f25] to-[#08201a]'
+      )}
+      aria-live="polite"
+    >
+      <span className={cx('absolute -top-16 -right-12 w-48 h-48 rounded-full blur-3xl anim-blob', donation ? 'bg-pink-400/30' : 'bg-emerald-400/30')} aria-hidden />
+      <span className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-yellow-400/20 blur-3xl anim-blob [animation-delay:-6s]" aria-hidden />
+
+      <div className="relative p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#E9CF8E]">{donation ? 'Your donation' : t('est.youGet')}</div>
+          <div className="[perspective:400px]" aria-hidden>
+            <div
+              className={cx(
+                'anim-spin-3d w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg shadow-[0_10px_20px_-6px_rgb(0_0_0/0.5),inset_0_-4px_8px_rgb(0_0_0/0.25),inset_0_3px_6px_rgb(255_255_255/0.5)]',
+                donation ? 'bg-gradient-to-br from-pink-300 to-rose-500 text-white' : 'bg-gradient-to-br from-[#F6E3A8] via-[#E2B85A] to-[#B8862E] text-[#5a3d0c]'
+              )}
+            >
+              {donation ? <HandHeart className="w-6 h-6" /> : CURRENCY_SYMBOL}
+            </div>
+          </div>
+        </div>
+
+        {donation ? (
+          <>
+            <div className="font-head text-2xl font-bold mt-2">Thank you for giving</div>
+            <p className="text-sm text-white/70 mt-1">Free pickup, and a donation certificate for you.</p>
+          </>
+        ) : estimate ? (
+          <div className="mt-2">
+            <div className="font-head text-[2rem] leading-tight font-bold tabular bg-gradient-to-r from-[#F6E3A8] via-[#EBC66E] to-[#F6E3A8] bg-clip-text text-transparent">
+              <span className="whitespace-nowrap">{rupees(min)}</span> <span className="text-white/40">–</span> <span className="whitespace-nowrap">{rupees(max)}</span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              <span className="rounded-full bg-white/10 border border-white/10 px-2.5 py-1">≈ {estimate.weightKg} kg</span>
+              <span className="rounded-full bg-white/10 border border-white/10 px-2.5 py-1">
+                {items} {items === 1 ? 'item' : 'items'}
+              </span>
+              {bonus > 0 && <span className="rounded-full bg-emerald-400/20 border border-emerald-300/30 text-emerald-200 px-2.5 py-1 font-semibold">+{rupees(bonus)} bonus</span>}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-2">
+            <div className="font-head text-[2rem] leading-tight font-bold text-white/25 tabular">{CURRENCY_SYMBOL} – – –</div>
+            <p className="text-sm text-white/70 mt-1">{t('est.empty')}</p>
+          </div>
+        )}
+
+        <ul className="mt-5 pt-4 border-t border-white/10 space-y-1.5 text-xs text-white/75">
+          <li className="flex items-center gap-2">
+            <Check className="w-3.5 h-3.5 text-emerald-300" aria-hidden /> Free doorstep pickup
+          </li>
+          <li className="flex items-center gap-2">
+            <Check className="w-3.5 h-3.5 text-emerald-300" aria-hidden /> Weighed digitally in front of you
+          </li>
+          {!donation && (
+            <li className="flex items-center gap-2">
+              <Check className="w-3.5 h-3.5 text-emerald-300" aria-hidden /> Paid instantly: cash, eSewa, Khalti or bank
+            </li>
+          )}
+        </ul>
+      </div>
+      <div className="relative bg-black/20 px-6 py-3 text-[11px] text-white/55">{t('est.disclaimer')}</div>
+    </div>
+  );
+}
 
 const DRAFT_KEY = 'sm-booking-draft';
 const STEPS = ['items', 'address', 'slot', 'review'];
@@ -632,23 +729,7 @@ export default function SchedulePickup() {
 
           {/* Summary sidebar */}
           <aside className="lg:sticky lg:top-24 order-first lg:order-none">
-            <Card className="!p-0 overflow-hidden">
-              <div className="p-5">
-                <div className="text-xs font-medium uppercase tracking-wide text-steel-500">{type === 'donation' ? 'Donation' : t('est.youGet')}</div>
-                {type === 'donation' ? (
-                  <div className="font-head text-xl font-semibold text-steel-900 mt-1">Thank you for giving 💚</div>
-                ) : estimate ? (
-                  <div className="font-head text-2xl font-bold text-steel-900 tabular mt-1">
-                    {rupees(estimate.min)} – {rupees(estimate.max)}
-                  </div>
-                ) : (
-                  <div className="text-sm text-steel-500 mt-1">{t('est.empty')}</div>
-                )}
-                {estimate && <div className="text-xs text-steel-500 mt-1">≈ {estimate.weightKg} kg · {validLines.length} items</div>}
-                {coupon?.bonus > 0 && <div className="text-xs text-patina-700 mt-1">+{rupees(coupon.bonus)} coupon bonus</div>}
-              </div>
-              <div className="bg-surface-2 border-t border-steel-100 px-5 py-3 text-xs text-steel-500">{t('est.disclaimer')}</div>
-            </Card>
+            <EstimateCard donation={type === 'donation'} estimate={estimate} items={validLines.length} bonus={coupon?.bonus} t={t} />
           </aside>
         </div>
       </div>

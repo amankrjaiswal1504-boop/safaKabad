@@ -6,6 +6,7 @@ import { rupees } from '../../utils/format';
 import { useConfig } from '../../context/ConfigContext';
 import { DIAL_CODE, PAYOUT_METHODS, TIMEZONE } from '../../utils/locale';
 import { Badge, Button, Card, Field, IconButton, Input, PageHeader, SectionTitle, Tabs, Textarea, Toggle, cx } from '../../components/ui';
+import { CURRENCY_SYMBOL } from '../../utils/locale';
 import { Async, Callout, NumberInput, isBlank, useAction } from './_catalog/shared';
 
 const TABS = [
@@ -327,8 +328,8 @@ function ReferralCard({ settingKey, initial, onSaved }) {
     <SectionCard title="Referrals" subtitle="Wallet credit after the referred friend's first completed pickup." section={s}>
       <Toggle checked={!!s.v.enabled} onChange={s.set('enabled')} label="Referral programme on" />
       <div className="grid grid-cols-2 gap-4">
-        <Num label="Referrer gets (Rs.)" k="referrerReward" s={s} min={0} />
-        <Num label="New customer gets (Rs.)" k="refereeReward" s={s} min={0} />
+        <Num label={`Referrer gets (${CURRENCY_SYMBOL})`} k="referrerReward" s={s} min={0} />
+        <Num label={`New customer gets (${CURRENCY_SYMBOL})`} k="refereeReward" s={s} min={0} />
       </div>
     </SectionCard>
   );
@@ -341,7 +342,7 @@ function FirstPickupCard({ settingKey, initial, onSaved }) {
       <Toggle checked={!!s.v.enabled} onChange={s.set('enabled')} label="Bonus on" />
       <div className="grid grid-cols-2 gap-4">
         <Num label="Bonus (%)" k="percent" s={s} min={0} max={100} step={0.5} />
-        <Num label="Max bonus (Rs.)" k="maxBonus" s={s} min={0} />
+        <Num label={`Max bonus (${CURRENCY_SYMBOL})`} k="maxBonus" s={s} min={0} />
       </div>
       {s.v.enabled && !isBlank(s.v.percent) && (
         <p className="text-sm text-steel-600">
@@ -443,10 +444,10 @@ function CollectorCard({ settingKey, initial, onSaved }) {
   return (
     <SectionCard title="Collector earnings & dispatch" subtitle="How collectors are paid and how new pickups are assigned." section={s}>
       <div className="grid sm:grid-cols-2 gap-4">
-        <Num label="Base fee per pickup (Rs.)" k="baseFeePerPickup" s={s} min={0} />
+        <Num label={`Base fee per pickup (${CURRENCY_SYMBOL})`} k="baseFeePerPickup" s={s} min={0} />
         <Num label="Commission (% of pickup value)" k="commissionPercent" s={s} min={0} max={50} step={0.5} hint="Individual collectors can have their own rate" />
         <Num label="Weekly bonus after (pickups)" k="weeklyBonusThreshold" s={s} min={0} step={1} />
-        <Num label="Weekly bonus (Rs.)" k="weeklyBonusAmount" s={s} min={0} />
+        <Num label={`Weekly bonus (${CURRENCY_SYMBOL})`} k="weeklyBonusAmount" s={s} min={0} />
       </div>
       {example != null && <p className="text-sm text-steel-600">A {rupees(500)} pickup earns the collector {rupees(example, { decimals: 2 })}.</p>}
       <Toggle checked={!!s.v.autoAssign} onChange={s.set('autoAssign')} label="Auto-assign new pickups" description="On booking, assign the best collector: serves that municipality first, then lightest load that day, then nearest." />
@@ -518,8 +519,8 @@ function WalletCard({ settingKey, initial, onSaved }) {
   return (
     <SectionCard title="Wallet" subtitle="Limits for each customer withdrawal from the ScrapMate wallet." section={s}>
       <div className="grid grid-cols-2 gap-4">
-        <Num label="Minimum withdrawal (Rs.)" k="minWithdrawal" s={s} min={1} step={1} />
-        <Num label="Maximum withdrawal (Rs.)" k="maxWithdrawal" s={s} min={1} step={1} />
+        <Num label={`Minimum withdrawal (${CURRENCY_SYMBOL})`} k="minWithdrawal" s={s} min={1} step={1} />
+        <Num label={`Maximum withdrawal (${CURRENCY_SYMBOL})`} k="maxWithdrawal" s={s} min={1} step={1} />
       </div>
       {!isBlank(s.v.minWithdrawal) && !isBlank(s.v.maxWithdrawal) && (
         <p className="text-sm text-steel-600">

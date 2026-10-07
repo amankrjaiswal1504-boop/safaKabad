@@ -5,13 +5,13 @@ const KEY = 'sm-theme';
 
 function read() {
   try {
-    return localStorage.getItem(KEY) || 'system';
+    return localStorage.getItem(KEY) || 'light';
   } catch {
-    return 'system';
+    return 'light';
   }
 }
 
-// 'light' | 'dark' | 'system'
+// 'light' | 'dark' | 'system'. Light by default; dark only when chosen.
 export function ThemeProvider({ children }) {
   const [mode, setMode] = useState(read);
   const [systemDark, setSystemDark] = useState(() => window.matchMedia?.('(prefers-color-scheme: dark)').matches);
@@ -33,7 +33,7 @@ export function ThemeProvider({ children }) {
   const set = (m) => {
     setMode(m);
     try {
-      if (m === 'system') localStorage.removeItem(KEY);
+      if (m === 'light') localStorage.removeItem(KEY);
       else localStorage.setItem(KEY, m);
     } catch {
       /* ignore */

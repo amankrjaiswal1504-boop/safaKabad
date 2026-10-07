@@ -80,7 +80,7 @@ function describeCards(cards) {
   return (cards || [])
     .map((c) => {
       if (c.type === 'tracking') return `[Showed tracking card for ${c.pickup?.pickupId}: ${c.pickup?.status}]`;
-      if (c.type === 'estimate') return `[Showed estimate Rs. ${c.min}-Rs. ${c.max} in ${c.city}]`;
+      if (c.type === 'estimate') return `[Showed estimate रु ${c.min}-रु ${c.max} in ${c.city}]`;
       if (c.type === 'rates') return `[Showed ${c.rates?.length || 0} rates for ${c.city}]`;
       if (c.type === 'confirm') return `[Showed confirm button: ${c.summary} (${c.state})]`;
       if (c.type === 'handoff') return `[Created support ticket ${c.ticketId}]`;

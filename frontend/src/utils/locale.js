@@ -5,7 +5,7 @@ export const COUNTRY = 'Nepal';
 export const DIAL_CODE = '977';
 export const TIMEZONE = 'Asia/Kathmandu';
 export const CURRENCY = 'NPR';
-export const CURRENCY_SYMBOL = 'Rs.';
+export const CURRENCY_SYMBOL = 'रु';
 // Nepal uses the same lakh/crore digit grouping as en-IN (1,23,456).
 export const NUMBER_LOCALE = 'en-IN';
 export const DATE_LOCALE = 'en-GB';

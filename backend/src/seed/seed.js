@@ -408,9 +408,9 @@ async function seed() {
 
   await Coupon.insertMany([
     { code: 'FIRST5', description: '+5% on your first pickup', type: 'percent', value: 5, maxBonus: 300, firstPickupOnly: true, perUserLimit: 1 },
-    { code: 'BULK100', description: '+Rs. 100 on pickups of 50 kg or more', type: 'flat', value: 100, minWeightKg: 50, perUserLimit: 5 },
-    { code: 'DASHAIN10', description: 'Dashain-Tihar bonus: +10% (max Rs. 500)', type: 'percent', value: 10, maxBonus: 500, perUserLimit: 1, validTo: new Date(Date.now() + 45 * 86400000) },
-    { code: 'EWASTE150', description: '+Rs. 150 when you recycle e-waste worth Rs. 800+', type: 'flat', value: 150, minOrderValue: 800, perUserLimit: 2 },
+    { code: 'BULK100', description: '+रु 100 on pickups of 50 kg or more', type: 'flat', value: 100, minWeightKg: 50, perUserLimit: 5 },
+    { code: 'DASHAIN10', description: 'Dashain-Tihar bonus: +10% (max रु 500)', type: 'percent', value: 10, maxBonus: 500, perUserLimit: 1, validTo: new Date(Date.now() + 45 * 86400000) },
+    { code: 'EWASTE150', description: '+रु 150 when you recycle e-waste worth रु 800+', type: 'flat', value: 150, minOrderValue: 800, perUserLimit: 2 },
   ]);
   await Ngo.insertMany(NGOS);
   await Faq.insertMany(FAQ_DATA.map((f, i) => ({ ...f, order: i })));

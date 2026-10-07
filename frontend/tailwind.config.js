@@ -23,9 +23,9 @@ export default {
         viz: { 1: v('viz-1'), 2: v('viz-2'), grid: v('viz-grid') },
       },
       fontFamily: {
-        head: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        display: ['"Fraunces"', 'Georgia', 'serif'],
-        body: ['"Inter"', 'system-ui', 'sans-serif'],
+        head: ['"Plus Jakarta Sans"', '"Noto Sans Devanagari"', 'system-ui', 'sans-serif'],
+        display: ['"Fraunces"', '"Noto Sans Devanagari"', 'Georgia', 'serif'],
+        body: ['"Inter"', '"Noto Sans Devanagari"', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         card: '0 1px 2px rgb(16 28 24 / 0.04), 0 4px 16px -8px rgb(16 28 24 / 0.08)',
