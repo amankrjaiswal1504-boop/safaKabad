@@ -82,7 +82,7 @@ export default function Footer() {
             <span className="group inline-flex items-center gap-1.5 rounded-full border border-[#D9B66A]/30 bg-white/[0.06] px-3 py-1">
               <span className="text-[#CFE3D8]">Created by</span>
               <span className="font-display italic text-sm font-semibold pr-1 bg-gradient-to-r from-[#F6E3A8] via-[#E2B85A] to-[#F6E3A8] bg-[length:200%_100%] bg-clip-text text-transparent transition-[background-position] duration-700 group-hover:bg-[position:100%_0]">
-                Aman Jaiswal
+                Amnn Jaiswal
               </span>
               <span className="text-[#E2B85A]" aria-hidden>
                 ✦
