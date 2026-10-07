@@ -164,7 +164,7 @@ export default function Home() {
         <div className="absolute -top-32 right-[-6rem] w-[38rem] h-[38rem] rounded-full bg-[#86EFAC]/45 dark:bg-rust-500/15 blur-3xl anim-blob pointer-events-none" aria-hidden />
         <div className="absolute -bottom-40 -left-24 w-[30rem] h-[30rem] rounded-full bg-[#FDE68A]/45 dark:bg-amber-600/10 blur-3xl anim-blob [animation-delay:-6s] pointer-events-none" aria-hidden />
         <div className="absolute top-1/3 left-1/3 w-72 h-72 rounded-full bg-[#BAE6FD]/35 dark:bg-transparent blur-3xl anim-blob [animation-delay:-10s] pointer-events-none" aria-hidden />
-        <div className="container-page relative py-12 sm:py-16 lg:py-20">
+        <div className="container-page relative z-10 py-12 sm:py-16 lg:py-20">
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] gap-10 items-center">
             <div>
               {serviceAreas.length > 0 && (
@@ -179,7 +179,7 @@ export default function Home() {
                 {lang === 'en' && home.heroTitle ? home.heroTitle : t('home.title')}
               </h1>
               <p className="mt-4 text-steel-600 text-base sm:text-lg max-w-xl">{lang === 'en' && home.heroSubtitle ? home.heroSubtitle : t('home.subtitle')}</p>
-              <div className="mt-7 flex flex-wrap gap-3">
+              <div className="mt-7 flex flex-col sm:flex-row sm:flex-wrap gap-3 [&>a]:justify-center">
                 <TruckCta label={t('home.ctaBook')} goingLabel={t('home.onTheWay')} />
                 <Link to="/rates" className="btn border border-steel-300 bg-surface/80 text-steel-900 !px-6 !py-3 text-base hover:border-rust-500 hover:text-rust-700">
                   {t('home.ctaRates')}
@@ -200,6 +200,8 @@ export default function Home() {
           </div>
           <StatsBand />
         </div>
+        {/* Soft fade into the page so the glow has no hard edge. */}
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-steel-50 pointer-events-none" aria-hidden />
       </section>
 
       {/* Estimator + how it works */}
@@ -256,9 +258,11 @@ export default function Home() {
       <section className="container-page py-14">
         <h2 className="font-head text-2xl sm:text-3xl font-semibold text-steel-900 mb-8">{t('home.whyTitle')}</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {why.map((w) => (
-            <div key={w.t}>
-              <span className="w-11 h-11 rounded-xl bg-patina-50 text-patina-700 flex items-center justify-center">
+          {why.map((w, i) => (
+            <div key={w.t} className="group">
+              <span
+                className={`w-12 h-12 rounded-2xl bg-gradient-to-br text-white flex items-center justify-center shadow-md transition-transform duration-300 group-hover:-translate-y-1 group-hover:rotate-6 ${['from-green-500 to-emerald-700 shadow-green-600/25', 'from-sky-400 to-indigo-600 shadow-indigo-500/25', 'from-yellow-400 to-orange-500 shadow-orange-500/25', 'from-lime-400 to-green-600 shadow-green-500/25'][i % 4]}`}
+              >
                 <w.icon className="w-5 h-5" aria-hidden />
               </span>
               <h3 className="font-semibold text-steel-900 mt-3">{w.t}</h3>
@@ -295,7 +299,7 @@ export default function Home() {
         <div className="rounded-2xl bg-ink text-white p-8 relative overflow-hidden">
           <Building2 className="w-10 h-10 text-[#D9B66A]" aria-hidden />
           <h2 className="font-head text-2xl font-semibold mt-4">{t('home.businessTitle')}</h2>
-          <p className="text-[#C7D2CD] mt-2 max-w-md">{t('home.businessSub')}</p>
+          <p className="text-white/85 mt-2 max-w-md">{t('home.businessSub')}</p>
           <Link to="/business" className="btn-primary mt-6">
             {t('home.businessCta')} <ArrowRight className="w-4 h-4" aria-hidden />
           </Link>

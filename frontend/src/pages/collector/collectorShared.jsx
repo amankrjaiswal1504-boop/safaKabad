@@ -195,9 +195,9 @@ export function PickupCard({ pickup }) {
             </div>
             <p className="mt-2 font-head font-semibold text-steel-900 text-lg leading-snug flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-steel-500 shrink-0" aria-hidden />
-              <span className="truncate">{pickup.timeSlot}</span>
-              <span className="text-sm font-normal text-steel-500 whitespace-nowrap">· {fmtDay(pickup.scheduledDate)}</span>
+              <span className="whitespace-nowrap">{pickup.timeSlot}</span>
             </p>
+            <p className="text-sm text-steel-500 ml-[22px]">{fmtDay(pickup.scheduledDate)}</p>
           </div>
           <div className="text-right shrink-0">
             <div className="font-semibold text-steel-900 tabular">{amount}</div>

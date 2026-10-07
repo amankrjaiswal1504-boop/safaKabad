@@ -109,8 +109,11 @@ export function Toggle({ checked, onChange, label, disabled, description }) {
 
 // ---------- Surfaces ----------
 export function Card({ className, children, padded = true, as: As = 'div', ...rest }) {
+  // A background passed in className replaces the default white one (both are
+  // plain utilities, so otherwise CSS order decides and the default could win).
+  const customBg = /(^|\s)!?bg-(?!opacity|clip|gradient)/.test(className || '');
   return (
-    <As className={cx('bg-surface border border-steel-100 rounded-xl shadow-card', padded && 'p-5', className)} {...rest}>
+    <As className={cx(!customBg && 'bg-surface', 'border border-steel-200/70 rounded-2xl shadow-card', padded && 'p-5', className)} {...rest}>
       {children}
     </As>
   );

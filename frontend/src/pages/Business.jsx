@@ -95,11 +95,13 @@ export default function Business() {
 
   return (
     <div>
-      <section className="bg-ink text-white">
-        <div className="container-page py-12 sm:py-16">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#D9B66A]">SafaKabad for Business</span>
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#1f9d55] via-[#168045] to-[#0d5530] text-white">
+        <div className="absolute -top-24 -right-20 w-96 h-96 rounded-full bg-white/10 blur-3xl anim-blob pointer-events-none" aria-hidden />
+        <div className="absolute -bottom-28 left-1/4 w-80 h-80 rounded-full bg-yellow-300/20 blur-3xl anim-blob [animation-delay:-6s] pointer-events-none" aria-hidden />
+        <div className="container-page relative py-12 sm:py-16">
+          <span className="text-xs font-semibold uppercase tracking-wider text-yellow-200">SafaKabad for Business</span>
           <h1 className="font-head text-3xl sm:text-5xl font-bold mt-3 max-w-3xl leading-tight">Scrap pickup that works like a vendor, not a favour</h1>
-          <p className="text-[#C7D2CD] mt-4 max-w-2xl text-lg">For kirana shops, offices, housing societies and factories. Scheduled pickups, transparent weighing, invoices and compliance paperwork, all in one place.</p>
+          <p className="text-white/90 mt-4 max-w-2xl text-lg">For kirana shops, offices, housing societies and factories. Scheduled pickups, transparent weighing, invoices and compliance paperwork, all in one place.</p>
         </div>
       </section>
       <div className="container-page py-12 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_28rem] gap-10 items-start">

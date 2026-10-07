@@ -100,7 +100,7 @@ export default function Estimator({ compact = false, className }) {
                     <optgroup key={g} label={g}>
                       {items.map((it) => (
                         <option key={it.itemId} value={it.itemId}>
-                          {tr(it)} ({rupees(it.minPrice)}–{rupees(it.maxPrice)}/{unitLabel(it.unit)})
+                          {tr(it)}
                         </option>
                       ))}
                     </optgroup>
@@ -133,6 +133,11 @@ export default function Estimator({ compact = false, className }) {
               >
                 <Trash2 className="w-4 h-4" aria-hidden />
               </button>
+              {rate && (
+                <p className="col-span-3 -mt-1 text-xs text-steel-500 tabular">
+                  Today: <span className="font-semibold text-rust-700">{rupees(rate.minPrice)} – {rupees(rate.maxPrice)}</span> / {unitLabel(rate.unit)}
+                </p>
+              )}
               {graded && (
                 <div className="col-span-3 -mt-1 flex flex-wrap gap-1.5" role="radiogroup" aria-label={t('est.condition')}>
                   {['working', 'not_working', 'damaged'].map((c) => (

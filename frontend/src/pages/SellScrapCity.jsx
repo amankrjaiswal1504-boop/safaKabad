@@ -62,26 +62,28 @@ export default function SellScrapCity() {
 
   return (
     <div>
-      <section className="bg-ink text-white">
-        <div className="container-page py-12 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_26rem] gap-10 items-center">
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#1f9d55] via-[#168045] to-[#0d5530] text-white">
+        <div className="absolute -top-24 -right-20 w-96 h-96 rounded-full bg-white/10 blur-3xl anim-blob pointer-events-none" aria-hidden />
+        <div className="absolute -bottom-28 left-1/4 w-80 h-80 rounded-full bg-yellow-300/20 blur-3xl anim-blob [animation-delay:-6s] pointer-events-none" aria-hidden />
+        <div className="container-page relative py-12 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_26rem] gap-10 items-center">
           <div>
             {loading && !data ? (
               <Skeleton className="h-12 w-80 !bg-white/10" />
             ) : (
               <h1 className="font-head text-3xl sm:text-5xl font-bold leading-tight">Sell scrap online in {city}</h1>
             )}
-            <p className="text-[#C7D2CD] mt-4 max-w-xl text-lg">
+            <p className="text-white/90 mt-4 max-w-xl text-lg">
               Book a free doorstep pickup anywhere in {city}. A verified SafaKabad collector weighs your scrap in front of you and pays instantly.
             </p>
-            <ul className="mt-6 space-y-2 text-sm text-[#DDE5E1]">
+            <ul className="mt-6 space-y-2 text-sm text-white/90">
               {['Free pickup, same-day or next-day slots', 'Digital weighing with photo proof', payWith && `${payWith} payment`, data?.itemCount ? `${data.itemCount} items bought here: paper, metals, e-waste, appliances and more` : null].filter(Boolean).map((x) => (
                 <li key={x} className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#7FD3A8]" aria-hidden /> {x}
+                  <CheckCircle2 className="w-4 h-4 text-yellow-200" aria-hidden /> {x}
                 </li>
               ))}
             </ul>
             {top.length > 0 && (
-              <p className="mt-6 text-sm text-[#A3B3AC]">
+              <p className="mt-6 text-sm text-white/75">
                 Popular in {city}: {top.map((r) => `${r.name} ${rupees(r.minPrice)}–${rupees(r.maxPrice)}/${unitLabel(r.unit)}`).join(' · ')}
               </p>
             )}

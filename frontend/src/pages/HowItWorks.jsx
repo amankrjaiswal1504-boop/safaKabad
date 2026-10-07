@@ -42,7 +42,7 @@ export default function HowItWorks() {
       <div className="grid md:grid-cols-3 gap-5 mt-10">
         {[
           { icon: Camera, t: 'Photo proof', d: 'Every scale reading is photographed and shown on your receipt.' },
-          { icon: MapPin, t: 'PIN-code coverage', d: 'Enter your PIN while booking to see if we serve your area and any minimum.' },
+          { icon: MapPin, t: 'Municipality & ward coverage', d: 'Pick your municipality and ward while booking. We show only the places we serve, plus any minimum.' },
           { icon: FileText, t: 'Certificates', d: 'Donation certificates for NGO donations and certified e-waste disposal certificates for businesses.' },
         ].map((x) => (
           <div key={x.t} className="rounded-xl bg-surface-2 border border-steel-100 p-5">

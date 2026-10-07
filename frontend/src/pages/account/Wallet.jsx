@@ -52,20 +52,22 @@ export default function Wallet() {
   return (
     <div>
       <PageHeader title="Wallet" subtitle="Choose 'Wallet' at pickup to collect earnings here, then withdraw any time." />
-      <Card className="mb-6 bg-ink text-white border-0 !p-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
+      <Card className="relative overflow-hidden mb-6 bg-gradient-to-br from-[#22a35a] via-[#168045] to-[#0f5f35] text-white border-0 shadow-lift !p-6 sm:!p-7">
+        <span className="absolute -right-16 -top-20 w-64 h-64 rounded-full bg-white/10 blur-2xl pointer-events-none" aria-hidden />
+        <span className="absolute -left-10 -bottom-24 w-56 h-56 rounded-full bg-yellow-300/20 blur-3xl pointer-events-none" aria-hidden />
+        <div className="relative flex flex-wrap items-end justify-between gap-4">
           <div>
-            <div className="text-sm text-[#A3B3AC] flex items-center gap-2">
+            <div className="text-sm text-white/80 flex items-center gap-2">
               <WalletIcon className="w-4 h-4" aria-hidden /> Available balance
             </div>
             <div className="font-head text-4xl sm:text-5xl font-bold mt-1 tabular">{data ? rupees(data.balance, { decimals: 2 }) : '—'}</div>
-            {pending && <div className="text-sm text-[#D9B66A] mt-1">{rupees(pending.amount)} withdrawal {pending.status}</div>}
+            {pending && <div className="text-sm text-yellow-100 mt-1">{rupees(pending.amount)} withdrawal {pending.status}</div>}
           </div>
-          <Button icon={Banknote} onClick={() => setOpen(true)} disabled={!data || data.balance < minW || Boolean(pending) || !withdrawalMethods.length}>
+          <Button className="!bg-white !text-rust-700 hover:!bg-rust-50 !shadow-md" icon={Banknote} onClick={() => setOpen(true)} disabled={!data || data.balance < minW || Boolean(pending) || !withdrawalMethods.length}>
             Withdraw
           </Button>
         </div>
-        {data && data.balance < minW && <p className="text-xs text-[#A3B3AC] mt-3">Minimum withdrawal is {rupees(minW)}.</p>}
+        {data && data.balance < minW && <p className="relative text-xs text-white/75 mt-3">Minimum withdrawal is {rupees(minW)}.</p>}
       </Card>
 
       <h2 className="font-medium text-steel-900 mb-3">Transactions</h2>

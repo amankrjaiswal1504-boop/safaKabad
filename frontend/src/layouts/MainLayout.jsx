@@ -29,7 +29,7 @@ function Banner() {
   const banner = config?.home?.banners?.find((b) => b.active);
   if (!banner) return null;
   return (
-    <div className="bg-ink text-white text-center text-xs sm:text-sm py-2 px-4 print:hidden">
+    <div className="bg-gradient-to-r from-[#0f5f35] via-[#168045] to-[#0f5f35] text-white text-center text-xs sm:text-sm py-2 px-4 print:hidden">
       {banner.link ? (
         <Link to={banner.link} className="hover:underline">
           {banner.text} →

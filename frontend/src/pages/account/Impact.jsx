@@ -81,7 +81,7 @@ export default function Impact() {
       <div className="rounded-2xl p-6 sm:p-8 mb-6 text-white relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgb(var(--ink)), #325A2D)' }}>
         <div className="flex items-center gap-3">
           <LogoMark className="w-8 h-8" />
-          <span className="text-sm text-[#C7D2CD]">{user.name.split(' ')[0]}'s recycling impact</span>
+          <span className="text-sm text-white/85">{user.name.split(' ')[0]}'s recycling impact</span>
         </div>
         <div className="grid sm:grid-cols-3 gap-6 mt-6">
           {[
@@ -91,7 +91,7 @@ export default function Impact() {
           ].map(([v, l]) => (
             <div key={l}>
               <div className="font-head text-4xl font-bold tabular">{v}</div>
-              <div className="text-sm text-[#C7D2CD]">{l}</div>
+              <div className="text-sm text-white/85">{l}</div>
             </div>
           ))}
         </div>

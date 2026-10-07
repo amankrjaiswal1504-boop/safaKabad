@@ -55,6 +55,10 @@ export default function FloatingWidgets() {
     if (window.matchMedia('(max-width: 639px)').matches) setOpen(false);
   };
 
+  // Staff tools (admin, collector app) have their own support flows; the
+  // customer chat and WhatsApp buttons would only cover their controls.
+  if (/^\/(admin|collector)(\/|$)/.test(page)) return null;
+
   return (
     <div className="print:hidden">
       {open && (
