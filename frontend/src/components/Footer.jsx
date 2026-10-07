@@ -71,7 +71,7 @@ export default function Footer() {
       </div>
       <div className="border-t border-white/10">
         <div className="container-page py-5 flex flex-col sm:flex-row gap-2 justify-between text-xs text-[#8A9A93]">
-          <span>© {new Date().getFullYear()} ScrapMate. {t('footer.rights')}</span>
+          <span>© {new Date().getFullYear()} SafaKabad. {t('footer.rights')}</span>
           <span>An independent demo project, not affiliated with any other scrap service.</span>
         </div>
       </div>

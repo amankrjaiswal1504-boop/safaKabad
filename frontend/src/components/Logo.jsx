@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-// Original ScrapMate mark: a rounded emerald tile with a circular "loop" arrow
+// Original SafaKabad mark: a rounded emerald tile with a circular "loop" arrow
 // suggesting reuse.
 export function LogoMark({ className = 'w-9 h-9' }) {
   return (
@@ -15,7 +15,7 @@ export function LogoMark({ className = 'w-9 h-9' }) {
 
 export default function Logo({ to = '/', light = false }) {
   return (
-    <Link to={to} className="flex items-center gap-2.5 shrink-0" aria-label="ScrapMate home">
+    <Link to={to} className="flex items-center gap-2.5 shrink-0" aria-label="SafaKabad home">
       <LogoMark />
       <span className={`font-head font-bold text-xl tracking-tight ${light ? 'text-white' : 'text-steel-900'}`}>
         Safa<span className={light ? 'text-[#D9B66A]' : 'text-rust-600'}>Kabad</span>

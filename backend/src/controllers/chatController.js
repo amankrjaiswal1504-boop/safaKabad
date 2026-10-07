@@ -115,7 +115,7 @@ function contextNote({ user, defaultCity, page, pagePickupId, lang }) {
     ? `logged in as a ${user.role}, first name "${cleanString(user.name.split(' ')[0]).slice(0, 40)}"`
     : 'not logged in (anonymous visitor)';
   return [
-    'Request context from the ScrapMate server (not written by the user):',
+    'Request context from the SafaKabad server (not written by the user):',
     `- Today: ${today} (Nepal time)`,
     `- User: ${who}`,
     `- Default city for rates: ${defaultCity}`,

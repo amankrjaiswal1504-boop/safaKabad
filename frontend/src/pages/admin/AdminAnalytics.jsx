@@ -76,8 +76,8 @@ export default function AdminAnalytics() {
         subtitle="Volumes, margins and collector performance"
         actions={
           <>
-            <ExportButton path={`/admin/analytics?${query}&format=csv`} filename={`scrapmate-analytics-${days}d.csv`} label="CSV" />
-            <ExportButton path={`/admin/analytics?${query}&format=pdf`} filename={`scrapmate-report-${days}d.pdf`} label="PDF report" />
+            <ExportButton path={`/admin/analytics?${query}&format=csv`} filename={`safakabad-analytics-${days}d.csv`} label="CSV" />
+            <ExportButton path={`/admin/analytics?${query}&format=pdf`} filename={`safakabad-report-${days}d.pdf`} label="PDF report" />
           </>
         }
       />

@@ -10,7 +10,7 @@ const ACCEPTS = { 'normal-recyclables': 'Clothes, books & paper', 'e-waste': 'La
 export default function Donate() {
   const { city } = useConfig();
   const { data, loading } = useApi('/public/ngos', { params: { city } });
-  usePageMeta({ title: 'Donate instead of selling', description: 'Donate clothes, books and old electronics to verified NGO partners through ScrapMate. Free pickup and a donation certificate.' });
+  usePageMeta({ title: 'Donate instead of selling', description: 'Donate clothes, books and old electronics to verified NGO partners through SafaKabad. Free pickup and a donation certificate.' });
   return (
     <div className="container-page py-10">
       <PageHeader title="Donate instead of selling" subtitle="Choose a verified NGO partner when you book. We pick up for free and send you a donation certificate." />

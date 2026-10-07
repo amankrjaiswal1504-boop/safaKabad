@@ -207,20 +207,20 @@ async function calendarFile(req, res, next) {
     const ics = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//ScrapMate//Pickup//EN',
+      'PRODID:-//SafaKabad//Pickup//EN',
       'BEGIN:VEVENT',
-      `UID:${pickup.pickupId}@scrapmate`,
+      `UID:${pickup.pickupId}@safakabad`,
       `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
       `DTSTART;TZID=${TIMEZONE}:${day}T${pad(startH)}0000`,
       `DTEND;TZID=${TIMEZONE}:${day}T${pad(startH + 2)}0000`,
-      `SUMMARY:ScrapMate pickup ${pickup.pickupId}`,
+      `SUMMARY:SafaKabad pickup ${pickup.pickupId}`,
       `DESCRIPTION:Scrap pickup (${pickup.items.map((i) => i.itemName).join('\\, ')}). Track: ${process.env.CLIENT_URL || 'http://localhost:5173'}/pickups/${pickup.pickupId}`,
       `LOCATION:${location}`,
       'END:VEVENT',
       'END:VCALENDAR',
     ].join('\r\n');
     res.set('Content-Type', 'text/calendar; charset=utf-8');
-    res.set('Content-Disposition', `attachment; filename="scrapmate-${pickup.pickupId}.ics"`);
+    res.set('Content-Disposition', `attachment; filename="safakabad-${pickup.pickupId}.ics"`);
     res.send(ics);
   } catch (err) {
     next(err);
@@ -236,7 +236,7 @@ async function receipt(req, res, next) {
     if (pickup.status !== 'COMPLETED') return res.status(400).json({ success: false, message: 'Receipt is available after completion' });
     const pdf = await receiptPdf(pickup);
     res.set('Content-Type', 'application/pdf');
-    res.set('Content-Disposition', `attachment; filename="ScrapMate-${pickup.pickupId}.pdf"`);
+    res.set('Content-Disposition', `attachment; filename="SafaKabad-${pickup.pickupId}.pdf"`);
     res.send(pdf);
   } catch (err) {
     next(err);
@@ -266,7 +266,7 @@ async function certificate(req, res, next) {
         title: 'Donation certificate',
         certificateNo: `DON-${pickup.pickupId}`,
         recipient,
-        statement: `donated the items below through ScrapMate to ${pickup.ngo?.name || 'our partner NGO'}${pickup.ngo?.registrationNumber ? ` (Reg. ${pickup.ngo.registrationNumber})` : ''}. Thank you for your generosity.`,
+        statement: `donated the items below through SafaKabad to ${pickup.ngo?.name || 'our partner NGO'}${pickup.ngo?.registrationNumber ? ` (Reg. ${pickup.ngo.registrationNumber})` : ''}. Thank you for your generosity.`,
         lines: [['Pickup', pickup.pickupId], ...lines],
         issuedOn: pickup.completedAt,
       });
@@ -278,13 +278,13 @@ async function certificate(req, res, next) {
         certificateNo: `EW-${pickup.pickupId}`,
         recipient,
         statement:
-          'handed over the electronic waste listed below to ScrapMate for environmentally sound recycling through authorised recycling partners, in line with the Solid Waste Management Act, 2068 (2011) and the Environment Protection Act, 2076 (2019) of Nepal.',
+          'handed over the electronic waste listed below to SafaKabad for environmentally sound recycling through authorised recycling partners, in line with the Solid Waste Management Act, 2068 (2011) and the Environment Protection Act, 2076 (2019) of Nepal.',
         lines: [['Pickup', pickup.pickupId], ...lines.filter(([name]) => ewasteNames.has(name))],
         issuedOn: pickup.completedAt,
       });
     }
     res.set('Content-Type', 'application/pdf');
-    res.set('Content-Disposition', `attachment; filename="ScrapMate-${kind}-${pickup.pickupId}.pdf"`);
+    res.set('Content-Disposition', `attachment; filename="SafaKabad-${kind}-${pickup.pickupId}.pdf"`);
     res.send(pdf);
   } catch (err) {
     next(err);

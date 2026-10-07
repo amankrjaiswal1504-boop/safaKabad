@@ -6,7 +6,7 @@ const paymentSchema = new mongoose.Schema(
     pickup: { type: mongoose.Schema.Types.ObjectId, ref: 'Pickup', index: true },
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
     amount: { type: Number, required: true },
-    // direction: payout = ScrapMate pays the customer; collection = customer/business pays ScrapMate
+    // direction: payout = SafaKabad pays the customer; collection = customer/business pays SafaKabad
     direction: { type: String, enum: ['payout', 'collection'], default: 'payout' },
     purpose: { type: String, default: 'pickup' }, // pickup | quote | withdrawal
     method: {

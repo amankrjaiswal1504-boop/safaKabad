@@ -97,7 +97,7 @@ export default function Business() {
     <div>
       <section className="bg-ink text-white">
         <div className="container-page py-12 sm:py-16">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#D9B66A]">ScrapMate for Business</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-[#D9B66A]">SafaKabad for Business</span>
           <h1 className="font-head text-3xl sm:text-5xl font-bold mt-3 max-w-3xl leading-tight">Scrap pickup that works like a vendor, not a favour</h1>
           <p className="text-[#C7D2CD] mt-4 max-w-2xl text-lg">For kirana shops, offices, housing societies and factories. Scheduled pickups, transparent weighing, invoices and compliance paperwork, all in one place.</p>
         </div>

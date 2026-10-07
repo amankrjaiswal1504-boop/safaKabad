@@ -72,7 +72,7 @@ const PAYOUT_HINT = {
   esewa: 'Sent to the customer’s eSewa wallet (their mobile number).',
   khalti: 'Sent to the customer’s Khalti wallet (their mobile number).',
   bank_transfer: 'Sent to the customer’s bank account by our finance team.',
-  wallet: 'Credited to the customer’s ScrapMate wallet.',
+  wallet: 'Credited to the customer’s SafaKabad wallet.',
 };
 const isWalletMethod = (m) => m === 'esewa' || m === 'khalti';
 const RATE_OPTIONS = [
@@ -277,7 +277,7 @@ function WeighingForm({ pickup, online, onSubmitted, onQueued, onCancelEdit }) {
       <div>
         <p className="label">Rate</p>
         <Segmented options={RATE_OPTIONS} value={rateChoice} onChange={setRateChoice} className="w-full grid grid-cols-3 [&>button]:justify-center [&>button]:min-h-[40px]" />
-        <p className="text-xs text-steel-500 mt-1.5">The rate always comes from ScrapMate's price list for {pickup.city || pickup.addressSnapshot?.city || 'this city'} — you only pick where in the range this material falls.</p>
+        <p className="text-xs text-steel-500 mt-1.5">The rate always comes from SafaKabad's price list for {pickup.city || pickup.addressSnapshot?.city || 'this city'} — you only pick where in the range this material falls.</p>
       </div>
 
       <div className="flex flex-col-reverse sm:flex-row gap-2 pt-1">
@@ -578,7 +578,7 @@ export default function CollectorPickup() {
   const weighed = status === 'WEIGHING' && pickup.finalAmount != null;
   const showWeighForm = status === 'WEIGHING' && !queued && (!weighed || reweigh);
   const paid = (pickup.finalAmount || 0) + (pickup.bonusAmount || 0);
-  const waText = `Hi ${pickup.customer?.name?.split(' ')[0] || ''}, this is your ScrapMate partner for pickup ${pickup.pickupId}.`;
+  const waText = `Hi ${pickup.customer?.name?.split(' ')[0] || ''}, this is your SafaKabad partner for pickup ${pickup.pickupId}.`;
 
   return (
     <div className="space-y-5">
@@ -649,7 +649,7 @@ export default function CollectorPickup() {
       )}
 
       {status === 'ARRIVED' && (
-        <StepCard icon={KeyRound} title="Enter the door code" subtitle="Ask the customer for the 4-digit code in their ScrapMate app or SMS.">
+        <StepCard icon={KeyRound} title="Enter the door code" subtitle="Ask the customer for the 4-digit code in their SafaKabad app or SMS.">
           <DoorCode otp={otp} setOtp={setOtp} error={otpError} busy={busy === 'otp'} onVerify={verifyOtp} autoFocus />
         </StepCard>
       )}
@@ -669,7 +669,7 @@ export default function CollectorPickup() {
               );
             })}
           </ul>
-          <p className="text-xs text-steel-500 mb-3">Rate: {RATE_OPTIONS.find((r) => r.value === queued.rateChoice)?.label || 'Average'} of ScrapMate's price range.</p>
+          <p className="text-xs text-steel-500 mb-3">Rate: {RATE_OPTIONS.find((r) => r.value === queued.rateChoice)?.label || 'Average'} of SafaKabad's price range.</p>
           <Button
             variant="outline"
             icon={Scale}
@@ -711,7 +711,7 @@ export default function CollectorPickup() {
 
       {weighed && !reweigh && !queued && (
         <>
-          <StepCard icon={Scale} tone="patina" title={isDonation ? 'Weighed' : `Pay ${rupees(pickup.finalAmount)}`} subtitle="Final amount from ScrapMate's rates for these weights.">
+          <StepCard icon={Scale} tone="patina" title={isDonation ? 'Weighed' : `Pay ${rupees(pickup.finalAmount)}`} subtitle="Final amount from SafaKabad's rates for these weights.">
             <WeighedLines pickup={pickup} />
             <DecisionBanner decision={decision} note={pickup.customerDecision?.note} />
             <Button

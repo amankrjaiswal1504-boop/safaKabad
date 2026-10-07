@@ -40,7 +40,7 @@ export default function SellScrapCity() {
     el.text = JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'LocalBusiness',
-      name: `ScrapMate ${city}`,
+      name: `SafaKabad ${city}`,
       areaServed: (data?.areas || []).map((a) => a.name).concat(city),
       description: `Doorstep scrap pickup in ${city}`,
       makesOffer: top.map((r) => ({ '@type': 'Offer', name: r.name, priceSpecification: { '@type': 'UnitPriceSpecification', price: r.maxPrice, priceCurrency: CURRENCY, unitText: r.unit } })),
@@ -71,7 +71,7 @@ export default function SellScrapCity() {
               <h1 className="font-head text-3xl sm:text-5xl font-bold leading-tight">Sell scrap online in {city}</h1>
             )}
             <p className="text-[#C7D2CD] mt-4 max-w-xl text-lg">
-              Book a free doorstep pickup anywhere in {city}. A verified ScrapMate collector weighs your scrap in front of you and pays instantly.
+              Book a free doorstep pickup anywhere in {city}. A verified SafaKabad collector weighs your scrap in front of you and pays instantly.
             </p>
             <ul className="mt-6 space-y-2 text-sm text-[#DDE5E1]">
               {['Free pickup, same-day or next-day slots', 'Digital weighing with photo proof', payWith && `${payWith} payment`, data?.itemCount ? `${data.itemCount} items bought here: paper, metals, e-waste, appliances and more` : null].filter(Boolean).map((x) => (

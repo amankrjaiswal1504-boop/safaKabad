@@ -26,7 +26,7 @@ export default function Receipt() {
           <div className="flex items-center gap-3">
             <LogoMark className="w-10 h-10" />
             <div>
-              <div className="font-head font-bold text-lg">ScrapMate</div>
+              <div className="font-head font-bold text-lg">SafaKabad</div>
               <div className="text-xs opacity-70">{p.type === 'donation' ? 'Donation receipt' : 'Payment receipt'}</div>
             </div>
           </div>
@@ -99,7 +99,7 @@ export default function Receipt() {
             </div>
           )}
           <p className="text-xs text-steel-500 text-center border-t border-steel-100 pt-4 mt-6">
-            Weights were recorded on a digital scale at your doorstep. Thank you for recycling with ScrapMate.
+            Weights were recorded on a digital scale at your doorstep. Thank you for recycling with SafaKabad.
           </p>
         </div>
       </div>
@@ -107,7 +107,7 @@ export default function Receipt() {
         <Button variant="outline" icon={Printer} className="flex-1" onClick={() => window.print()}>
           Print
         </Button>
-        <Button icon={FileDown} className="flex-1" onClick={() => download(`/pickups/${id}/receipt.pdf`, `ScrapMate-${id}.pdf`).catch((e) => toast.error(e.message))}>
+        <Button icon={FileDown} className="flex-1" onClick={() => download(`/pickups/${id}/receipt.pdf`, `SafaKabad-${id}.pdf`).catch((e) => toast.error(e.message))}>
           Download PDF
         </Button>
       </div>

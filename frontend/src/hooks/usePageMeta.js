@@ -14,7 +14,7 @@ function setMeta(attr, key, value) {
 // Per-page title, description, Open Graph tags and canonical URL.
 export default function usePageMeta({ title, description, image, noindex } = {}) {
   useEffect(() => {
-    const full = title ? `${title} | ScrapMate` : 'ScrapMate — Sell scrap online, doorstep pickup at the best rates';
+    const full = title ? `${title} | SafaKabad` : 'SafaKabad — Sell scrap online, doorstep pickup at the best rates';
     document.title = full;
     setMeta('name', 'description', description);
     setMeta('property', 'og:title', full);

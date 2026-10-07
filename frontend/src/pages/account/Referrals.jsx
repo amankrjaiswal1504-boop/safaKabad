@@ -12,7 +12,7 @@ export default function Referrals() {
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading && !data) return <Skeleton className="h-80" />;
   const link = `${window.location.origin}/register?ref=${data.code}`;
-  const message = `I sell my scrap with ScrapMate: free doorstep pickup and instant payment. Sign up with my code ${data.code} and we both get ${rupees(data.rewards.referee)}: ${link}`;
+  const message = `I sell my scrap with SafaKabad: free doorstep pickup and instant payment. Sign up with my code ${data.code} and we both get ${rupees(data.rewards.referee)}: ${link}`;
 
   async function copy(text) {
     try {
@@ -41,7 +41,7 @@ export default function Referrals() {
           <Button
             variant="outline"
             icon={Share2}
-            onClick={() => (navigator.share ? navigator.share({ title: 'ScrapMate', text: message, url: link }).catch(() => {}) : copy(message))}
+            onClick={() => (navigator.share ? navigator.share({ title: 'SafaKabad', text: message, url: link }).catch(() => {}) : copy(message))}
           >
             Share link
           </Button>

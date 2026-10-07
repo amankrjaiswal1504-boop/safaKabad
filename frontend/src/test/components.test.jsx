@@ -33,7 +33,7 @@ describe('WhatsApp helpers', () => {
   it('prefills the pickup ID and user name', () => {
     expect(pickupIdFromPath('/pickups/sm-2026-000123')).toBe('SM-2026-000123');
     const text = buildWhatsAppText({ user: { name: 'Asha' }, pickupId: 'SM-2026-000123' });
-    expect(text).toBe('Hi ScrapMate, this is Asha. I need help with pickup SM-2026-000123.');
+    expect(text).toBe('Hi SafaKabad, this is Asha. I need help with pickup SM-2026-000123.');
     expect(buildWhatsAppLink('9779800000000', 'a b')).toBe('https://wa.me/9779800000000?text=a%20b');
   });
 });

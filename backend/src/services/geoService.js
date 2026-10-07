@@ -3,7 +3,7 @@
 // light usage, which a small cache helps with).
 const logger = require('../utils/logger');
 
-const UA = 'ScrapMate/1.0 (support@scrapmate.dev)';
+const UA = 'SafaKabad/1.0 (support@scrapmate.dev)';
 const cache = new Map();
 const TTL = 10 * 60 * 1000;
 

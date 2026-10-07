@@ -10,7 +10,7 @@ export default function Leaderboard() {
   const { data, loading } = useApi('/public/leaderboard');
   const { config } = useConfig();
   const reward = config?.referral?.referrerReward;
-  usePageMeta({ title: 'Referral leaderboard', description: 'Top ScrapMate referrers this season. Invite friends and both of you earn wallet rewards.' });
+  usePageMeta({ title: 'Referral leaderboard', description: 'Top SafaKabad referrers this season. Invite friends and both of you earn wallet rewards.' });
   return (
     <div className="container-page py-10 max-w-3xl">
       <PageHeader title="Referral leaderboard" subtitle={reward ? `Invite friends with your code. When they finish their first pickup, you both get ${rupees(reward)} in your wallet.` : 'Invite friends with your code and earn wallet rewards.'} />

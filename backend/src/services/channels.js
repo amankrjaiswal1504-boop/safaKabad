@@ -26,7 +26,7 @@ async function sendEmail({ to, cc, subject, text, html, attachments }) {
     });
   }
   await transporter.sendMail({
-    from: process.env.SMTP_FROM || `ScrapMate <${process.env.SMTP_USER}>`,
+    from: process.env.SMTP_FROM || `SafaKabad <${process.env.SMTP_USER}>`,
     to,
     cc,
     subject,
@@ -49,7 +49,7 @@ async function sendSms(phone, text) {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           token: process.env.SPARROW_SMS_TOKEN,
-          from: process.env.SPARROW_SMS_FROM || 'ScrapMate',
+          from: process.env.SPARROW_SMS_FROM || 'SafaKabad',
           to: cleanPhone(phone),
           text,
         }),

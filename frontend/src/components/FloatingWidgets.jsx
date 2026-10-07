@@ -114,7 +114,7 @@ export default function FloatingWidgets() {
             href={whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`WhatsApp the ScrapMate team${support ? (support.online ? ', online now' : ', currently offline') : ''} (opens in a new tab)`}
+            aria-label={`WhatsApp the SafaKabad team${support ? (support.online ? ', online now' : ', currently offline') : ''} (opens in a new tab)`}
             className={`${ROUND_BUTTON} bg-[#1F8A4C] hover:bg-[#18703D] text-white focus-visible:ring-[#1F8A4C]`}
           >
             <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden>

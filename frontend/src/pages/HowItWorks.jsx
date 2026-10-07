@@ -8,14 +8,14 @@ import { useState } from 'react';
 const STEPS = [
   { icon: Smartphone, title: 'Book in a minute', text: 'Pick your items and approximate quantity, see an instant estimate, choose an address and a time slot. No password needed: verify your phone with a one-time code.' },
   { icon: Truck, title: 'Track your collector', text: 'You get a notification when a collector is assigned and when they start the trip. Follow them live on the map with an ETA.' },
-  { icon: KeyRound, title: 'Share your door code', text: 'At your door the collector enters the 4-digit code from your pickup page. This proves it is really your ScrapMate collector before anything is weighed.' },
-  { icon: Scale, title: 'Weighed in front of you', text: 'Each item is weighed on a digital scale and the reading is photographed. The rate comes from ScrapMate\'s published price list for your city; collectors can\'t change it.' },
+  { icon: KeyRound, title: 'Share your door code', text: 'At your door the collector enters the 4-digit code from your pickup page. This proves it is really your SafaKabad collector before anything is weighed.' },
+  { icon: Scale, title: 'Weighed in front of you', text: 'Each item is weighed on a digital scale and the reading is photographed. The rate comes from SafaKabad\'s published price list for your city; collectors can\'t change it.' },
   { icon: BadgeCheck, title: 'Review and accept', text: 'See the final amount on your phone with every weight and rate. Accept it, or raise a dispute and our team steps in.' },
-  { icon: CreditCard, title: 'Get paid instantly', text: 'Choose eSewa, Khalti, bank transfer, cash or your ScrapMate wallet. A PDF receipt is emailed and saved in your account.' },
+  { icon: CreditCard, title: 'Get paid instantly', text: 'Choose eSewa, Khalti, bank transfer, cash or your SafaKabad wallet. A PDF receipt is emailed and saved in your account.' },
 ];
 
 export default function HowItWorks() {
-  usePageMeta({ title: 'How it works', description: 'How ScrapMate doorstep scrap pickup works: book, track, door-code verification, digital weighing with photo proof and instant payment.' });
+  usePageMeta({ title: 'How it works', description: 'How SafaKabad doorstep scrap pickup works: book, track, door-code verification, digital weighing with photo proof and instant payment.' });
   const { data } = useApi('/public/faqs');
   const topics = [...new Set((data?.faqs || []).map((f) => f.topic))];
   const [topic, setTopic] = useState('all');
@@ -23,7 +23,7 @@ export default function HowItWorks() {
 
   return (
     <div className="container-page py-10">
-      <PageHeader title="How ScrapMate works" subtitle="Six simple steps from booking to payment, with safety and transparency built in." />
+      <PageHeader title="How SafaKabad works" subtitle="Six simple steps from booking to payment, with safety and transparency built in." />
       <ol className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {STEPS.map((s, i) => (
           <li key={s.title} className="card !p-6">

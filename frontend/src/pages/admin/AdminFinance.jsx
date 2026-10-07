@@ -197,7 +197,7 @@ function Withdrawals() {
                 then marks the payout paid in the Payments tab. This can't be undone.
               </Callout>
             ) : (
-              <Callout tone="amber">The amount goes back to the customer's ScrapMate wallet and they are notified.</Callout>
+              <Callout tone="amber">The amount goes back to the customer's SafaKabad wallet and they are notified.</Callout>
             )}
             <Field label={acting.action === 'reject' ? 'Reason (shown to the customer)' : 'Note (optional)'} hint={`${note.length}/300`}>
               {(id) => <Textarea id={id} rows={2} maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />}
@@ -338,7 +338,7 @@ function Payments() {
         </Field>
       </Toolbar>
       <Callout icon={Banknote} className="mb-4">
-        Digital payouts (anything other than cash or the ScrapMate wallet) are settled by the finance team and then marked paid here, unless a payout
+        Digital payouts (anything other than cash or the SafaKabad wallet) are settled by the finance team and then marked paid here, unless a payout
         provider is configured to send them automatically. Which methods are offered is set in Site settings → Wallet &amp; payments.
       </Callout>
       {anyMock && (

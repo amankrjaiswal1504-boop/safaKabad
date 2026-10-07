@@ -113,7 +113,7 @@ export default function ChatPanel({ chat, user, whatsappHref, whatsappNumber, on
         <AssistantMark className="w-10 h-10 shrink-0 drop-shadow" />
         <div className="flex-1 min-w-0">
           <h2 id="chat-title" className="font-head font-semibold text-sm leading-tight">
-            ScrapMate Assistant
+            SafaKabad Assistant
           </h2>
           <p className="text-[11px] text-steel-300 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-patina-500" aria-hidden /> Online · {aiLabel}

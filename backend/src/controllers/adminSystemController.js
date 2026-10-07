@@ -132,7 +132,7 @@ async function analytics(req, res, next) {
     const data = await buildAnalytics({ days, city: req.query.city });
     if (req.query.format === 'csv') {
       res.set('Content-Type', 'text/csv');
-      res.set('Content-Disposition', `attachment; filename="scrapmate-analytics-${days}d.csv"`);
+      res.set('Content-Disposition', `attachment; filename="safakabad-analytics-${days}d.csv"`);
       return res.send(
         toCsv(data.daily, [
           { label: 'Date', value: (d) => d.date },
@@ -170,7 +170,7 @@ async function analytics(req, res, next) {
         ],
       });
       res.set('Content-Type', 'application/pdf');
-      res.set('Content-Disposition', `attachment; filename="scrapmate-report-${days}d.pdf"`);
+      res.set('Content-Disposition', `attachment; filename="safakabad-report-${days}d.pdf"`);
       return res.send(pdf);
     }
     res.json({ success: true, data });

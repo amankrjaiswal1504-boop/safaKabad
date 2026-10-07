@@ -1,4 +1,4 @@
-// ScrapMate UI kit. Small, accessible building blocks shared by every page.
+// SafaKabad UI kit. Small, accessible building blocks shared by every page.
 import { forwardRef, useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';

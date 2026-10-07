@@ -35,7 +35,7 @@ async function sendOtp(phone, purpose = 'login') {
   const code = String(crypto.randomInt(100000, 1000000));
   await OtpCode.create({ phone, purpose, codeHash: hash(phone, code), expiresAt: new Date(Date.now() + TTL_MS) });
 
-  const text = `${code} is your ScrapMate verification code. It expires in 5 minutes. Do not share it.`;
+  const text = `${code} is your SafaKabad verification code. It expires in 5 minutes. Do not share it.`;
   if (smsConfigured()) {
     await sendSms(phone, text);
   } else {

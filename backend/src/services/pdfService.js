@@ -12,7 +12,7 @@ const date = (d) => new Date(d).toLocaleDateString('en-GB', { timeZone: TIMEZONE
 
 function toBuffer(build) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: 'A4', margin: 50, info: { Producer: 'ScrapMate' } });
+    const doc = new PDFDocument({ size: 'A4', margin: 50, info: { Producer: 'SafaKabad' } });
     const chunks = [];
     doc.on('data', (c) => chunks.push(c));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
@@ -25,7 +25,7 @@ function toBuffer(build) {
 function header(doc, title, subtitle) {
   doc.rect(50, 50, 28, 28).fill(BRAND);
   doc.fillColor('#fff').font('Helvetica-Bold').fontSize(16).text('S', 50, 56, { width: 28, align: 'center' });
-  doc.fillColor(INK).fontSize(18).text('ScrapMate', 86, 52);
+  doc.fillColor(INK).fontSize(18).text('SafaKabad', 86, 52);
   doc.font('Helvetica').fontSize(9).fillColor(MUTED).text('Doorstep scrap pickup & recycling', 86, 72);
   doc.font('Helvetica-Bold').fontSize(14).fillColor(INK).text(title, 300, 52, { width: 245, align: 'right' });
   if (subtitle) doc.font('Helvetica').fontSize(9).fillColor(MUTED).text(subtitle, 300, 72, { width: 245, align: 'right' });
@@ -86,12 +86,12 @@ function receiptPdf(pickup) {
     line('Total paid', rs((pickup.finalAmount || 0) + (pickup.bonusAmount || 0)), true);
     doc.y = y + 20;
     doc.font('Helvetica').fontSize(9).fillColor(MUTED).text(
-      'Weights were recorded on a digital scale at your doorstep. Rates are the ScrapMate rates for your city on the pickup date.',
+      'Weights were recorded on a digital scale at your doorstep. Rates are the SafaKabad rates for your city on the pickup date.',
       50,
       doc.y,
       { width: 495 }
     );
-    footer(doc, 'Thank you for recycling with ScrapMate. This is a computer-generated receipt.');
+    footer(doc, 'Thank you for recycling with SafaKabad. This is a computer-generated receipt.');
   });
 }
 
@@ -109,8 +109,8 @@ function certificatePdf({ title, certificateNo, recipient, lines, statement, iss
     keyValues(doc, lines);
     doc.moveDown(3);
     doc.font('Helvetica').fontSize(10).fillColor(MUTED).text(`Issued on ${date(issuedOn || new Date())}`, 50, doc.y);
-    doc.text('Authorised signatory, ScrapMate Recycling Operations', 300, doc.y - 12, { width: 245, align: 'right' });
-    footer(doc, 'Verify this certificate by contacting ScrapMate support with the certificate number.');
+    doc.text('Authorised signatory, SafaKabad Recycling Operations', 300, doc.y - 12, { width: 245, align: 'right' });
+    footer(doc, 'Verify this certificate by contacting SafaKabad support with the certificate number.');
   });
 }
 

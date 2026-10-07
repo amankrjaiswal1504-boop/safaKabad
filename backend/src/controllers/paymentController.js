@@ -3,7 +3,7 @@ const { Quote } = require('../models/platform');
 const gateway = require('../services/paymentGateway');
 const { generatePaymentId } = require('../utils/generateId');
 
-// Khalti checkout is used when a business pays ScrapMate (e.g. a certified
+// Khalti checkout is used when a business pays SafaKabad (e.g. a certified
 // e-waste disposal fee on an accepted quote). Customer payouts for scrap go
 // through bookingService.payOut instead.
 async function createPayment(req, res, next) {
@@ -18,7 +18,7 @@ async function createPayment(req, res, next) {
     const order = await gateway.createOrder({
       amount: quote.quotedAmount,
       orderId: paymentId,
-      orderName: `ScrapMate quote ${quote.quoteId}`,
+      orderName: `SafaKabad quote ${quote.quoteId}`,
       returnUrl: `${clientUrl}/business?paymentId=${paymentId}`,
       customer: { name: req.user.name, email: req.user.email || undefined, phone: req.user.phone },
     });

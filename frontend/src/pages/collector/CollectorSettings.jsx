@@ -222,7 +222,7 @@ export default function CollectorSettings() {
         </Button>
       </form>
 
-      <Section icon={User} title="Profile" subtitle="Contact ScrapMate support to change these details.">
+      <Section icon={User} title="Profile" subtitle="Contact SafaKabad support to change these details.">
         <dl className="divide-y divide-steel-100 text-sm">
           {[
             ['Name', user?.name],

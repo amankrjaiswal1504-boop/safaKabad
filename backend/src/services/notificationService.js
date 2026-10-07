@@ -38,7 +38,7 @@ async function notify(userId, { type, title, body, link = '', channels = ['inapp
     const text = `${title}\n${body}${link ? `\n${CLIENT_URL()}${link}` : ''}`;
     const jobs = [];
     if (channels.includes('email') && prefs.email !== false && user.email) {
-      jobs.push(sendEmail({ to: user.email, subject: `ScrapMate: ${title}`, text, attachments: emailAttachments }));
+      jobs.push(sendEmail({ to: user.email, subject: `SafaKabad: ${title}`, text, attachments: emailAttachments }));
     }
     if (channels.includes('whatsapp') && prefs.whatsapp !== false) jobs.push(sendWhatsApp(user.phone, text));
     if (channels.includes('sms') && prefs.sms) jobs.push(sendSms(user.phone, text));

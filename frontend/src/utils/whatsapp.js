@@ -1,5 +1,5 @@
 const ENV_NUMBER = (import.meta.env.VITE_WHATSAPP_NUMBER || '').replace(/\D/g, '');
-const ENV_MESSAGE = import.meta.env.VITE_WHATSAPP_MESSAGE || 'Hi ScrapMate, I need help with scrap pickup';
+const ENV_MESSAGE = import.meta.env.VITE_WHATSAPP_MESSAGE || 'Hi SafaKabad, I need help with scrap pickup';
 
 const PICKUP_ID_RE = /SM-\d{4}-\d{6}/i;
 
@@ -14,10 +14,10 @@ export function whatsappNumber(config) {
 }
 
 export function buildWhatsAppText({ user, pickupId, extra } = {}) {
-  const firstLine = user ? `Hi ScrapMate, this is ${user.name}.` : 'Hi ScrapMate,';
+  const firstLine = user ? `Hi SafaKabad, this is ${user.name}.` : 'Hi SafaKabad,';
   let body;
   if (pickupId) body = `I need help with pickup ${pickupId}.`;
-  else body = ENV_MESSAGE.replace(/^hi scrapmate,?\s*/i, '');
+  else body = ENV_MESSAGE.replace(/^hi safakabad,?\s*/i, '');
   const text = user || pickupId ? `${firstLine} ${body}` : ENV_MESSAGE;
   return extra ? `${text}\n\n${extra}` : text;
 }

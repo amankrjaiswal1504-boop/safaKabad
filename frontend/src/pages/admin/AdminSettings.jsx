@@ -519,7 +519,7 @@ const serializeWallet = (v) => ({ minWithdrawal: Number(v.minWithdrawal), maxWit
 function WalletCard({ settingKey, initial, onSaved }) {
   const s = useSection(settingKey, initial || {}, onSaved, validateWallet, serializeWallet);
   return (
-    <SectionCard title="Wallet" subtitle="Limits for each customer withdrawal from the ScrapMate wallet." section={s}>
+    <SectionCard title="Wallet" subtitle="Limits for each customer withdrawal from the SafaKabad wallet." section={s}>
       <div className="grid grid-cols-2 gap-4">
         <Num label={`Minimum withdrawal (${CURRENCY_SYMBOL})`} k="minWithdrawal" s={s} min={1} step={1} />
         <Num label={`Maximum withdrawal (${CURRENCY_SYMBOL})`} k="maxWithdrawal" s={s} min={1} step={1} />

@@ -128,7 +128,7 @@ export default function PickupTracking() {
           <>
             <StatusBadge status={pickup.status} />
             {isCustomer && active && (
-              <Button variant="outline" size="sm" icon={CalendarPlus} onClick={() => download(`/pickups/${id}/calendar.ics`, `scrapmate-${id}.ics`).catch((e) => toast.error(e.message))}>
+              <Button variant="outline" size="sm" icon={CalendarPlus} onClick={() => download(`/pickups/${id}/calendar.ics`, `safakabad-${id}.ics`).catch((e) => toast.error(e.message))}>
                 {t('book.addToCalendar')}
               </Button>
             )}
@@ -330,7 +330,7 @@ export default function PickupTracking() {
                   <Button variant="outline" icon={ReceiptIcon} to={`/receipt/${id}`}>
                     View receipt
                   </Button>
-                  <Button variant="ghost" icon={FileDown} onClick={() => download(`/pickups/${id}/receipt.pdf`, `ScrapMate-${id}.pdf`).catch((e) => toast.error(e.message))}>
+                  <Button variant="ghost" icon={FileDown} onClick={() => download(`/pickups/${id}/receipt.pdf`, `SafaKabad-${id}.pdf`).catch((e) => toast.error(e.message))}>
                     Download PDF
                   </Button>
                   {pickup.type === 'donation' && (

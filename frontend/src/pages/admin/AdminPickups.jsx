@@ -288,7 +288,7 @@ export default function AdminPickups() {
         }
       >
         <p className="text-sm text-steel-700 mb-4">Only active pickups are cancelled. Customers are notified and any coupon is released.</p>
-        <Field label="Reason" hint="Shown to customers. Defaults to “Cancelled by ScrapMate”.">
+        <Field label="Reason" hint="Shown to customers. Defaults to “Cancelled by SafaKabad”.">
           {(id) => <Textarea id={id} maxLength={300} value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} />}
         </Field>
       </Modal>

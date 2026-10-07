@@ -1,4 +1,4 @@
-# ScrapMate web app: build with Vite, serve with nginx (which also proxies /api).
+# SafaKabad web app: build with Vite, serve with nginx (which also proxies /api).
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -7,7 +7,7 @@ COPY . .
 # Same-origin API through the nginx proxy by default.
 ARG VITE_API_URL=/api
 ARG VITE_WHATSAPP_NUMBER=
-ARG VITE_WHATSAPP_MESSAGE="Hi ScrapMate, I need help with scrap pickup"
+ARG VITE_WHATSAPP_MESSAGE="Hi SafaKabad, I need help with scrap pickup"
 ENV VITE_API_URL=$VITE_API_URL VITE_WHATSAPP_NUMBER=$VITE_WHATSAPP_NUMBER VITE_WHATSAPP_MESSAGE=$VITE_WHATSAPP_MESSAGE
 RUN npm run build
 

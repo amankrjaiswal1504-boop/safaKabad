@@ -1,6 +1,6 @@
 {
-  "name": "ScrapMate — Doorstep scrap pickup",
-  "short_name": "ScrapMate",
+  "name": "SafaKabad — Doorstep scrap pickup",
+  "short_name": "SafaKabad",
   "description": "Check scrap rates, book a free pickup and get paid instantly.",
   "start_url": "/?source=pwa",
   "scope": "/",

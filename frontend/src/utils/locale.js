@@ -44,6 +44,6 @@ export const PAYOUT_METHODS = [
   { value: 'esewa', label: 'eSewa' },
   { value: 'khalti', label: 'Khalti' },
   { value: 'bank_transfer', label: 'Bank transfer' },
-  { value: 'wallet', label: 'ScrapMate wallet' },
+  { value: 'wallet', label: 'SafaKabad wallet' },
 ];
 export const payoutLabel = (m) => PAYOUT_METHODS.find((x) => x.value === m)?.label || String(m || '').replace('_', ' ');

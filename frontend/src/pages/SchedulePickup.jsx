@@ -369,7 +369,7 @@ export default function SchedulePickup() {
 
   async function confirmAsGuest({ phone, code, name }) {
     const { serviceable, serviceReason, ...address } = guestAddress;
-    const res = await api.post('/pickups/guest', { ...payload(), phone, code, name: name || 'ScrapMate customer', address });
+    const res = await api.post('/pickups/guest', { ...payload(), phone, code, name: name || 'SafaKabad customer', address });
     // The API signed the guest in (cookie); load the new session.
     await refreshMe();
     finish(res.data.data.pickup);
@@ -383,7 +383,7 @@ export default function SchedulePickup() {
         booked={booked}
         t={t}
         onTrack={() => navigate(`/pickups/${booked.pickupId}`)}
-        onCalendar={() => download(`/pickups/${booked.pickupId}/calendar.ics`, `scrapmate-${booked.pickupId}.ics`).catch((e) => toast.error(e.message))}
+        onCalendar={() => download(`/pickups/${booked.pickupId}/calendar.ics`, `safakabad-${booked.pickupId}.ics`).catch((e) => toast.error(e.message))}
       />
     );
   }

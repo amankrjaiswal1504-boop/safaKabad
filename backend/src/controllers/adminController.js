@@ -407,7 +407,7 @@ async function adminUpdatePickupStatus(req, res, next) {
     if (!pickup) return fail(res, 404, 'Pickup not found');
     const before = pickup.status;
     if (req.body.status === 'CANCELLED') {
-      pickup.cancelReason = req.body.reason || 'Cancelled by ScrapMate';
+      pickup.cancelReason = req.body.reason || 'Cancelled by SafaKabad';
       pickup.cancelledBy = 'admin';
       await releaseCoupon(pickup);
     }
@@ -445,7 +445,7 @@ async function bulkPickups(req, res, next) {
     } else if (action === 'cancel') {
       for (const p of pickups) {
         p.status = 'CANCELLED';
-        p.cancelReason = reason || 'Cancelled by ScrapMate';
+        p.cancelReason = reason || 'Cancelled by SafaKabad';
         p.cancelledBy = 'admin';
         p.$locals.changedBy = req.user._id;
         await p.save();

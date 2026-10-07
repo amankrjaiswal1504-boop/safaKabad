@@ -249,7 +249,7 @@ async function completePickup(pickup, payoutDetails, actor) {
   await pickup.populate([{ path: 'customer', select: 'name email phone' }, { path: 'collector', select: 'name phone' }]);
   const pdf = await receiptPdf(pickup).catch(() => null);
   await pickupStatusChanged(pickup, {
-    attachments: pdf ? [{ filename: `ScrapMate-${pickup.pickupId}.pdf`, content: pdf }] : undefined,
+    attachments: pdf ? [{ filename: `SafaKabad-${pickup.pickupId}.pdf`, content: pdf }] : undefined,
   });
   await rewardOnFirstPickup(customer._id);
   await track('completed', { user: customer._id, city: pickup.addressSnapshot?.city });

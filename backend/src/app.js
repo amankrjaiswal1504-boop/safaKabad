@@ -88,7 +88,7 @@ app.get('/api/health', (req, res) => {
   const ok = db === 'connected';
   res.status(ok ? 200 : 503).json({
     success: ok,
-    message: ok ? 'ScrapMate API is running' : 'Database unavailable',
+    message: ok ? 'SafaKabad API is running' : 'Database unavailable',
     db,
     uptime: Math.round(process.uptime()),
     version: process.env.npm_package_version || '2.0.0',

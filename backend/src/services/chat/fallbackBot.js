@@ -11,7 +11,7 @@ const { money } = require('../../config/locale');
 const T = {
   en: {
     greeting:
-      "Namaste! I'm the ScrapMate Assistant. I can check scrap rates, estimate your payout, help you book or track a pickup, and answer payment questions. What would you like to do?",
+      "Namaste! I'm the SafaKabad Assistant. I can check scrap rates, estimate your payout, help you book or track a pickup, and answer payment questions. What would you like to do?",
     ratesFor: (city) => `Here are the current indicative rates in **${city}**. The final amount depends on actual weight at pickup.`,
     ratesNone: (city) => `I couldn't find rates for that in **${city}**. You can see the full list on the [rates page](/rates).`,
     ratesGeneric: (city) =>
@@ -44,7 +44,7 @@ const T = {
   },
   ne: {
     greeting:
-      'नमस्ते! म ScrapMate सहायक हुँ। म कबाडीको भाउ, अनुमानित रकम, पिकअप बुक वा ट्र्याक गर्न र भुक्तानी सम्बन्धी प्रश्नमा मद्दत गर्न सक्छु। तपाईं के गर्न चाहनुहुन्छ?',
+      'नमस्ते! म SafaKabad सहायक हुँ। म कबाडीको भाउ, अनुमानित रकम, पिकअप बुक वा ट्र्याक गर्न र भुक्तानी सम्बन्धी प्रश्नमा मद्दत गर्न सक्छु। तपाईं के गर्न चाहनुहुन्छ?',
     ratesFor: (city) => `**${city}** मा अहिलेको अनुमानित भाउ यस्तो छ। अन्तिम रकम पिकअपमा वास्तविक तौल अनुसार हुन्छ।`,
     ratesNone: (city) => `**${city}** मा यसको भाउ भेटिएन। पूरा सूची [भाउ पेज](/rates) मा हेर्नुहोस्।`,
     ratesGeneric: (city) =>

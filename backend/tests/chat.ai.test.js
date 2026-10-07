@@ -83,7 +83,7 @@ it('runs the tool loop against real data and shows cards', async () => {
   // First request: stable system + tools (cacheable), per-request context as a system message.
   const [first, second] = mockCalls;
   expect(first.model).toBe('claude-sonnet-5-5');
-  expect(first.system).toMatch(/ScrapMate Assistant/);
+  expect(first.system).toMatch(/SafaKabad Assistant/);
   expect(first.tools).toHaveLength(10);
   expect(first.cache_control).toEqual({ type: 'ephemeral' });
   expect(first.fallbacks).toBe('default');

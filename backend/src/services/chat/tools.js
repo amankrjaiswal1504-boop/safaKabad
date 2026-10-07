@@ -15,7 +15,7 @@ const TOOL_DEFINITIONS = [
   {
     name: 'get_scrap_rates',
     description:
-      'Look up current indicative scrap buying rates (min-max per unit) from the ScrapMate price list. Always use this before quoting any price. Rates are city-specific.',
+      'Look up current indicative scrap buying rates (min-max per unit) from the SafaKabad price list. Always use this before quoting any price. Rates are city-specific.',
     input_schema: {
       type: 'object',
       properties: {
@@ -64,7 +64,7 @@ const TOOL_DEFINITIONS = [
   },
   {
     name: 'get_service_areas',
-    description: 'List the cities where ScrapMate currently offers doorstep pickup.',
+    description: 'List the cities where SafaKabad currently offers doorstep pickup.',
     input_schema: { type: 'object', properties: {} },
   },
   {
@@ -117,7 +117,7 @@ const TOOL_DEFINITIONS = [
   },
   {
     name: 'get_faq',
-    description: 'Search ScrapMate\'s official FAQ (payments, pickups, pricing, accounts, policies).',
+    description: 'Search SafaKabad\'s official FAQ (payments, pickups, pricing, accounts, policies).',
     input_schema: {
       type: 'object',
       properties: { topic: { type: 'string', description: 'Topic or question keywords, e.g. "payment methods".' } },

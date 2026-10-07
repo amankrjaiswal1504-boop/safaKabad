@@ -19,7 +19,7 @@ initSocket(server);
 
 connectDB().then(() => {
   server.listen(PORT, () => {
-    logger.info(`ScrapMate API listening on http://localhost:${PORT}`);
+    logger.info(`SafaKabad API listening on http://localhost:${PORT}`);
     startJobs();
   });
 });

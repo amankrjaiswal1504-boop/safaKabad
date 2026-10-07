@@ -149,7 +149,7 @@ async function verifyOtpLogin(req, res, next) {
     let user = await User.findOne({ phone, role: { $in: ['customer', 'collector'] } }).select('+tokenVersion');
     let created = false;
     if (!user) {
-      user = new User({ name: name?.trim() || 'ScrapMate customer', phone, phoneVerified: true, role: 'customer' });
+      user = new User({ name: name?.trim() || 'SafaKabad customer', phone, phoneVerified: true, role: 'customer' });
       await applyReferral(user, referralCode);
       await user.save();
       created = true;
@@ -181,7 +181,7 @@ async function forgotPassword(req, res, next) {
       const link = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${token}`;
       await sendEmail({
         to: user.email,
-        subject: 'Reset your ScrapMate password',
+        subject: 'Reset your SafaKabad password',
         text: `Hi ${user.name},\n\nUse this link to set a new password (valid for 30 minutes):\n${link}\n\nIf you didn't ask for this, ignore this email.`,
       });
     }

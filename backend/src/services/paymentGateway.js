@@ -1,10 +1,10 @@
 // Payments for Nepal.
 //
-// Collections (a business paying ScrapMate, e.g. an e-waste disposal quote) use
+// Collections (a business paying SafaKabad, e.g. an e-waste disposal quote) use
 // Khalti ePayment: initiate -> customer pays on Khalti's page -> we verify with
 // the lookup API. Without KHALTI_SECRET_KEY a clearly marked mock is used.
 //
-// Payouts (ScrapMate paying a customer to eSewa / Khalti / bank) have no public
+// Payouts (SafaKabad paying a customer to eSewa / Khalti / bank) have no public
 // self-serve API in Nepal; they need a merchant payout agreement. When
 // PAYOUT_PROVIDER_URL is configured, payouts are POSTed there (adapter for your
 // bank/aggregator). Otherwise:

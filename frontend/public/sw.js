@@ -1,4 +1,4 @@
-/* ScrapMate service worker: app-shell caching, offline rates, push notifications. */
+/* SafaKabad service worker: app-shell caching, offline rates, push notifications. */
 const VERSION = 'sm-v2';
 const SHELL = `${VERSION}-shell`;
 const RUNTIME = `${VERSION}-runtime`;
@@ -71,10 +71,10 @@ self.addEventListener('push', (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: 'ScrapMate', body: event.data?.text() };
+    data = { title: 'SafaKabad', body: event.data?.text() };
   }
   event.waitUntil(
-    self.registration.showNotification(data.title || 'ScrapMate', {
+    self.registration.showNotification(data.title || 'SafaKabad', {
       body: data.body || '',
       icon: '/icon-192.png',
       badge: '/icon-192.png',

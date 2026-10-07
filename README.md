@@ -1,4 +1,4 @@
-# ScrapMate — Doorstep Scrap Collection & Recycling Platform
+# SafaKabad — Doorstep Scrap Collection & Recycling Platform
 
 Customers check live scrap rates, book a free doorstep pickup, verify the collector with a
 door code, watch their scrap being weighed (with photo proof) and get paid instantly by eSewa,
@@ -349,7 +349,7 @@ ADMIN       (admin, or staff with the matching permission)
 
 ## 13. Known limitations
 
-Be upfront about these before treating ScrapMate as production-ready:
+Be upfront about these before treating SafaKabad as production-ready:
 
 - Third-party integrations (Khalti, payout provider, Sparrow SMS/Twilio, WhatsApp Cloud API, Cloudinary,
   Google Geocoding, web push, Anthropic) are implemented against their documented APIs but
