@@ -18,7 +18,7 @@ export default function Logo({ to = '/', light = false }) {
     <Link to={to} className="flex items-center gap-2.5 shrink-0" aria-label="ScrapMate home">
       <LogoMark />
       <span className={`font-head font-bold text-xl tracking-tight ${light ? 'text-white' : 'text-steel-900'}`}>
-        Scrap<span className={light ? 'text-[#D9B66A]' : 'text-rust-600'}>Mate</span>
+        Safa<span className={light ? 'text-[#D9B66A]' : 'text-rust-600'}>Kabad</span>
       </span>
     </Link>
   );
