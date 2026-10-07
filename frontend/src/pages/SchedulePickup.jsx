@@ -2,12 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
-  CalendarPlus,
   Check,
-  CheckCircle2,
   ChevronLeft,
   HandHeart,
-  KeyRound,
   MapPin,
   Minus,
   Plus,
@@ -26,6 +23,7 @@ import { useConfig } from '../context/ConfigContext';
 import { useI18n } from '../i18n/I18nContext';
 import { Badge, Button, Card, Field, Input, Segmented, Skeleton, Textarea, cx } from '../components/ui';
 import AddressForm from '../components/AddressForm';
+import BookingSuccess from '../components/BookingSuccess';
 import SlotPicker from '../components/SlotPicker';
 import PhotoUploader from '../components/PhotoUploader';
 import PhoneOtpForm from '../components/PhoneOtpForm';
@@ -282,50 +280,12 @@ export default function SchedulePickup() {
   // ---------- Success ----------
   if (booked) {
     return (
-      <div className="container-page py-12 max-w-xl text-center">
-        <div className="w-16 h-16 mx-auto rounded-full bg-patina-100 text-patina-700 flex items-center justify-center">
-          <CheckCircle2 className="w-9 h-9" aria-hidden />
-        </div>
-        <h1 className="font-head text-3xl font-bold text-steel-900 mt-5">{t('book.successTitle')}</h1>
-        <p className="text-steel-500 mt-2">{t('book.successSub')}</p>
-        <Card className="mt-8 text-left">
-          <div className="flex justify-between gap-4 text-sm">
-            <span className="text-steel-500">Pickup ID</span>
-            <span className="font-semibold text-steel-900">{booked.pickupId}</span>
-          </div>
-          <div className="flex justify-between gap-4 text-sm mt-2">
-            <span className="text-steel-500">When</span>
-            <span className="font-medium text-steel-900 text-right">
-              {fmtDay(booked.scheduledDate)} · {booked.timeSlot}
-            </span>
-          </div>
-          {booked.type !== 'donation' && (
-            <div className="flex justify-between gap-4 text-sm mt-2">
-              <span className="text-steel-500">Estimate</span>
-              <span className="font-medium text-steel-900">
-                {rupees(booked.estimatedValueMin)} – {rupees(booked.estimatedValueMax)}
-              </span>
-            </div>
-          )}
-          {booked.otp && (
-            <div className="mt-5 rounded-xl bg-rust-50 border border-rust-100 p-4 flex items-center gap-4">
-              <KeyRound className="w-6 h-6 text-rust-600 shrink-0" aria-hidden />
-              <div className="flex-1">
-                <div className="text-xs text-steel-600">{t('track.code')}</div>
-                <div className="font-head text-3xl font-bold tracking-[0.3em] text-steel-900 tabular">{booked.otp}</div>
-              </div>
-            </div>
-          )}
-        </Card>
-        <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-          <Button size="lg" onClick={() => navigate(`/pickups/${booked.pickupId}`)}>
-            {t('book.track')}
-          </Button>
-          <Button size="lg" variant="outline" icon={CalendarPlus} onClick={() => download(`/pickups/${booked.pickupId}/calendar.ics`, `scrapmate-${booked.pickupId}.ics`).catch((e) => toast.error(e.message))}>
-            {t('book.addToCalendar')}
-          </Button>
-        </div>
-      </div>
+      <BookingSuccess
+        booked={booked}
+        t={t}
+        onTrack={() => navigate(`/pickups/${booked.pickupId}`)}
+        onCalendar={() => download(`/pickups/${booked.pickupId}/calendar.ics`, `scrapmate-${booked.pickupId}.ics`).catch((e) => toast.error(e.message))}
+      />
     );
   }
 
