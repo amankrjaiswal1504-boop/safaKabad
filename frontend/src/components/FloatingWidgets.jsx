@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import useChatAssistant from '../hooks/useChatAssistant';
 import ChatPanel from './chat/ChatPanel';
+import AssistantMark from './chat/AssistantMark';
 import { buildWhatsAppLink, buildWhatsAppText, pickupIdFromPath, whatsappNumber } from '../utils/whatsapp';
 
 function Tooltip({ children }) {
@@ -82,17 +83,14 @@ export default function FloatingWidgets() {
             onClick={() => setOpen((o) => !o)}
             aria-label={open ? 'Hide chat assistant' : `Chat with AI assistant${chat.unread ? ' (new reply)' : ''}`}
             aria-expanded={open}
-            className={`${ROUND_BUTTON} bg-rust-600 hover:bg-rust-700 text-white focus-visible:ring-rust-500`}
+            className={`${ROUND_BUTTON} ${open ? 'bg-rust-600 hover:bg-rust-700' : 'bg-transparent shadow-[0_10px_24px_-8px_rgb(8_56_38/0.6)]'} text-white focus-visible:ring-rust-500`}
           >
             {open ? (
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
                 <path d="M6 9l6 6 6-6" />
               </svg>
             ) : (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />
-                <path d="M8.5 11h.01M12 11h.01M15.5 11h.01" strokeWidth="3" strokeLinecap="round" />
-              </svg>
+              <AssistantMark className="w-full h-full" />
             )}
             {chat.unread && !open && (
               <span className="absolute top-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-patina-500 border-2 border-white" aria-hidden />

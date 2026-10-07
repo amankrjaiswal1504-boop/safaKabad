@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import ChatCards from './ChatCards';
+import AssistantMark from './AssistantMark';
 
 const QUICK_REPLIES = [
   { label: 'Check scrap rates', message: 'Check scrap rates' },
@@ -109,9 +110,7 @@ export default function ChatPanel({ chat, user, whatsappHref, whatsappNumber, on
       style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <header className="bg-ink text-white flex items-center gap-3 px-3 py-2.5 shrink-0">
-        <span className="w-9 h-9 bg-rust-600 rounded-lg flex items-center justify-center font-head font-bold shrink-0" aria-hidden>
-          S
-        </span>
+        <AssistantMark className="w-10 h-10 shrink-0 drop-shadow" />
         <div className="flex-1 min-w-0">
           <h2 id="chat-title" className="font-head font-semibold text-sm leading-tight">
             ScrapMate Assistant
