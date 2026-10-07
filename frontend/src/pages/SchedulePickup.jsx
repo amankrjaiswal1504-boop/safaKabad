@@ -63,16 +63,16 @@ function EstimateCard({ donation, estimate, items, bonus, t }) {
     <div
       className={cx(
         'relative overflow-hidden rounded-3xl text-white shadow-lift ring-1 ring-white/10',
-        donation ? 'bg-gradient-to-br from-[#4a1d3a] via-[#2a1424] to-[#1b0f19]' : 'bg-gradient-to-br from-[#11523c] via-[#0c2f25] to-[#08201a]'
+        donation ? 'bg-gradient-to-br from-[#db2777] via-[#be185d] to-[#9d174d]' : 'bg-gradient-to-br from-[#22a35a] via-[#168045] to-[#0f5f35]'
       )}
       aria-live="polite"
     >
       <span className={cx('absolute -top-16 -right-12 w-48 h-48 rounded-full blur-3xl anim-blob', donation ? 'bg-pink-400/30' : 'bg-emerald-400/30')} aria-hidden />
-      <span className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-yellow-400/20 blur-3xl anim-blob [animation-delay:-6s]" aria-hidden />
+      <span className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-yellow-300/30 blur-3xl anim-blob [animation-delay:-6s]" aria-hidden />
 
       <div className="relative p-6">
         <div className="flex items-start justify-between gap-3">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#E9CF8E]">{donation ? 'Your donation' : t('est.youGet')}</div>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#FEF3C7]">{donation ? 'Your donation' : t('est.youGet')}</div>
           <div className="[perspective:400px]" aria-hidden>
             <div
               className={cx(
@@ -92,7 +92,7 @@ function EstimateCard({ donation, estimate, items, bonus, t }) {
           </>
         ) : estimate ? (
           <div className="mt-2">
-            <div className="font-head text-[2rem] leading-tight font-bold tabular bg-gradient-to-r from-[#F6E3A8] via-[#EBC66E] to-[#F6E3A8] bg-clip-text text-transparent">
+            <div className="font-head text-[2rem] leading-tight font-bold tabular text-white drop-shadow-[0_2px_6px_rgb(0_0_0/0.18)]">
               <span className="whitespace-nowrap">{rupees(min)}</span> <span className="text-white/40">–</span> <span className="whitespace-nowrap">{rupees(max)}</span>
             </div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs">

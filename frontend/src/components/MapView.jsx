@@ -6,7 +6,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useConfig } from '../context/ConfigContext';
 
-const COLORS = { rust: '#0F6247', patina: '#4D8A45', blue: '#2F6DB5', steel: '#4F5955', amber: '#A0701A' };
+const COLORS = { rust: '#168045', patina: '#16A34A', blue: '#2F6DB5', steel: '#4F5955', amber: '#A0701A' };
 
 export function pinIcon(color = 'rust', label = '') {
   const c = COLORS[color] || color;

@@ -57,8 +57,8 @@ export default function TruckCta({ to = '/schedule-pickup', label, goingLabel = 
       aria-label={label}
       className={cx(
         'truck-cta group relative inline-flex items-center gap-3 overflow-hidden rounded-full pl-3 pr-6 py-2.5 text-base font-semibold text-white',
-        'bg-gradient-to-r from-[#11523c] via-[#0f6247] to-[#1f8a63] ring-1 ring-[#D9B66A]/50 shadow-[0_10px_30px_-10px_rgb(15_98_71/0.8)]',
-        'transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-12px_rgb(15_98_71/0.9)] hover:ring-[#D9B66A]',
+        'bg-gradient-to-r from-[#22a35a] via-[#168045] to-[#116637] ring-1 ring-[#D9B66A]/60 shadow-[0_10px_30px_-10px_rgb(22_128_69/0.7)]',
+        'transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-12px_rgb(22_128_69/0.85)] hover:ring-[#D9B66A]',
         driving && 'is-driving',
         className
       )}

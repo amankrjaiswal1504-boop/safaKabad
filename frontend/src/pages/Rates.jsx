@@ -211,29 +211,29 @@ export default function Rates() {
   return (
     <div>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-ink text-white">
-        <div className="absolute -top-24 -left-16 w-80 h-80 rounded-full bg-emerald-500/30 blur-3xl anim-blob" aria-hidden />
-        <div className="absolute -bottom-32 right-0 w-96 h-96 rounded-full bg-orange-500/20 blur-3xl anim-blob [animation-delay:-5s]" aria-hidden />
-        <div className="absolute top-10 right-1/3 w-56 h-56 rounded-full bg-sky-500/20 blur-3xl anim-blob [animation-delay:-9s]" aria-hidden />
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#E9FBEF] via-[#F4FDF7] to-steel-50 dark:from-steel-50 dark:via-steel-50 dark:to-steel-50 text-steel-900">
+        <div className="absolute -top-24 -left-16 w-96 h-96 rounded-full bg-[#86EFAC]/50 dark:bg-rust-500/15 blur-3xl anim-blob pointer-events-none" aria-hidden />
+        <div className="absolute -bottom-32 right-0 w-96 h-96 rounded-full bg-[#FDE68A]/50 dark:bg-amber-600/10 blur-3xl anim-blob [animation-delay:-5s] pointer-events-none" aria-hidden />
+        <div className="absolute top-10 right-1/3 w-56 h-56 rounded-full bg-[#BAE6FD]/40 dark:bg-transparent blur-3xl anim-blob [animation-delay:-9s] pointer-events-none" aria-hidden />
         <div className="container-page relative py-12 sm:py-16 grid lg:grid-cols-[1fr_auto] gap-10 items-center">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3 py-1 text-xs font-semibold tracking-wide">
+            <span className="inline-flex items-center gap-2 rounded-full bg-surface/80 border border-rust-200 shadow-card px-3 py-1 text-xs font-semibold tracking-wide text-rust-700">
               <span className="relative flex w-2 h-2">
-                <span className="absolute inset-0 rounded-full bg-emerald-400 anim-ping" />
-                <span className="relative w-2 h-2 rounded-full bg-emerald-400" />
+                <span className="absolute inset-0 rounded-full bg-patina-500 anim-ping" />
+                <span className="relative w-2 h-2 rounded-full bg-patina-500" />
               </span>
               LIVE RATES · {city.toUpperCase()}
             </span>
             <h1 className="font-head text-4xl sm:text-5xl font-bold mt-4 leading-tight">
               {t('rates.title')}
-              <span className="block text-gradient-energy">Turn scrap into cash.</span>
+              <span className="block text-gradient-growth">Turn scrap into cash.</span>
             </h1>
-            <p className="text-[#C7D2CD] mt-3 max-w-xl">{t('rates.subtitle', { city })}</p>
+            <p className="text-steel-600 mt-3 max-w-xl">{t('rates.subtitle', { city })}</p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link to="/schedule-pickup" className="btn bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 shadow-lg shadow-emerald-500/30 hover:scale-105 active:scale-95">
+              <Link to="/schedule-pickup" className="btn bg-gradient-to-r from-green-600 to-emerald-700 text-white px-6 py-3 shadow-lg shadow-green-600/30 hover:scale-105 active:scale-95">
                 <Truck className="w-4 h-4" aria-hidden /> {t('home.ctaBook')}
               </Link>
-              <div className="rounded-full bg-surface shadow-lg px-1.5 [&>label]:rounded-full">
+              <div className="rounded-full bg-surface border border-steel-200 shadow-card px-1.5 [&>label]:rounded-full">
                 <CitySelect />
               </div>
             </div>
@@ -283,7 +283,7 @@ export default function Rates() {
         <RatesTable city={city} category={category} search={q} />
 
         {/* CTA */}
-        <div className="relative overflow-hidden mt-14 rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-700 to-ink text-white p-7 sm:p-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+        <div className="relative overflow-hidden mt-14 rounded-3xl bg-gradient-to-br from-green-600 via-emerald-600 to-teal-700 text-white p-7 sm:p-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="absolute -right-10 -bottom-16 w-64 h-64 rounded-full bg-yellow-300/20 blur-2xl anim-blob" aria-hidden />
           <Truck className="absolute right-8 top-6 w-24 h-24 text-white/10 -rotate-12 anim-float hidden sm:block" aria-hidden />
           <div className="relative">
@@ -301,13 +301,13 @@ export default function Rates() {
 
 function HeroStat({ icon: Icon, label, value, tone, style }) {
   return (
-    <div className="anim-float rounded-2xl bg-white/[0.07] border border-white/15 backdrop-blur p-3 sm:p-4 flex items-center gap-3 shadow-xl" style={style}>
+    <div className="anim-float rounded-2xl bg-surface/90 border border-steel-200/70 backdrop-blur p-3 sm:p-4 flex items-center gap-3 shadow-lift" style={style}>
       <span className={cx('hidden sm:flex shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br items-center justify-center text-white shadow-lg', tone)}>
         <Icon className="w-5 h-5" aria-hidden />
       </span>
       <div className="min-w-0">
-        <div className="font-head text-base sm:text-lg font-bold tabular truncate">{value}</div>
-        <div className="text-[11px] text-white/60 truncate">{label}</div>
+        <div className="font-head text-base sm:text-lg font-bold text-steel-900 tabular truncate">{value}</div>
+        <div className="text-[11px] text-steel-500 truncate">{label}</div>
       </div>
     </div>
   );

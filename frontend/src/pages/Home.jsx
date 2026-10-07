@@ -115,11 +115,11 @@ function StatsBand() {
     { v: data ? (data.rating ? `${data.rating}/5` : 'New') : null, l: t('home.statRating') },
   ];
   return (
-    <dl className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-white/10 rounded-2xl overflow-hidden mt-12 ring-1 ring-white/10">
-      {items.map((s) => (
-        <div key={s.l} className="bg-ink/95 px-5 py-5">
-          <dd className="font-display text-3xl sm:text-4xl text-white tabular">{s.v ?? <span className="inline-block w-16 h-7 rounded bg-white/10 animate-pulse2" />}</dd>
-          <dt className="text-xs sm:text-sm text-[#A3B3AC] mt-0.5">{s.l}</dt>
+    <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-12">
+      {items.map((s, i) => (
+        <div key={s.l} className="anim-rise rounded-2xl bg-surface/90 backdrop-blur border border-steel-200/70 shadow-card px-5 py-5 hover:-translate-y-1 hover:shadow-lift transition-all" style={{ animationDelay: `${i * 80}ms` }}>
+          <dd className="font-display text-3xl sm:text-4xl text-rust-600 tabular">{s.v ?? <span className="inline-block w-16 h-7 rounded bg-steel-100 animate-pulse2" />}</dd>
+          <dt className="text-xs sm:text-sm text-steel-500 mt-0.5">{s.l}</dt>
         </div>
       ))}
     </dl>
@@ -160,42 +160,41 @@ export default function Home() {
   return (
     <div>
       {/* Hero */}
-      <section className="bg-ink text-white relative overflow-hidden">
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage:
-              'radial-gradient(60rem 30rem at 85% -10%, rgb(34 150 108 / 0.28), transparent 60%), radial-gradient(40rem 24rem at -10% 110%, rgb(217 182 106 / 0.14), transparent 60%)',
-          }}
-          aria-hidden
-        />
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#D9B66A]/40 to-transparent" aria-hidden />
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#E9FBEF] via-[#F4FDF7] to-steel-50 dark:from-steel-50 dark:via-steel-50 dark:to-steel-50 text-steel-900">
+        <div className="absolute -top-32 right-[-6rem] w-[38rem] h-[38rem] rounded-full bg-[#86EFAC]/45 dark:bg-rust-500/15 blur-3xl anim-blob pointer-events-none" aria-hidden />
+        <div className="absolute -bottom-40 -left-24 w-[30rem] h-[30rem] rounded-full bg-[#FDE68A]/45 dark:bg-amber-600/10 blur-3xl anim-blob [animation-delay:-6s] pointer-events-none" aria-hidden />
+        <div className="absolute top-1/3 left-1/3 w-72 h-72 rounded-full bg-[#BAE6FD]/35 dark:bg-transparent blur-3xl anim-blob [animation-delay:-10s] pointer-events-none" aria-hidden />
         <div className="container-page relative py-12 sm:py-16 lg:py-20">
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] gap-10 items-center">
             <div>
               {serviceAreas.length > 0 && (
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#D9B66A]/30 bg-white/[0.04] px-3.5 py-1 text-xs font-medium tracking-wide text-[#E9D9B4]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#7FD3A8]" aria-hidden /> {t('home.badge', { count: serviceAreas.length })}
+                <span className="inline-flex items-center gap-2 rounded-full border border-rust-200 bg-surface/80 shadow-card px-3.5 py-1 text-xs font-semibold tracking-wide text-rust-700">
+                  <span className="relative flex w-2 h-2" aria-hidden>
+                    <span className="absolute inset-0 rounded-full bg-patina-500 anim-ping" />
+                    <span className="relative w-2 h-2 rounded-full bg-patina-500" />
+                  </span> {t('home.badge', { count: serviceAreas.length })}
                 </span>
               )}
               <h1 className="font-head text-[2.3rem] sm:text-5xl lg:text-[3.6rem] font-bold leading-[1.05] mt-5 tracking-tight">
                 {lang === 'en' && home.heroTitle ? home.heroTitle : t('home.title')}
               </h1>
-              <p className="mt-4 text-[#C7D2CD] text-base sm:text-lg max-w-xl">{lang === 'en' && home.heroSubtitle ? home.heroSubtitle : t('home.subtitle')}</p>
+              <p className="mt-4 text-steel-600 text-base sm:text-lg max-w-xl">{lang === 'en' && home.heroSubtitle ? home.heroSubtitle : t('home.subtitle')}</p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <TruckCta label={t('home.ctaBook')} goingLabel={t('home.onTheWay')} />
-                <Link to="/rates" className="btn border border-white/20 text-white !px-6 !py-3 text-base hover:bg-white/10 hover:border-white/40">
+                <Link to="/rates" className="btn border border-steel-300 bg-surface/80 text-steel-900 !px-6 !py-3 text-base hover:border-rust-500 hover:text-rust-700">
                   {t('home.ctaRates')}
                 </Link>
               </div>
               <ul className="mt-7 grid grid-cols-2 gap-x-4 gap-y-2.5 max-w-lg">
                 {trust.map((x) => (
-                  <li key={x.text} className="flex items-center gap-2 text-sm text-[#DDE5E1]">
-                    <x.icon className="w-4 h-4 text-[#D9B66A] shrink-0" aria-hidden /> {x.text}
+                  <li key={x.text} className="flex items-center gap-2 text-sm text-steel-700">
+                    <span className="w-6 h-6 rounded-full bg-patina-100 text-patina-700 flex items-center justify-center shrink-0" aria-hidden>
+                      <x.icon className="w-3.5 h-3.5" />
+                    </span> {x.text}
                   </li>
                 ))}
               </ul>
-              <AndroidAppButton className="mt-7" />
+              <AndroidAppButton className="mt-7" tone="light" />
             </div>
             <HeroVisual />
           </div>

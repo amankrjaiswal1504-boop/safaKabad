@@ -3,14 +3,14 @@
 @tailwind utilities;
 
 /* ---------- Design tokens (R G B triplets) ----------
-   Palette: deep emerald brand ("rust" token name kept for compatibility),
-   warm ivory neutrals ("steel"), sage success ("patina"), brass-gold accent
-   ("amber"), and a near-black green ink band for hero/footer. */
+   Palette: fresh growth-green brand ("rust" token name kept for compatibility),
+   clean mint-white neutrals ("steel"), bright success green ("patina"),
+   gold accent ("amber"), and a rich forest-green band for footer/banners. */
 :root {
   color-scheme: light;
-  --steel-50: 248 247 243;
-  --steel-100: 238 236 229;
-  --steel-200: 225 222 213;
+  --steel-50: 246 250 247;
+  --steel-100: 234 241 236;
+  --steel-200: 219 229 222;
   --steel-300: 200 201 195;
   --steel-400: 146 153 149;
   --steel-500: 103 112 108;
@@ -20,21 +20,21 @@
   --steel-900: 23 31 28;
   --steel-950: 13 20 17;
 
-  --rust-50: 236 245 240;
-  --rust-100: 211 232 221;
-  --rust-200: 167 207 186;
-  --rust-500: 22 122 88;
-  --rust-600: 15 98 71;
-  --rust-700: 11 78 57;
-  --rust-800: 8 60 44;
+  --rust-50: 237 250 242;
+  --rust-100: 211 243 223;
+  --rust-200: 160 225 186;
+  --rust-500: 31 157 85;
+  --rust-600: 22 128 69;
+  --rust-700: 17 102 55;
+  --rust-800: 13 77 42;
 
-  --patina-50: 240 246 238;
-  --patina-100: 222 235 218;
-  --patina-200: 192 214 186;
-  --patina-500: 88 135 80;
-  --patina-600: 66 112 59;
-  --patina-700: 50 90 45;
-  --patina-800: 38 70 35;
+  --patina-50: 240 253 244;
+  --patina-100: 220 252 231;
+  --patina-200: 187 247 208;
+  --patina-500: 34 197 94;
+  --patina-600: 22 163 74;
+  --patina-700: 21 128 61;
+  --patina-800: 22 101 52;
 
   --amber-50: 251 246 234;
   --amber-100: 244 232 203;
@@ -47,15 +47,15 @@
   --danger-700: 155 33 29;
 
   --surface: 255 255 255;
-  --surface-2: 251 250 247;
-  --ink: 14 31 26;
-  --ink-2: 22 44 37;
+  --surface-2: 249 252 250;
+  --ink: 12 74 48;
+  --ink-2: 18 96 62;
 
   /* Chart palette: emerald + brass differ in both hue and lightness (CVD-safe),
      each >= 3:1 on the surface. */
-  --viz-1: 15 98 71;
+  --viz-1: 22 128 69;
   --viz-2: 176 128 40;
-  --viz-grid: 229 226 217;
+  --viz-grid: 222 231 225;
 }
 
 .dark {
@@ -286,6 +286,16 @@ h2.font-head[class*='text-3xl'],
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+/* Growth gradient for headlines on light backgrounds (green -> gold). */
+.text-gradient-growth {
+  background: linear-gradient(100deg, #15803d 0%, #16a34a 45%, #ca8a04 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.dark .text-gradient-growth {
+  background-image: linear-gradient(100deg, #4ade80 0%, #86efac 45%, #fbbf24 100%);
 }
 @media (prefers-reduced-motion: reduce) {
   .confetti-piece { display: none; }

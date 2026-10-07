@@ -19,7 +19,7 @@ function drawCard(canvas, { name, kg, co2, trees, tier }) {
   g.addColorStop(1, '#325A2D');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = '#0F6247';
+  ctx.fillStyle = '#168045';
   ctx.beginPath();
   ctx.roundRect(80, 80, 90, 90, 22);
   ctx.fill();

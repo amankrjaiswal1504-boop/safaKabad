@@ -9,9 +9,9 @@ export default function AssistantMark({ className = 'w-10 h-10' }) {
     <svg viewBox="0 0 48 48" className={className} aria-hidden>
       <defs>
         <radialGradient id={`${id}-g`} cx="35%" cy="28%" r="80%">
-          <stop offset="0" stopColor="#1F8A63" />
-          <stop offset="0.55" stopColor="#0F6247" />
-          <stop offset="1" stopColor="#083826" />
+          <stop offset="0" stopColor="#2BB868" />
+          <stop offset="0.55" stopColor="#168045" />
+          <stop offset="1" stopColor="#0D5A31" />
         </radialGradient>
         <linearGradient id={`${id}-b`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#F6E3A8" />
