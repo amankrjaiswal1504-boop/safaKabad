@@ -1,8 +1,9 @@
 // Public, unauthenticated helpers: site config, serviceability, slots, address
 // search, testimonials, FAQs, NGOs, leaderboard, SEO (sitemap, city pages).
-const { Review, Ngo } = require('../models/platform');
+const { Review, Ngo, CallRequest } = require('../models/platform');
 const Faq = require('../models/Faq');
 const settings = require('../services/settingsService');
+const { notifyAdmins } = require('../services/notificationService');
 const { checkPin, checkArea, listAreas, listCities, defaultCity, findCity } = require('../services/cityService');
 const { PROVINCES } = require('../config/locale');
 const { getAvailability, todayLocal, addDays } = require('../services/slotService');
@@ -223,6 +224,61 @@ async function sitemap(req, res, next) {
   }
 }
 
+// Handle incoming call / callback requests from website visitors
+async function createCallRequest(req, res, next) {
+  try {
+    const { phone, name, city, note } = req.body || {};
+    if (!phone || !String(phone).trim()) {
+      return res.status(400).json({ success: false, message: 'Phone number is required' });
+    }
+    const cleanPhone = String(phone).replace(/[^\d+]/g, '');
+    if (cleanPhone.length < 7 || cleanPhone.length > 15) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid phone number' });
+    }
+    const callId = `CALL-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const callRequest = await CallRequest.create({
+      callId,
+      phone: cleanPhone,
+      name: String(name || '').trim().slice(0, 80),
+      city: String(city || '').trim().slice(0, 60),
+      note: String(note || '').trim().slice(0, 300),
+      user: req.user?._id || null,
+      source: 'hero_cta',
+      status: 'pending',
+    });
+
+    try {
+      await notifyAdmins({
+        type: 'call_request',
+        title: 'New Callback Request',
+        body: `Call request from ${cleanPhone}${name ? ` (${name})` : ''} in ${city || 'unknown'}`,
+        link: '/admin/support',
+      });
+    } catch {}
+
+    res.status(201).json({
+      success: true,
+      message: 'Call request received. Our team will call you shortly!',
+      data: callRequest,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Track call button clicks
+async function trackCallClick(req, res) {
+  try {
+    const { city } = req.body || {};
+    await track('call_click', {
+      user: req.user?._id,
+      path: '/',
+      city: city || undefined,
+    });
+  } catch {}
+  res.status(204).end();
+}
+
 module.exports = {
   config,
   serviceability,
@@ -238,4 +294,6 @@ module.exports = {
   cityPage,
   sitemap,
   slugify,
+  createCallRequest,
+  trackCallClick,
 };

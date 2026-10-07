@@ -6,12 +6,12 @@ const { TIME_SLOTS } = require('../config/constants');
 const DEFAULTS = {
   support: {
     whatsappNumber: (process.env.SUPPORT_WHATSAPP_NUMBER || '').replace(/\D/g, ''),
+    phone: (process.env.SUPPORT_PHONE_NUMBER || process.env.SUPPORT_WHATSAPP_NUMBER || '9801234567').replace(/[^\d+]/g, ''),
     hoursStart: Number(process.env.SUPPORT_HOURS_START ?? 9),
     hoursEnd: Number(process.env.SUPPORT_HOURS_END ?? 20),
     timezone: process.env.SUPPORT_TIMEZONE || 'Asia/Kathmandu',
     replyMinutes: Number(process.env.SUPPORT_REPLY_MINUTES || 10),
     email: 'support@scrapmate.dev',
-    phone: '',
   },
   home: {
     heroTitle: 'Sell your scrap at the best price, right from your doorstep',
@@ -86,11 +86,16 @@ function merge(base, override) {
 
 async function getAll() {
   if (cache && Date.now() - cacheAt < TTL_MS) return cache;
-  const docs = await Setting.find({}).lean();
-  const stored = Object.fromEntries(docs.map((d) => [d.key, d.value]));
-  cache = Object.fromEntries(Object.entries(DEFAULTS).map(([k, v]) => [k, merge(v, stored[k])]));
+  try {
+    const docs = await Setting.find({}).lean();
+    const stored = Object.fromEntries(docs.map((d) => [d.key, d.value]));
+    cache = Object.fromEntries(Object.entries(DEFAULTS).map(([k, v]) => [k, merge(v, stored[k])]));
+  } catch {
+    cache = Object.fromEntries(Object.entries(DEFAULTS).map(([k, v]) => [k, { ...v }]));
+  }
   // Env number wins only if the admin hasn't set one.
   if (!cache.support.whatsappNumber) cache.support.whatsappNumber = DEFAULTS.support.whatsappNumber;
+  if (!cache.support.phone) cache.support.phone = DEFAULTS.support.phone;
   cacheAt = Date.now();
   return cache;
 }

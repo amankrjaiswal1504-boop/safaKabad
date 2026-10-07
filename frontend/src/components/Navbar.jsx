@@ -146,10 +146,16 @@ export function UserMenu() {
   return (
     <Dropdown
       button={({ toggle, open }) => (
-        <button type="button" onClick={toggle} aria-expanded={open} className="flex items-center gap-2 rounded-lg pl-1 pr-2 py-1 hover:bg-steel-100" aria-label="Account menu">
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={open}
+          className="flex items-center gap-1.5 sm:gap-2 rounded-lg pl-1 pr-1.5 sm:pr-2 py-1 hover:bg-steel-100 focus:outline-none"
+          aria-label="Account menu"
+        >
           <Avatar name={user.name} size="sm" />
           <span className="hidden lg:block text-sm font-medium text-steel-900 max-w-[8rem] truncate">{user.name.split(' ')[0]}</span>
-          <ChevronDown className="w-4 h-4 text-steel-500" aria-hidden />
+          <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-steel-500" aria-hidden />
         </button>
       )}
     >
@@ -160,8 +166,16 @@ export function UserMenu() {
       <Link data-close to={homePathFor(user)} className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-steel-50">
         <LayoutDashboard className="w-4 h-4 text-steel-500" aria-hidden /> {t('nav.dashboard')}
       </Link>
-      {user.role === 'customer' && (
+      {user.role === 'customer' ? (
         <Link data-close to="/profile" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-steel-50">
+          <User className="w-4 h-4 text-steel-500" aria-hidden /> {t('dash.profile')}
+        </Link>
+      ) : user.role === 'collector' ? (
+        <Link data-close to="/collector/settings" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-steel-50">
+          <User className="w-4 h-4 text-steel-500" aria-hidden /> {t('dash.profile')}
+        </Link>
+      ) : (
+        <Link data-close to="/admin/settings" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-steel-50">
           <User className="w-4 h-4 text-steel-500" aria-hidden /> {t('dash.profile')}
         </Link>
       )}
@@ -180,10 +194,11 @@ export function UserMenu() {
 }
 
 export default function Navbar() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   useEffect(() => setOpen(false), [location.pathname]);
 
   const links = [
@@ -214,12 +229,14 @@ export default function Navbar() {
           </div>
           {user && <NotificationBell />}
           {user ? (
-            <div className="hidden md:block">
-              <UserMenu />
-            </div>
+            <UserMenu />
           ) : (
-            <Link to="/login" className="hidden md:inline-flex btn-ghost text-sm">
-              {t('nav.login')}
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-steel-700 hover:text-steel-900 hover:bg-steel-100 transition-colors"
+            >
+              <User className="w-4 h-4 text-steel-600" aria-hidden />
+              <span>{t('nav.login')}</span>
             </Link>
           )}
           {(!user || user.role === 'customer') && (
@@ -235,8 +252,8 @@ export default function Navbar() {
 
       {open && (
         <div className="lg:hidden border-t border-steel-100 bg-surface animate-fade-up">
-          <div className="container-page py-4 space-y-1">
-            <div className="flex items-center justify-between pb-3 mb-2 border-b border-steel-100">
+          <div className="container-page py-4 space-y-2">
+            <div className="flex items-center justify-between pb-3 mb-1 border-b border-steel-100">
               <CitySelect compact />
               <div className="flex items-center gap-1">
                 <PreferenceButtons />
@@ -247,22 +264,50 @@ export default function Navbar() {
                 {l.label}
               </NavLink>
             ))}
-            <div className="pt-3 mt-2 border-t border-steel-100 flex gap-2">
-              {user ? (
-                <Link to={homePathFor(user)} className="btn-outline flex-1 text-sm">
-                  {t('nav.dashboard')}
+            {user ? (
+              <div className="pt-3 mt-2 border-t border-steel-100 space-y-2.5">
+                <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-steel-50">
+                  <Avatar name={user.name} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold text-steel-900 truncate">{user.name}</div>
+                    <div className="text-xs text-steel-500 truncate">{user.email || user.phone}</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link to={homePathFor(user)} className="btn-outline text-sm text-center py-2 flex items-center justify-center gap-1.5">
+                    <LayoutDashboard className="w-4 h-4 text-steel-500" aria-hidden />
+                    {t('nav.dashboard')}
+                  </Link>
+                  <Link
+                    to={user.role === 'customer' ? '/profile' : user.role === 'collector' ? '/collector/settings' : '/admin/settings'}
+                    className="btn-outline text-sm text-center py-2 flex items-center justify-center gap-1.5"
+                  >
+                    <User className="w-4 h-4 text-steel-500" aria-hidden />
+                    {t('dash.profile')}
+                  </Link>
+                </div>
+                <button
+                  type="button"
+                  className="w-full btn-ghost text-sm text-danger-600 hover:bg-danger-50 flex items-center justify-center gap-2 py-2"
+                  onClick={async () => {
+                    await logout();
+                    navigate('/');
+                  }}
+                >
+                  <LogOut className="w-4 h-4" aria-hidden />
+                  {t('nav.logout')}
+                </button>
+              </div>
+            ) : (
+              <div className="pt-3 mt-2 border-t border-steel-100 flex gap-2">
+                <Link to="/login" className="btn-outline flex-1 text-sm text-center">
+                  {t('nav.login')}
                 </Link>
-              ) : (
-                <>
-                  <Link to="/login" className="btn-outline flex-1 text-sm">
-                    {t('nav.login')}
-                  </Link>
-                  <Link to="/register" className="btn-secondary flex-1 text-sm">
-                    {t('nav.signup')}
-                  </Link>
-                </>
-              )}
-            </div>
+                <Link to="/register" className="btn-secondary flex-1 text-sm text-center">
+                  {t('nav.signup')}
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}

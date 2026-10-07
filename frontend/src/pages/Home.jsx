@@ -20,6 +20,7 @@ import { useConfig } from '../context/ConfigContext';
 import { useI18n } from '../i18n/I18nContext';
 import Estimator from '../components/Estimator';
 import TruckCta from '../components/TruckCta';
+import CallCta from '../components/CallCta';
 import AndroidAppButton from '../components/AndroidAppButton';
 import CategoryIcon from '../components/CategoryIcon';
 import { Skeleton, Stars } from '../components/ui';
@@ -181,9 +182,7 @@ export default function Home() {
               <p className="mt-4 text-steel-600 text-base sm:text-lg max-w-xl">{lang === 'en' && home.heroSubtitle ? home.heroSubtitle : t('home.subtitle')}</p>
               <div className="mt-7 flex flex-col sm:flex-row sm:flex-wrap gap-3 [&>a]:justify-center">
                 <TruckCta label={t('home.ctaBook')} goingLabel={t('home.onTheWay')} />
-                <Link to="/rates" className="btn border border-steel-300 bg-surface/80 text-steel-900 !px-6 !py-3 text-base hover:border-rust-500 hover:text-rust-700">
-                  {t('home.ctaRates')}
-                </Link>
+                <CallCta />
               </div>
               <ul className="mt-7 grid grid-cols-2 gap-x-4 gap-y-2.5 max-w-lg">
                 {trust.map((x) => (

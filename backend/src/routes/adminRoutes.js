@@ -280,6 +280,8 @@ router.get('/support/conversations/:id', can('support'), support.getConversation
 router.put('/support/conversations/:id/resolve', can('support'), support.resolveConversation);
 router.get('/support/tickets', can('support'), support.listTickets);
 router.put('/support/tickets/:ticketId', can('support'), support.updateTicket);
+router.get('/support/calls', can('support'), support.listCallRequests);
+router.put('/support/calls/:id', can('support'), support.updateCallRequest);
 router.get('/support/analytics', can('support', 'analytics'), support.chatAnalytics);
 router.get('/faqs', can('support'), support.listFaqs);
 router.post('/faqs', can('support'), validate(z.object({ question: z.string().trim().min(5).max(300), answer: z.string().trim().min(5).max(2000), topic: z.string().trim().min(2).max(40), keywords: z.any().optional(), language: z.enum(['en', 'ne']).optional(), order: z.coerce.number().optional(), isActive: z.boolean().optional() })), support.createFaq);

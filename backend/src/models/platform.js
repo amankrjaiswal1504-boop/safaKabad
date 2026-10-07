@@ -251,7 +251,7 @@ const ngoSchema = new mongoose.Schema(
 // ---------- Funnel analytics events ----------
 const analyticsEventSchema = new mongoose.Schema(
   {
-    type: { type: String, enum: ['visit', 'estimate', 'booking_started', 'booking', 'completed'], required: true, index: true },
+    type: { type: String, enum: ['visit', 'estimate', 'booking_started', 'booking', 'completed', 'call_click'], required: true, index: true },
     sessionId: String,
     user: { type: ObjectId, ref: 'User' },
     path: String,
@@ -273,6 +273,24 @@ const blocklistSchema = new mongoose.Schema(
 );
 blocklistSchema.index({ type: 1, value: 1 }, { unique: true });
 
+// ---------- Call / Callback requests ----------
+const callRequestSchema = new mongoose.Schema(
+  {
+    callId: { type: String, required: true, unique: true },
+    phone: { type: String, required: true, trim: true },
+    name: { type: String, default: '', trim: true },
+    city: { type: String, default: '', trim: true },
+    note: { type: String, default: '', trim: true },
+    user: { type: ObjectId, ref: 'User', default: null, index: true },
+    source: { type: String, default: 'hero_cta' },
+    status: { type: String, enum: ['pending', 'called', 'resolved', 'cancelled'], default: 'pending', index: true },
+    adminNote: { type: String, default: '' },
+    resolvedBy: { type: ObjectId, ref: 'User', default: null },
+    resolvedAt: Date,
+  },
+  { timestamps: true }
+);
+
 module.exports = {
   Setting: mongoose.model('Setting', settingSchema),
   AuditLog: mongoose.model('AuditLog', auditLogSchema),
@@ -292,4 +310,5 @@ module.exports = {
   Ngo: mongoose.model('Ngo', ngoSchema),
   AnalyticsEvent: mongoose.model('AnalyticsEvent', analyticsEventSchema),
   Blocklist: mongoose.model('Blocklist', blocklistSchema),
+  CallRequest: mongoose.model('CallRequest', callRequestSchema),
 };

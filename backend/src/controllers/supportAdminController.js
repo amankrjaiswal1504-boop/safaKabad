@@ -3,6 +3,7 @@ const ChatSession = require('../models/ChatSession');
 const ChatMessage = require('../models/ChatMessage');
 const SupportTicket = require('../models/SupportTicket');
 const Faq = require('../models/Faq');
+const { CallRequest } = require('../models/platform');
 
 function paging(req) {
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
@@ -237,6 +238,52 @@ async function deleteFaq(req, res, next) {
   }
 }
 
+// ---------- call requests ----------
+
+async function listCallRequests(req, res, next) {
+  try {
+    const { page, limit, skip } = paging(req);
+    const filter = {};
+    if (req.query.status) filter.status = req.query.status;
+    const [calls, total] = await Promise.all([
+      CallRequest.find(filter)
+        .populate('user', 'name email phone')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      CallRequest.countDocuments(filter),
+    ]);
+    res.json({
+      success: true,
+      data: {
+        calls,
+        pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function updateCallRequest(req, res, next) {
+  try {
+    const { status, adminNote } = req.body || {};
+    const update = {};
+    if (status) update.status = status;
+    if (adminNote !== undefined) update.adminNote = adminNote;
+    if (status === 'resolved' || status === 'called') {
+      update.resolvedBy = req.user._id;
+      update.resolvedAt = new Date();
+    }
+    const call = await CallRequest.findByIdAndUpdate(req.params.id, { $set: update }, { new: true });
+    if (!call) return res.status(404).json({ success: false, message: 'Call request not found' });
+    res.json({ success: true, data: call });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   listConversations,
   getConversation,
@@ -248,4 +295,6 @@ module.exports = {
   createFaq,
   updateFaq,
   deleteFaq,
+  listCallRequests,
+  updateCallRequest,
 };

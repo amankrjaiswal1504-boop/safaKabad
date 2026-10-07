@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
-import { BookOpen, CheckCircle2, LifeBuoy, MessagesSquare, Pencil, Plus, Trash2 } from 'lucide-react';
+import { BookOpen, CheckCircle2, LifeBuoy, MessagesSquare, Pencil, Phone, Plus, Trash2 } from 'lucide-react';
 import api from '../../services/api';
 import useApi from '../../hooks/useApi';
 import { fmtDateTime, timeAgo } from '../../utils/format';
@@ -12,6 +12,7 @@ import { Async, ConfirmModal, useAction, Modal } from './_catalog/shared';
 const TABS = [
   { value: 'conversations', label: 'Conversations' },
   { value: 'tickets', label: 'Tickets' },
+  { value: 'calls', label: 'Call requests' },
   { value: 'analytics', label: 'Analytics' },
   { value: 'faqs', label: 'FAQs' },
 ];
@@ -59,6 +60,7 @@ export default function AdminSupport() {
       <Tabs className="mb-6" tabs={TABS} value={tab} onChange={setTab} />
       {tab === 'conversations' && <Conversations />}
       {tab === 'tickets' && <Tickets />}
+      {tab === 'calls' && <CallRequests />}
       {tab === 'analytics' && <Analytics />}
       {tab === 'faqs' && <Faqs />}
     </div>
@@ -298,6 +300,94 @@ function Tickets() {
           empty={<EmptyState icon={LifeBuoy} title="No tickets" description="Escalations from the chat assistant create tickets here." />}
         />
       )}
+      <Pagination pagination={res.data?.pagination} onPage={setPage} />
+    </>
+  );
+}
+
+// ---------------- Call Requests ----------------
+function CallRequests() {
+  const [status, setStatus] = useState('');
+  const [page, setPage] = useState(1);
+  useEffect(() => setPage(1), [status]);
+  const res = useApi('/admin/support/calls', { params: { status: status || undefined, page } });
+  const { busy, run } = useAction();
+
+  async function update(id, body) {
+    const r = await run(id, () => api.put(`/admin/support/calls/${id}`, body), { success: 'Call updated' });
+    if (r.ok) res.reload();
+  }
+
+  const columns = [
+    {
+      key: 'callId',
+      header: 'ID',
+      render: (c) => <span className="font-medium text-steel-900">{c.callId}</span>,
+    },
+    {
+      key: 'phone',
+      header: 'Phone',
+      render: (c) => (
+        <a href={`tel:${c.phone}`} className="inline-flex items-center gap-1.5 font-semibold text-rust-700 hover:underline">
+          <Phone className="w-3.5 h-3.5" aria-hidden /> {c.phone}
+        </a>
+      ),
+    },
+    {
+      key: 'name',
+      header: 'Customer',
+      render: (c) => (
+        <div>
+          <div className="text-steel-900 font-medium">{c.name || c.user?.name || 'Visitor'}</div>
+          {c.city && <div className="text-xs text-steel-500">{c.city}</div>}
+        </div>
+      ),
+    },
+    {
+      key: 'createdAt',
+      header: 'Requested',
+      render: (c) => <span className="text-steel-700 whitespace-nowrap">{timeAgo(c.createdAt)}</span>,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (c) => (
+        <Select
+          className="!py-1.5 text-sm w-36"
+          value={c.status}
+          aria-label={`Status of ${c.callId}`}
+          disabled={busy === c._id}
+          onChange={(e) => update(c._id, { status: e.target.value })}
+        >
+          <option value="pending">Pending</option>
+          <option value="called">Called</option>
+          <option value="resolved">Resolved</option>
+          <option value="cancelled">Cancelled</option>
+        </Select>
+      ),
+    },
+  ];
+
+  return (
+    <>
+      <div className="flex gap-2 mb-4">
+        <Segmented
+          value={status}
+          onChange={setStatus}
+          options={[
+            { value: '', label: 'All' },
+            { value: 'pending', label: 'Pending' },
+            { value: 'called', label: 'Called' },
+            { value: 'resolved', label: 'Resolved' },
+          ]}
+        />
+      </div>
+      <DataTable
+        columns={columns}
+        rows={res.data?.calls}
+        loading={res.loading}
+        empty={<EmptyState icon={Phone} title="No call requests" description="Incoming call requests and callbacks from the website will appear here." />}
+      />
       <Pagination pagination={res.data?.pagination} onPage={setPage} />
     </>
   );
