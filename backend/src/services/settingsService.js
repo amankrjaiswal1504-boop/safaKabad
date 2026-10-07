@@ -59,6 +59,9 @@ const DEFAULTS = {
   },
   conditionMultipliers: { working: 1, not_working: 0.6, damaged: 0.35 },
   wallet: { minWithdrawal: 50, maxWithdrawal: 100000 },
+  // Nightly "daily pickups" email (see reportService). Goes to the primary
+  // email; the secondary gets a copy only when copySecondary is on.
+  reports: { dailyEnabled: true, sendHour: 20, primaryEmail: '', secondaryEmail: '', copySecondary: false },
   // Which payout options collectors can offer and customers can withdraw to.
   payments: {
     payoutMethods: ['cash', 'esewa', 'khalti', 'bank_transfer', 'wallet'],
@@ -99,6 +102,7 @@ async function get(key) {
 const PAYOUT_METHODS = ['cash', 'esewa', 'khalti', 'bank_transfer', 'wallet'];
 const WITHDRAWAL_METHODS = ['esewa', 'khalti', 'bank_transfer'];
 const bad = (message) => Object.assign(new Error(message), { status: 400 });
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Sanity checks for settings that the server enforces elsewhere.
 const VALIDATORS = {
@@ -107,6 +111,18 @@ const VALIDATORS = {
     const max = Number(v?.maxWithdrawal);
     if (!(min >= 1) || !(max >= min)) throw bad('Minimum withdrawal must be at least 1 and not above the maximum');
     return { minWithdrawal: Math.round(min), maxWithdrawal: Math.round(max) };
+  },
+  reports(v) {
+    const clean = (e) => String(e || '').trim().toLowerCase();
+    const primaryEmail = clean(v?.primaryEmail);
+    const secondaryEmail = clean(v?.secondaryEmail);
+    const sendHour = Number(v?.sendHour ?? 20);
+    if (primaryEmail && !EMAIL_RE.test(primaryEmail)) throw bad('Primary email is not valid');
+    if (secondaryEmail && !EMAIL_RE.test(secondaryEmail)) throw bad('Secondary email is not valid');
+    if (secondaryEmail && secondaryEmail === primaryEmail) throw bad('Secondary email must be different from the primary');
+    if (v?.dailyEnabled && !primaryEmail) throw bad('Add a primary email to turn on the daily report');
+    if (!Number.isInteger(sendHour) || sendHour < 0 || sendHour > 23) throw bad('Send time must be a whole hour from 0 to 23');
+    return { dailyEnabled: Boolean(v?.dailyEnabled), sendHour, primaryEmail, secondaryEmail, copySecondary: Boolean(v?.copySecondary && secondaryEmail) };
   },
   payments(v) {
     const payout = [...new Set(v?.payoutMethods || [])].filter((m) => PAYOUT_METHODS.includes(m));

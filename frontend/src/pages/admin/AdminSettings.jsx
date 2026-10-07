@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
-import { CalendarClock, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { CalendarClock, Mail, Plus, RotateCcw, Save, Send, Trash2 } from 'lucide-react';
 import api from '../../services/api';
 import useApi from '../../hooks/useApi';
 import { rupees } from '../../utils/format';
 import { useConfig } from '../../context/ConfigContext';
 import { DIAL_CODE, PAYOUT_METHODS, TIMEZONE } from '../../utils/locale';
-import { Badge, Button, Card, Field, IconButton, Input, PageHeader, SectionTitle, Tabs, Textarea, Toggle, cx } from '../../components/ui';
+import { Badge, Button, Card, Field, IconButton, Input, PageHeader, SectionTitle, Select, Tabs, Textarea, Toggle, cx } from '../../components/ui';
 import { CURRENCY_SYMBOL } from '../../utils/locale';
 import { Async, Callout, NumberInput, isBlank, useAction } from './_catalog/shared';
 
@@ -18,6 +18,7 @@ const TABS = [
   { value: 'fraud', label: 'Fraud limits' },
   { value: 'pricing', label: 'Pricing' },
   { value: 'payments', label: 'Wallet & payments' },
+  { value: 'reports', label: 'Daily report' },
 ];
 
 export default function AdminSettings() {
@@ -67,6 +68,7 @@ export default function AdminSettings() {
                   {card('payments', PaymentsCard)}
                 </>
               )}
+              {tab === 'reports' && card('reports', DailyReportCard)}
             </div>
           );
         }}
@@ -591,6 +593,105 @@ function PaymentsCard({ settingKey, initial, onSaved }) {
         onChange={s.set('withdrawalMethods')}
         error={s.errors.withdrawalMethods}
       />
+    </SectionCard>
+  );
+}
+
+// ---------- Daily report email ----------
+const EMAIL_OK = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || '').trim());
+const validateReports = (v) => ({
+  primaryEmail: v.dailyEnabled && !String(v.primaryEmail || '').trim() ? 'Required to send the daily report' : v.primaryEmail && !EMAIL_OK(v.primaryEmail) ? 'Enter a valid email' : null,
+  secondaryEmail:
+    v.secondaryEmail && !EMAIL_OK(v.secondaryEmail)
+      ? 'Enter a valid email'
+      : v.secondaryEmail && v.secondaryEmail.trim().toLowerCase() === String(v.primaryEmail || '').trim().toLowerCase()
+        ? 'Use a different email from the primary'
+        : null,
+});
+const fmtDayLong = (ymd) => new Date(`${ymd}T00:00:00Z`).toLocaleDateString('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short' });
+
+function DailyReportCard({ settingKey, initial, onSaved }) {
+  const s = useSection(settingKey, { dailyEnabled: true, sendHour: 20, primaryEmail: '', secondaryEmail: '', copySecondary: false, ...initial }, onSaved, validateReports);
+  const status = useApi('/admin/reports/daily');
+  const { busy, run } = useAction();
+  const st = status.data;
+
+  async function sendNow() {
+    const r = await run('send', () => api.post('/admin/reports/daily/send'), {
+      success: (out) => {
+        const d = out.data.data;
+        return d.mock ? 'Report built. Email isn’t set up on the server yet, so it was only logged.' : `Report sent to ${d.to}${d.cc ? ` (copy to ${d.cc})` : ''}`;
+      },
+    });
+    if (r.ok) status.reload();
+  }
+
+  return (
+    <SectionCard
+      title="Daily pickup report"
+      subtitle={`Every evening we email a summary of the day's pickups and tomorrow's schedule (${TIMEZONE}).`}
+      section={s}
+      badge={s.v.dailyEnabled ? <Badge tone="patina">On</Badge> : <Badge>Off</Badge>}
+    >
+      <Toggle checked={!!s.v.dailyEnabled} onChange={s.set('dailyEnabled')} label="Send the daily report automatically" description="Includes completed, open and cancelled pickups, kg collected, amount paid, new bookings, tomorrow's list and a CSV file." />
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <Field label="Primary email" required error={s.errors.primaryEmail} hint="The daily report is sent here.">
+          {(id) => <Input id={id} type="email" value={s.v.primaryEmail || ''} onChange={(e) => s.set('primaryEmail')(e.target.value)} placeholder="ops@yourcompany.com" invalid={!!s.errors.primaryEmail} autoComplete="email" />}
+        </Field>
+        <Field label="Secondary email" error={s.errors.secondaryEmail} hint="Optional backup contact.">
+          {(id) => (
+            <Input
+              id={id}
+              type="email"
+              value={s.v.secondaryEmail || ''}
+              onChange={(e) => {
+                s.set('secondaryEmail')(e.target.value);
+                if (!e.target.value) s.set('copySecondary')(false);
+              }}
+              placeholder="owner@yourcompany.com"
+              invalid={!!s.errors.secondaryEmail}
+              autoComplete="email"
+            />
+          )}
+        </Field>
+        <Field label="Send at" hint="Nepal time. The report covers that whole day.">
+          {(id) => (
+            <Select id={id} value={s.v.sendHour ?? 20} onChange={(e) => s.set('sendHour')(Number(e.target.value))}>
+              {Array.from({ length: 24 }, (_, h) => (
+                <option key={h} value={h}>
+                  {hour12(h)}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+        <div className="sm:pt-7">
+          <Toggle checked={!!s.v.copySecondary} onChange={s.set('copySecondary')} disabled={!s.v.secondaryEmail} label="Also send a copy to the secondary email" />
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-steel-200/70 bg-surface-2 p-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-start gap-3 text-sm">
+          <Mail className="w-5 h-5 text-rust-600 mt-0.5 shrink-0" aria-hidden />
+          <div>
+            <div className="font-medium text-steel-900">{st?.lastSentDay ? `Last sent for ${fmtDayLong(st.lastSentDay)}` : 'Not sent yet'}</div>
+            <div className="text-steel-500">
+              {s.v.dailyEnabled && s.v.primaryEmail ? `Sends every day at ${hour12(s.v.sendHour ?? 20)} to ${s.v.primaryEmail}${s.v.copySecondary && s.v.secondaryEmail ? ` (copy to ${s.v.secondaryEmail})` : ''}` : 'Turn it on and add a primary email to schedule it.'}
+            </div>
+          </div>
+        </div>
+        <Button variant="outline" size="sm" icon={Send} onClick={sendNow} loading={busy === 'send'} disabled={s.dirty || !initial?.primaryEmail}>
+          Send a test now
+        </Button>
+      </div>
+      {s.dirty && <p className="text-xs text-steel-500 -mt-2">Save your changes before sending a test.</p>}
+      {st && !st.emailConfigured && (
+        <Callout tone="amber">
+          Email sending isn’t set up on the server yet, so reports are only written to the server log. Add <code>SMTP_HOST</code>, <code>SMTP_PORT</code>, <code>SMTP_USER</code>, <code>SMTP_PASS</code> and <code>SMTP_FROM</code> to the backend’s
+          environment (for example in Render › Environment).
+        </Callout>
+      )}
     </SectionCard>
   );
 }

@@ -262,6 +262,8 @@ router.get('/analytics', can('analytics'), system.analytics);
 router.get('/reports', can('analytics'), system.analytics); // older reports page
 router.get('/settings', can('*'), system.getSettings);
 router.put('/settings/:key', can('*'), validate(z.object({ value: z.any() })), system.updateSetting);
+router.get('/reports/daily', can('*'), system.dailyReportStatus);
+router.post('/reports/daily/send', can('*'), system.sendDailyReportNow);
 router.get('/audit-log', can('*'), system.auditLog);
 router.get('/fraud', can('users', 'pickups'), system.listBlocklist);
 router.post(

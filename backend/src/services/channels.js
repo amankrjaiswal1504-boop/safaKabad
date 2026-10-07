@@ -14,9 +14,9 @@ let transporter = null;
 function emailEnabled() {
   return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER);
 }
-async function sendEmail({ to, subject, text, html, attachments }) {
+async function sendEmail({ to, cc, subject, text, html, attachments }) {
   if (!to) return { skipped: true };
-  if (!emailEnabled()) return mock('email', to, `${subject} — ${text || ''}`);
+  if (!emailEnabled()) return mock('email', cc ? `${to} (cc ${cc})` : to, `${subject} — ${text || ''}`);
   if (!transporter) {
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -28,6 +28,7 @@ async function sendEmail({ to, subject, text, html, attachments }) {
   await transporter.sendMail({
     from: process.env.SMTP_FROM || `ScrapMate <${process.env.SMTP_USER}>`,
     to,
+    cc,
     subject,
     text,
     html,

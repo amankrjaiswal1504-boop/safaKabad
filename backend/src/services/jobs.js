@@ -100,15 +100,23 @@ async function track(type, { user, sessionId, path, city } = {}) {
 }
 
 let timer = null;
+let reportTimer = null;
 function startJobs() {
   if (timer || process.env.NODE_ENV === 'test') return;
   const tick = () => runRecurringPlans().catch((err) => logger.error({ err: err.message }, 'recurring job failed'));
   timer = setInterval(tick, 60 * 60 * 1000);
   setTimeout(tick, 15 * 1000);
+  // Daily pickup email: checked every minute, sent once a day at the set hour.
+  const { runDailyReport } = require('./reportService');
+  const reportTick = () => runDailyReport().catch((err) => logger.error({ err: err.message }, 'daily report failed'));
+  reportTimer = setInterval(reportTick, 60 * 1000);
+  setTimeout(reportTick, 20 * 1000);
 }
 function stopJobs() {
   if (timer) clearInterval(timer);
+  if (reportTimer) clearInterval(reportTimer);
   timer = null;
+  reportTimer = null;
 }
 
 module.exports = { runRecurringPlans, checkPriceAlerts, track, startJobs, stopJobs, firstRunDate, nextDate };

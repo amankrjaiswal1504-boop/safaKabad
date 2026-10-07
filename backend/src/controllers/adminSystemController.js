@@ -8,6 +8,8 @@ const { audit } = require('../services/auditService');
 const { paginate, toCsv } = require('../utils/paginate');
 const { reportPdf, rs } = require('../services/pdfService');
 const { escapeRegex } = require('../services/rateService');
+const reports = require('../services/reportService');
+const { emailEnabled } = require('../services/channels');
 
 const fail = (res, status, message) => res.status(status).json({ success: false, message });
 
@@ -268,4 +270,23 @@ async function reviewSummary() {
   return Review.countDocuments({ status: 'pending' });
 }
 
-module.exports = { analytics, getSettings, updateSetting, auditLog, listBlocklist, addBlock, removeBlock, clearFlags, buildAnalytics, reviewSummary };
+// Daily pickup report: status for the settings card, and a send-now test.
+async function dailyReportStatus(req, res, next) {
+  try {
+    res.json({ success: true, data: { lastSentDay: await reports.lastSentDay(), emailConfigured: emailEnabled() } });
+  } catch (err) {
+    next(err);
+  }
+}
+async function sendDailyReportNow(req, res, next) {
+  try {
+    const out = await reports.sendDailyReport();
+    await audit(req, 'reports.daily.test', { entity: 'Setting', entityId: 'reports', after: { to: out.to, cc: out.cc } });
+    res.json({ success: true, data: out });
+  } catch (err) {
+    if (err.status) return fail(res, err.status, err.message);
+    next(err);
+  }
+}
+
+module.exports = { dailyReportStatus, sendDailyReportNow, analytics, getSettings, updateSetting, auditLog, listBlocklist, addBlock, removeBlock, clearFlags, buildAnalytics, reviewSummary };
