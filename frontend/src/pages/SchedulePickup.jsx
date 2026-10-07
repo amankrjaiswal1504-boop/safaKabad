@@ -9,6 +9,7 @@ import {
   Minus,
   Plus,
   Search,
+  Sparkles,
   ShoppingBag,
   Tag,
   Trash2,
@@ -30,6 +31,7 @@ import PhoneOtpForm from '../components/PhoneOtpForm';
 import CategoryIcon from '../components/CategoryIcon';
 import { addressLine, fmtDay, rupees, unitLabel } from '../utils/format';
 import { CURRENCY_SYMBOL } from '../utils/locale';
+import { accentFor } from '../utils/accents';
 
 // Animates a number from its previous value to the new one.
 function useCountUp(target, ms = 650) {
@@ -460,48 +462,79 @@ export default function SchedulePickup() {
                     )}
                   </Card>
                 )}
-                <Card>
-                  <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                    <div className="relative flex-1">
-                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-steel-400" aria-hidden />
-                      <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('rates.search')} className="pl-9" type="search" aria-label={t('rates.search')} />
-                    </div>
+                <Card className="!p-4 sm:!p-5">
+                  <div className="relative mb-4">
+                    <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-steel-400" aria-hidden />
+                    <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('rates.search')} className="pl-12 py-3 rounded-full" type="search" aria-label={t('rates.search')} />
                   </div>
-                  <div className="flex gap-2 overflow-x-auto pb-2 mb-3 -mx-1 px-1">
-                    {[{ slug: 'all', name: t('rates.all') }, ...(catData?.categories || [])].map((c) => (
-                      <button
-                        key={c.slug}
-                        type="button"
-                        onClick={() => setCategory(c.slug)}
-                        className={cx('shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm', category === c.slug ? 'border-rust-600 bg-rust-50 text-rust-700' : 'border-steel-200 text-steel-700 hover:border-steel-400')}
-                      >
-                        {c.icon && <CategoryIcon icon={c.icon} className="w-4 h-4" />}
-                        {c.slug === 'all' ? c.name : tr(c)}
-                      </button>
-                    ))}
+                  <div className="flex gap-2 overflow-x-auto pb-2 mb-3 -mx-1 px-1" role="group" aria-label="Filter by category">
+                    {[{ slug: 'all', name: t('rates.all') }, ...(catData?.categories || [])].map((c) => {
+                      const active = category === c.slug;
+                      const a = accentFor(c);
+                      return (
+                        <button
+                          key={c.slug}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => setCategory(c.slug)}
+                          className={cx(
+                            'shrink-0 inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-200',
+                            active
+                              ? cx('text-white border-transparent bg-gradient-to-r shadow-md', c.slug === 'all' ? 'from-steel-800 to-steel-950 dark:from-steel-300 dark:to-steel-200 dark:text-steel-950' : cx(a.btn, a.shadow))
+                              : 'bg-surface border-steel-200 text-steel-700 hover:border-steel-400 hover:-translate-y-0.5'
+                          )}
+                        >
+                          {c.slug === 'all' ? <Sparkles className="w-4 h-4" aria-hidden /> : <CategoryIcon icon={c.icon} className="w-4 h-4" />}
+                          {c.slug === 'all' ? c.name : tr(c)}
+                        </button>
+                      );
+                    })}
                   </div>
                   {!rates ? (
-                    <Skeleton className="h-48" />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {Array.from({ length: 6 }, (_, i) => (
+                        <Skeleton key={i} className="h-32 rounded-2xl" />
+                      ))}
+                    </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[22rem] overflow-y-auto pr-1">
-                      {filteredRates.map((r) => {
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[30rem] overflow-y-auto p-1 -m-1">
+                      {filteredRates.map((r, i) => {
                         const added = lines.some((l) => l.itemId === r.itemId);
+                        const a = accentFor(r.category);
                         return (
                           <button
                             key={r.itemId}
                             type="button"
                             onClick={() => (added ? setLines((ls) => ls.filter((l) => l.itemId !== r.itemId)) : addLine(r))}
                             aria-pressed={added}
-                            className={cx('relative text-left rounded-xl border p-3 transition-colors', added ? 'border-rust-600 bg-rust-50' : 'border-steel-200 hover:border-steel-400 bg-surface')}
-                          >
-                            {added && (
-                              <span className="absolute top-2 right-2 w-5 h-5 rounded-full bg-rust-600 text-white flex items-center justify-center">
-                                <Check className="w-3 h-3" aria-hidden />
-                              </span>
+                            aria-label={`${tr(r)}, ${rupees(r.minPrice)} – ${rupees(r.maxPrice)} per ${unitLabel(r.unit)}`}
+                            style={{ animationDelay: `${Math.min(i, 9) * 35}ms` }}
+                            className={cx(
+                              'anim-rise group relative overflow-hidden text-left rounded-2xl border p-3.5 sm:p-4 transition-all duration-300 active:scale-[0.97]',
+                              added ? cx(a.selected, 'shadow-card') : cx('bg-surface border-steel-200/80 shadow-card hover:-translate-y-1 hover:shadow-lift', a.hoverBorder)
                             )}
-                            <div className="font-medium text-sm text-steel-900 pr-5">{tr(r)}</div>
-                            <div className="text-xs text-steel-500 mt-0.5 tabular">
-                              {rupees(r.minPrice)}–{rupees(r.maxPrice)}/{unitLabel(r.unit)}
+                          >
+                            <span className={cx('absolute -right-6 -top-6 w-16 h-16 rounded-full bg-gradient-to-br transition-all duration-500', a.grad, added ? 'opacity-25 scale-125' : 'opacity-[0.10] group-hover:opacity-20')} aria-hidden />
+                            <div className="relative flex items-start justify-between gap-2">
+                              <span className={cx('w-9 h-9 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:rotate-12', a.soft)} aria-hidden>
+                                <CategoryIcon icon={r.category?.icon} className="w-4 h-4" />
+                              </span>
+                              <span
+                                className={cx(
+                                  'w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300',
+                                  added ? cx(a.check, 'text-white scale-100') : 'border-2 border-steel-200 text-transparent group-hover:border-steel-400'
+                                )}
+                                aria-hidden
+                              >
+                                {added ? <Check className="w-3.5 h-3.5" strokeWidth={3} /> : <Plus className="w-3 h-3 text-steel-400" />}
+                              </span>
+                            </div>
+                            <div className="relative font-semibold text-sm sm:text-[15px] text-steel-900 mt-3 leading-snug">{tr(r)}</div>
+                            <div className="relative mt-1 flex items-baseline flex-wrap gap-x-1 tabular">
+                              <span className="font-head font-bold text-steel-900">{rupees(r.minPrice)}</span>
+                              <span className="text-steel-400 text-xs">–</span>
+                              <span className={cx('font-head font-bold', a.text)}>{rupees(r.maxPrice)}</span>
+                              <span className="text-xs text-steel-500">/ {unitLabel(r.unit)}</span>
                             </div>
                           </button>
                         );
@@ -512,14 +545,20 @@ export default function SchedulePickup() {
 
                 {selectedLines.length > 0 && (
                   <Card>
-                    <div className="label mb-3">Your items</div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="font-head font-semibold text-steel-900">Your items</div>
+                      <span className="text-xs font-bold rounded-full px-2.5 py-1 bg-steel-100 text-steel-700">{selectedLines.length}</span>
+                    </div>
                     <ul className="divide-y divide-steel-100">
                       {selectedLines.map((l) => (
-                        <li key={l.itemId} className="py-3 flex flex-wrap items-center gap-3">
+                        <li key={l.itemId} className="anim-rise py-3 flex flex-wrap items-center gap-3">
+                          <span className={cx('shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br text-white flex items-center justify-center shadow-md', accentFor(l.rate.category).grad, accentFor(l.rate.category).shadow)} aria-hidden>
+                            <CategoryIcon icon={l.rate.category?.icon} className="w-4 h-4" />
+                          </span>
                           <div className="flex-1 min-w-[8rem]">
-                            <div className="font-medium text-steel-900 text-sm">{tr(l.rate)}</div>
+                            <div className="font-semibold text-steel-900 text-sm">{tr(l.rate)}</div>
                             {type === 'sale' && estLine(l.itemId) && (
-                              <div className="text-xs text-steel-500 tabular">
+                              <div className={cx('text-xs font-semibold tabular', accentFor(l.rate.category).text)}>
                                 ≈ {rupees(estLine(l.itemId).min)} – {rupees(estLine(l.itemId).max)}
                               </div>
                             )}

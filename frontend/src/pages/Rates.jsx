@@ -14,6 +14,7 @@ import { RangeChart, ChartTable } from '../components/charts';
 import CategoryIcon from '../components/CategoryIcon';
 import { fmtDate, rupees, unitLabel } from '../utils/format';
 import { CURRENCY_SYMBOL } from '../utils/locale';
+import { accentFor } from '../utils/accents';
 
 function TrendModal({ rate, city, onClose }) {
   const { user } = useAuth();
@@ -89,18 +90,6 @@ function TrendModal({ rate, city, onClose }) {
   );
 }
 
-// One lively accent per category section (cycled). Written out in full so
-// Tailwind keeps the classes.
-const ACCENTS = [
-  { grad: 'from-emerald-400 to-teal-600', btn: 'from-emerald-600 to-teal-700', shadow: 'shadow-emerald-600/30', soft: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300', text: 'text-emerald-600 dark:text-emerald-400', line: 'from-emerald-500', hoverBorder: 'hover:border-emerald-300 dark:hover:border-emerald-700' },
-  { grad: 'from-yellow-400 to-orange-500', btn: 'from-orange-600 to-orange-700', shadow: 'shadow-orange-500/30', soft: 'bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300', text: 'text-orange-600 dark:text-orange-400', line: 'from-orange-500', hoverBorder: 'hover:border-orange-300 dark:hover:border-orange-700' },
-  { grad: 'from-sky-400 to-indigo-600', btn: 'from-sky-700 to-indigo-700', shadow: 'shadow-indigo-500/30', soft: 'bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300', text: 'text-indigo-600 dark:text-indigo-400', line: 'from-indigo-500', hoverBorder: 'hover:border-sky-300 dark:hover:border-sky-700' },
-  { grad: 'from-pink-400 to-rose-600', btn: 'from-rose-600 to-rose-700', shadow: 'shadow-rose-500/30', soft: 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300', text: 'text-rose-600 dark:text-rose-400', line: 'from-rose-500', hoverBorder: 'hover:border-rose-300 dark:hover:border-rose-700' },
-  { grad: 'from-violet-400 to-purple-600', btn: 'from-violet-600 to-purple-700', shadow: 'shadow-violet-500/30', soft: 'bg-violet-50 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300', text: 'text-violet-600 dark:text-violet-400', line: 'from-violet-500', hoverBorder: 'hover:border-violet-300 dark:hover:border-violet-700' },
-  { grad: 'from-lime-400 to-green-600', btn: 'from-green-600 to-green-700', shadow: 'shadow-green-500/30', soft: 'bg-lime-50 text-green-700 dark:bg-lime-500/15 dark:text-lime-300', text: 'text-green-600 dark:text-green-400', line: 'from-green-500', hoverBorder: 'hover:border-lime-300 dark:hover:border-lime-700' },
-];
-const accentFor = (i) => ACCENTS[i % ACCENTS.length];
-
 export function RatesTable({ city, category, search, compactView }) {
   const { t, tr } = useI18n();
   const { data, error, loading, reload } = useApi('/scrap/rates', { params: { city } });
@@ -129,8 +118,8 @@ export function RatesTable({ city, category, search, compactView }) {
 
   return (
     <div className={cx('space-y-12 transition-opacity', loading && 'opacity-60')}>
-      {grouped.map(({ category: cat, items }, gi) => {
-        const a = accentFor(gi);
+      {grouped.map(({ category: cat, items }) => {
+        const a = accentFor(cat);
         const top = Math.max(...items.map((r) => r.maxPrice || 0), 1);
         return (
           <section key={cat?.slug}>
@@ -267,9 +256,9 @@ export default function Rates() {
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('rates.search')} className="pl-12 py-3 rounded-full shadow-card" aria-label={t('rates.search')} type="search" />
           </div>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1 -mb-1" role="group" aria-label="Filter by category">
-            {[{ slug: 'all', name: t('rates.all'), icon: 'sparkles' }, ...categories].map((c, i) => {
+            {[{ slug: 'all', name: t('rates.all') }, ...categories].map((c) => {
               const active = category === c.slug;
-              const a = accentFor(Math.max(0, i - 1));
+              const a = accentFor(c);
               return (
                 <button
                   key={c.slug}
