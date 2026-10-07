@@ -74,7 +74,6 @@ export default function Login() {
           setError('');
         }}
         options={[
-          
           { value: 'email', label: t('auth.withEmail'), icon: Mail },
           { value: 'phone', label: t('auth.withPhone'), icon: Smartphone },
         ]}
