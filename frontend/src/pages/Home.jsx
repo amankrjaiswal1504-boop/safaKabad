@@ -19,6 +19,7 @@ import usePageMeta from '../hooks/usePageMeta';
 import { useConfig } from '../context/ConfigContext';
 import { useI18n } from '../i18n/I18nContext';
 import Estimator from '../components/Estimator';
+import TruckCta from '../components/TruckCta';
 import CategoryIcon from '../components/CategoryIcon';
 import { Skeleton, Stars } from '../components/ui';
 import { compact, fmtDay, rupees, unitLabel } from '../utils/format';
@@ -181,9 +182,7 @@ export default function Home() {
               </h1>
               <p className="mt-4 text-[#C7D2CD] text-base sm:text-lg max-w-xl">{lang === 'en' && home.heroSubtitle ? home.heroSubtitle : t('home.subtitle')}</p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <Link to="/schedule-pickup" className="btn-primary !px-6 !py-3 text-base">
-                  {t('home.ctaBook')} <ArrowRight className="w-4 h-4" aria-hidden />
-                </Link>
+                <TruckCta label={t('home.ctaBook')} goingLabel={t('home.onTheWay')} />
                 <Link to="/rates" className="btn border border-white/20 text-white !px-6 !py-3 text-base hover:bg-white/10 hover:border-white/40">
                   {t('home.ctaRates')}
                 </Link>

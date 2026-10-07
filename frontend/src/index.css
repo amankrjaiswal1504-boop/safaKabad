@@ -292,6 +292,50 @@ h2.font-head[class*='text-3xl'],
   .tilt-3d { transform: none !important; }
 }
 
+/* ---------- Truck "Book a free pickup" button (TruckCta) ---------- */
+@keyframes truck-rumble {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  20% { transform: translate(0.4px, -0.7px) rotate(-0.4deg); }
+  40% { transform: translate(-0.3px, 0.2px) rotate(0.3deg); }
+  60% { transform: translate(0.3px, -0.5px) rotate(0); }
+  80% { transform: translate(-0.2px, 0.3px) rotate(-0.3deg); }
+}
+@keyframes truck-puff {
+  0% { transform: translate(0, 0) scale(0.4); opacity: 0; }
+  20% { opacity: 0.9; }
+  100% { transform: translate(-14px, -8px) scale(1.6); opacity: 0; }
+}
+@keyframes truck-drive {
+  0% { transform: translateX(0); }
+  18% { transform: translateX(-5px) rotate(1.5deg); }
+  35% { transform: translateX(6px) rotate(-1.5deg); }
+  100% { transform: translateX(var(--drive, 300px)) rotate(0); }
+}
+@keyframes truck-wheel-spin { to { transform: rotate(360deg); } }
+@keyframes truck-speed { 0% { opacity: 0; transform: translateX(10px) scaleX(0.3); } 40% { opacity: 1; } 100% { opacity: 0; transform: translateX(-18px) scaleX(1.2); } }
+@keyframes truck-road { to { background-position: -28px 0; } }
+
+.truck-cta .truck-body { animation: truck-rumble 0.22s linear infinite; }
+.truck-cta:hover .truck-body { animation-duration: 0.14s; }
+.truck-cta .truck-wheel { transform-box: fill-box; transform-origin: center; }
+.truck-cta .truck-puff { opacity: 0; animation: truck-puff 1s ease-out infinite; }
+.truck-cta .truck-speed { opacity: 0; }
+.truck-cta .truck-going { opacity: 0; transform: translateY(8px); transition: opacity 0.3s 0.25s, transform 0.3s 0.25s; }
+.truck-cta .truck-label { transition: opacity 0.25s, transform 0.25s; }
+
+.truck-cta.is-driving .truck-body { animation: truck-drive 0.9s cubic-bezier(0.55, 0, 0.75, 0.2) forwards; }
+.truck-cta.is-driving .truck-wheel { animation: truck-wheel-spin 0.22s linear infinite; }
+.truck-cta.is-driving .truck-puff { animation-duration: 0.35s; }
+.truck-cta.is-driving .truck-speed { animation: truck-speed 0.35s ease-out 0.3s infinite; }
+.truck-cta.is-driving .truck-road { animation: truck-road 0.3s linear infinite; }
+.truck-cta.is-driving .truck-label { opacity: 0; transform: translateX(24px); }
+.truck-cta.is-driving .truck-going { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .truck-cta .truck-body,
+  .truck-cta .truck-puff { animation: none !important; }
+}
+
 @media print {
   body {
     background: white;
